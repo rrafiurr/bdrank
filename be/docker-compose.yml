@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    networks:
+      - common-net
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - go-mod-cache:/root/go/pkg/mod
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  go-mod-cache:
+
+networks:
+  common-net:
+    external: true

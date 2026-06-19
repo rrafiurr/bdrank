@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(docker restart *)",
+      "Bash(curl -s -I -X OPTIONS http://localhost:8080/api/v1/reviews -H \"Origin: http://localhost:8081\" -H \"Access-Control-Request-Method: GET\")",
+      "Bash(curl -s http://localhost:8080/api/v1/reviews/11)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('timeline' in d, 'comments' in d, type\\(d.get\\('timeline'\\)\\), type\\(d.get\\('comments'\\)\\)\\)\")",
+      "Bash(python3 -c \"import sys, json; d=json.load\\(sys.stdin\\); print\\('views_count' in d, d.get\\('views_count'\\), 'timeline' in d, 'comments' in d\\)\")",
+      "Bash(go build *)",
+      "Read(//usr/local/go/**)",
+      "Read(//home/rafiur/**)",
+      "Read(//root/go/**)",
+      "Read(//opt/**)",
+      "Bash(identify /home/rafiur/Desktop/projects/final-review/fe/src/assets/logo.png)",
+      "Bash(convert --version)",
+      "Bash(ffmpeg -version)",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(python3)",
+      "Bash(docker exec *)",
+      "Bash(curl -s http://localhost:8080/api/v1/pages)",
+      "Bash(curl -s http://localhost:8080/api/v1/pages/about)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['title']\\); print\\(d['meta_description'][:50]\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:8080/api/v1/pages/privacy)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['title']\\); print\\(d['content'][:80]\\)\")"
+    ]
+  }
+}
