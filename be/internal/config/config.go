@@ -20,6 +20,7 @@ type Config struct {
 	TokenTTL      time.Duration
 	UploadDir     string
 	BaseURL       string
+	SiteURL       string
 }
 
 func Load() *Config {
@@ -38,6 +39,7 @@ func Load() *Config {
 		TokenTTL:      24 * time.Hour,
 		UploadDir:     getEnv("UPLOAD_DIR", "./uploads"),
 		BaseURL:       getEnv("BASE_URL", "http://localhost:8080"),
+		SiteURL:       getEnv("SITE_URL", "http://localhost:5173"),
 	}
 }
 

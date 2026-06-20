@@ -13,10 +13,11 @@ import (
 type CommentHandler struct {
 	comments *repository.CommentRepo
 	reviews  *repository.ReviewRepo
+	users    *repository.UserRepo
 }
 
-func NewCommentHandler(comments *repository.CommentRepo, reviews *repository.ReviewRepo) *CommentHandler {
-	return &CommentHandler{comments: comments, reviews: reviews}
+func NewCommentHandler(comments *repository.CommentRepo, reviews *repository.ReviewRepo, users *repository.UserRepo) *CommentHandler {
+	return &CommentHandler{comments: comments, reviews: reviews, users: users}
 }
 
 func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +40,14 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := middleware.UserIDFromCtx(r.Context())
+
+	// Block unverified product owners from commenting
+	u, _ := h.users.FindByID(r.Context(), userID)
+	if u != nil && u.IsProductOwner && !u.OwnerVerified {
+		writeError(w, http.StatusForbidden, "your product owner account is pending verification")
+		return
+	}
+
 	comment, err := h.comments.Create(r.Context(), reviewID, userID, body.Content)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to post comment")

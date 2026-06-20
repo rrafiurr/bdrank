@@ -1,3 +1,4 @@
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { ReviewCard } from "@/components/ReviewCard";
@@ -84,8 +85,22 @@ const Index = () => {
       }
     : null;
 
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "ReviewHub",
+    url: typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app",
+    description:
+      "Honest, time-tested product reviews from a real community. Track how products perform over months and years.",
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <PageHead
+        title="ReviewHub - Honest Reviews Over Time"
+        description="Discover honest, time-tested product reviews. Our community tracks products over months and years so you get the full picture before you buy."
+        jsonLd={orgSchema}
+      />
       <Header />
       <main>
         <HeroSection />

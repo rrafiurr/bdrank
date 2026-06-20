@@ -41,7 +41,7 @@ export function ReviewCard({
 
   return (
     <Link to={`/review/${id}`}>
-      <article className="group bg-card rounded-xl overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-300 hover:-translate-y-1">
+      <article className="group bg-card rounded-2xl overflow-hidden border border-border/60 shadow-soft hover:shadow-elevated transition-all duration-300 hover:-translate-y-1">
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
           {imageUrl ? (
             <img

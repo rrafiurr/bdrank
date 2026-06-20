@@ -8,6 +8,7 @@ import (
 	"final-review/be/internal/handlers"
 	mw "final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/redis/go-redis/v9"
@@ -16,7 +17,7 @@ import (
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -34,16 +35,21 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	commentRepo := repository.NewCommentRepo(db, cfg.BaseURL)
 	pageRepo    := repository.NewPageRepo(db)
 
+	// storage — swap NewLocal for a CDN implementation to change hosting
+	store := storage.NewLocal(cfg.UploadDir, cfg.BaseURL)
+
 	// handlers
 	authH     := handlers.NewAuthHandler(userRepo, rdb, cfg)
-	profileH  := handlers.NewProfileHandler(userRepo)
-	uploadH   := handlers.NewUploadHandler(cfg)
+	profileH  := handlers.NewProfileHandler(userRepo, db)
+	uploadH   := handlers.NewUploadHandler(store)
 	productH  := handlers.NewProductHandler(productRepo, reviewRepo)
-	reviewH   := handlers.NewReviewHandler(reviewRepo, productRepo, cfg)
-	timelineH := handlers.NewTimelineHandler(reviewRepo, cfg)
-	commentH  := handlers.NewCommentHandler(commentRepo, reviewRepo)
+	reviewH   := handlers.NewReviewHandler(reviewRepo, productRepo, store)
+	timelineH := handlers.NewTimelineHandler(reviewRepo, store)
+	commentH  := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo)
 	searchH   := handlers.NewSearchHandler(db)
 	pageH     := handlers.NewPageHandler(pageRepo)
+	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store)
+	sitemapH  := handlers.NewSitemapHandler(db, cfg.SiteURL)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -56,9 +62,13 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	r.Handle("/uploads/*", http.StripPrefix("/uploads/",
 		http.FileServer(http.Dir(cfg.UploadDir))))
 
+	// sitemap (served at root, not under /api/v1)
+	r.Get("/sitemap.xml", sitemapH.Sitemap)
+
 	r.Route("/api/v1", func(r chi.Router) {
 		// public
 		r.Post("/auth/register", authH.Register)
+		r.Post("/auth/register/owner", authH.RegisterOwner)
 		r.Post("/auth/login", authH.Login)
 
 		r.Get("/products", productH.List)
@@ -85,6 +95,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 
 			r.Get("/profile", profileH.Get)
 			r.Put("/profile", profileH.Update)
+			r.Get("/profile/reviews", profileH.MyReviews)
+			r.Get("/profile/comments", profileH.MyComments)
 
 			r.Post("/upload/image", uploadH.Image)
 
@@ -93,6 +105,40 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Post("/reviews/{id}/timeline", timelineH.Create)
 			r.Post("/reviews/{id}/comments", commentH.Create)
 			r.Post("/reviews/{id}/comments/{comment_id}/like", commentH.LikeComment)
+		})
+
+		// admin-only
+		r.Group(func(r chi.Router) {
+			r.Use(mw.Admin(cfg, rdb, userRepo))
+
+			r.Get("/admin/stats", adminH.Stats)
+
+			r.Get("/admin/users", adminH.ListUsers)
+			r.Patch("/admin/users/{id}", adminH.UpdateUser)
+
+			r.Get("/admin/owners", adminH.ListOwners)
+			r.Patch("/admin/owners/{id}", adminH.UpdateOwner)
+
+			r.Get("/admin/reviews", adminH.ListReviews)
+			r.Patch("/admin/reviews/{id}", adminH.UpdateReview)
+			r.Delete("/admin/reviews/{id}", adminH.DeleteReview)
+
+			r.Get("/admin/comments", adminH.ListComments)
+			r.Patch("/admin/comments/{id}", adminH.UpdateComment)
+			r.Delete("/admin/comments/{id}", adminH.DeleteComment)
+
+			r.Post("/admin/categories", adminH.CreateCategory)
+			r.Patch("/admin/categories/{slug}", adminH.UpdateCategory)
+			r.Delete("/admin/categories/{slug}", adminH.DeleteCategory)
+
+			r.Get("/admin/pages", adminH.ListAllPages)
+			r.Post("/admin/pages", adminH.CreatePage)
+			r.Patch("/admin/pages/{slug}", adminH.UpdatePage)
+			r.Delete("/admin/pages/{slug}", adminH.DeletePage)
+
+			r.Post("/admin/products", adminH.CreateProduct)
+			r.Patch("/admin/products/{id}", adminH.UpdateProduct)
+			r.Delete("/admin/products/{id}", adminH.DeleteProduct)
 		})
 	})
 

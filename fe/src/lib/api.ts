@@ -55,6 +55,8 @@ export interface ApiComment {
   content: string;
   likes_count: number;
   author: ApiAuthor;
+  is_owner_reply: boolean;
+  company_name?: string;
   created_at: string;
 }
 

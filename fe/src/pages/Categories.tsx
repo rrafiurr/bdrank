@@ -1,3 +1,4 @@
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ReviewCard } from "@/components/ReviewCard";
@@ -64,8 +65,20 @@ export default function Categories() {
   const selectedLabel =
     categories.find((c) => c.slug === selectedCategory)?.label ?? "All Reviews";
 
+  const catTitle = selectedCategory
+    ? `${selectedLabel} Reviews - ReviewHub`
+    : "Browse by Category - ReviewHub";
+
   return (
     <div className="min-h-screen bg-background">
+      <PageHead
+        title={catTitle}
+        description={
+          selectedCategory
+            ? `Read honest ${selectedLabel.toLowerCase()} reviews from our community.`
+            : "Browse product reviews by category — physical products, digital services, and more."
+        }
+      />
       <Header />
 
       <main className="container px-4 py-12">

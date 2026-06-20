@@ -88,6 +88,39 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *AuthHandler) RegisterOwner(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email       string `json:"email"`
+		Password    string `json:"password"`
+		FullName    string `json:"full_name"`
+		CompanyName string `json:"company_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil ||
+		body.Email == "" || body.Password == "" || body.CompanyName == "" {
+		writeError(w, http.StatusBadRequest, "email, password and company_name required")
+		return
+	}
+	if len(body.Password) < 8 {
+		writeError(w, http.StatusBadRequest, "password must be at least 8 characters")
+		return
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	user, err := h.users.CreateOwner(r.Context(), body.Email, string(hash), body.FullName, body.CompanyName)
+	if err != nil {
+		writeError(w, http.StatusConflict, "email already in use")
+		return
+	}
+	// No token issued — owner must wait for admin verification before logging in
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"message": "Registration submitted. Your account is pending admin verification.",
+		"user_id": user.ID,
+	})
+}
+
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromCtx(r.Context())
 	user, err := h.users.FindByID(r.Context(), userID)

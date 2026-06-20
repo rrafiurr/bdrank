@@ -4,19 +4,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"final-review/be/internal/config"
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 
 type TimelineHandler struct {
 	reviews *repository.ReviewRepo
-	cfg     *config.Config
+	storage storage.Storage
 }
 
-func NewTimelineHandler(reviews *repository.ReviewRepo, cfg *config.Config) *TimelineHandler {
-	return &TimelineHandler{reviews: reviews, cfg: cfg}
+func NewTimelineHandler(reviews *repository.ReviewRepo, s storage.Storage) *TimelineHandler {
+	return &TimelineHandler{reviews: reviews, storage: s}
 }
 
 func (h *TimelineHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -52,14 +52,14 @@ func (h *TimelineHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var imageURL string
+	var imagePath string
 	file, fh, fileErr := r.FormFile("image")
 	if fileErr == nil {
 		defer file.Close()
-		imageURL, _ = saveOpenFile(file, fh, h.cfg.UploadDir, 10<<20)
+		imagePath, _ = h.storage.Store(r.Context(), file, fh.Filename, 10<<20)
 	}
 
-	entry, err := h.reviews.AddTimelineEntry(r.Context(), reviewID, title, content, rating, imageURL)
+	entry, err := h.reviews.AddTimelineEntry(r.Context(), reviewID, title, content, rating, imagePath)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to add timeline entry")
 		return

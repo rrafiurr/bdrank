@@ -1,3 +1,4 @@
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ReviewCard } from "@/components/ReviewCard";
@@ -5,7 +6,7 @@ import { CategoryFilter } from "@/components/CategoryFilter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem } from "@/lib/api";
@@ -59,8 +60,16 @@ const BrowseReviews = () => {
   const reviews = data?.data ?? [];
   const total = data?.total ?? 0;
 
+  const pageTitle = debouncedSearch
+    ? `Search: "${debouncedSearch}" - ReviewHub`
+    : "Browse Reviews - ReviewHub";
+
   return (
     <div className="min-h-screen bg-background">
+      <PageHead
+        title={pageTitle}
+        description="Search and filter honest product reviews from our community. Find reviews by category, rating, and more."
+      />
       <Header />
       <main className="py-12">
         <div className="container px-4">
@@ -75,34 +84,44 @@ const BrowseReviews = () => {
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-card rounded-xl p-4 md:p-6 shadow-soft mb-8">
-            <div className="flex flex-col gap-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <div className="bg-card rounded-2xl border border-border shadow-soft mb-8 overflow-hidden">
+            {/* Search bar row */}
+            <div className="px-4 py-4 border-b border-border">
+              <div className="relative flex items-center">
+                <Search className="absolute left-4 h-5 w-5 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Search reviews by title, product, or author..."
+                  placeholder="Search reviews by title, product, or author…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12"
+                  className="pl-11 h-12 rounded-xl bg-muted/40 border-transparent text-base focus:bg-background focus:border-border focus:ring-2 focus:ring-primary/10"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-4 h-6 w-6 flex items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-sm"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
+            </div>
 
-              {/* Filters Row */}
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            {/* Filters row */}
+            <div className="px-4 py-3 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between bg-muted/20">
                 <CategoryFilter
                   activeCategory={activeCategory}
                   onCategoryChange={setActiveCategory}
                 />
 
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                     <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-[140px]">
+                      <SelectTrigger className="h-8 text-sm rounded-full border-border bg-background px-3 gap-1 w-[140px]">
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         <SelectItem value="latest">Latest</SelectItem>
                         <SelectItem value="popular">Most Popular</SelectItem>
                         <SelectItem value="rating">Highest Rated</SelectItem>
@@ -112,18 +131,17 @@ const BrowseReviews = () => {
                   </div>
 
                   <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="h-8 text-sm rounded-full border-border bg-background px-3 gap-1 w-[130px]">
                       <SelectValue placeholder="Rating" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="all">All Ratings</SelectItem>
-                      <SelectItem value="5">5 Stars</SelectItem>
-                      <SelectItem value="4">4+ Stars</SelectItem>
-                      <SelectItem value="3">3+ Stars</SelectItem>
+                      <SelectItem value="5">⭐ 5 Stars</SelectItem>
+                      <SelectItem value="4">⭐ 4+ Stars</SelectItem>
+                      <SelectItem value="3">⭐ 3+ Stars</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
             </div>
           </div>
 

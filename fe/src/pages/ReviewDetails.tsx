@@ -1,12 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, MessageCircle, ThumbsUp, Share2, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, ThumbsUp, Share2, Clock, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -152,8 +153,43 @@ const ReviewDetails = () => {
 
   const isAuthor = user && user.id === review.author.id;
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const reviewJsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      name: review.title,
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: String(review.rating),
+        bestRating: "5",
+        worstRating: "1",
+      },
+      author: { "@type": "Person", name: review.author.username },
+      itemReviewed: { "@type": "Product", name: review.product.name },
+      datePublished: review.created_at,
+      description: review.excerpt,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: origin },
+        { "@type": "ListItem", position: 2, name: "Browse Reviews", item: `${origin}/browse` },
+        { "@type": "ListItem", position: 3, name: review.title, item: `${origin}/review/${review.id}` },
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      <PageHead
+        title={review.title}
+        description={review.excerpt ?? `${review.author.username} reviewed ${review.product.name} — rated ${review.rating}/5.`}
+        ogType="article"
+        ogImage={review.images?.[0]}
+        jsonLd={reviewJsonLd}
+      />
       <Header />
 
       <main className="pt-24 pb-16">
@@ -203,7 +239,7 @@ const ReviewDetails = () => {
                   <div key={index} className="relative aspect-video rounded-xl overflow-hidden">
                     <img
                       src={image}
-                      alt={`Review image ${index + 1}`}
+                      alt={`${review.title} — photo ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -366,36 +402,79 @@ const ReviewDetails = () => {
               {/* Comments List */}
               <div className="space-y-6">
                 {comments.map((comment) => (
-                  <Card key={comment.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex gap-4">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={comment.author.avatar_url} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                            {comment.author.username.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-semibold text-foreground">{comment.author.username}</span>
-                            <span className="text-sm text-muted-foreground">
-                              • {new Date(comment.created_at).toLocaleDateString()}
-                            </span>
+                  comment.is_owner_reply ? (
+                    /* ── Official owner reply card ── */
+                    <div key={comment.id} className="rounded-xl border-2 border-primary/30 overflow-hidden shadow-sm">
+                      {/* Header strip */}
+                      <div className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground">
+                        <BadgeCheck className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm font-semibold tracking-wide">Official Response</span>
+                        <span className="text-primary-foreground/70 text-sm">·</span>
+                        <span className="text-sm font-medium text-primary-foreground/90">{comment.company_name}</span>
+                      </div>
+                      {/* Body */}
+                      <div className="bg-primary/[0.04] px-5 py-4">
+                        <div className="flex gap-4">
+                          <Avatar className="w-10 h-10 ring-2 ring-primary/30">
+                            <AvatarImage src={comment.author.avatar_url} />
+                            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
+                              {comment.author.username.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-semibold text-foreground">{comment.author.username}</span>
+                              <span className="text-sm text-muted-foreground">
+                                · {new Date(comment.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-foreground/85 mb-3 leading-relaxed">{comment.content}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-2 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleCommentLike(comment.id)}
+                            >
+                              <ThumbsUp className="w-4 h-4" />
+                              <span>{commentLikes[comment.id] ?? comment.likes_count}</span>
+                            </Button>
                           </div>
-                          <p className="text-foreground/80 mb-3">{comment.content}</p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-2 text-muted-foreground hover:text-foreground"
-                            onClick={() => handleCommentLike(comment.id)}
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                            <span>{commentLikes[comment.id] ?? comment.likes_count}</span>
-                          </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  ) : (
+                    /* ── Regular comment card ── */
+                    <Card key={comment.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex gap-4">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={comment.author.avatar_url} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {comment.author.username.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-semibold text-foreground">{comment.author.username}</span>
+                              <span className="text-sm text-muted-foreground">
+                                · {new Date(comment.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-foreground/80 mb-3">{comment.content}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-2 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleCommentLike(comment.id)}
+                            >
+                              <ThumbsUp className="w-4 h-4" />
+                              <span>{commentLikes[comment.id] ?? comment.likes_count}</span>
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
                 ))}
               </div>
             </section>

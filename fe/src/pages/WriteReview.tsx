@@ -1,3 +1,4 @@
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ReviewForm } from "@/components/ReviewForm";
@@ -8,6 +9,11 @@ export default function WriteReview() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHead
+        title="Write a Review"
+        description="Share your honest product experience with the ReviewHub community. Help others make informed decisions."
+        noindex
+      />
       <Header />
       
       <main className="container px-4 py-12">

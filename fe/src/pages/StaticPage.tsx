@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiPage } from "@/lib/api";
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,8 +18,36 @@ export default function StaticPage() {
     retry: false,
   });
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const articleJsonLd = page
+    ? [
+        {
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: page.title,
+          ...(page.meta_description ? { description: page.meta_description } : {}),
+          dateModified: page.updated_at,
+          publisher: { "@type": "Organization", name: "ReviewHub", url: origin },
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: origin },
+            { "@type": "ListItem", position: 2, name: page.title, item: `${origin}/page/${slug}` },
+          ],
+        },
+      ]
+    : [];
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <PageHead
+        title={page?.title ?? (slug ?? "Page")}
+        description={page?.meta_description || undefined}
+        ogType="article"
+        jsonLd={articleJsonLd}
+      />
       <Header />
 
       <main className="flex-1">

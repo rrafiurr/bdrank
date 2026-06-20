@@ -24,7 +24,18 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['title']\\); print\\(d['meta_description'][:50]\\)\")",
       "Bash(npx tsc *)",
       "Bash(curl -s http://localhost:8080/api/v1/pages/privacy)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['title']\\); print\\(d['content'][:80]\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['title']\\); print\\(d['content'][:80]\\)\")",
+      "Bash(npm install *)",
+      "Read(//usr/local/**)",
+      "Read(//snap/bin/**)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(./node_modules/.bin/vite build *)",
+      "Bash(curl -s http://localhost:8080/sitemap.xml)",
+      "Bash(curl -s http://localhost:5173/sitemap.xml)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/sitemap.xml)",
+      "Bash(curl -s http://localhost:8081/)"
     ]
   }
 }

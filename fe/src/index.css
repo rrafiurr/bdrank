@@ -30,11 +30,11 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
+    --border: 40 18% 84%;
+    --input: 40 18% 84%;
     --ring: 32 95% 44%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Custom tokens */
     --gold: 43 96% 56%;
@@ -49,10 +49,10 @@
     --font-sans: 'Inter', system-ui, sans-serif;
 
     /* Shadows */
-    --shadow-soft: 0 2px 20px -4px hsl(30 10% 15% / 0.08);
-    --shadow-medium: 0 8px 30px -8px hsl(30 10% 15% / 0.12);
-    --shadow-elevated: 0 20px 50px -12px hsl(30 10% 15% / 0.15);
-    --shadow-glow: 0 0 40px hsl(32 95% 44% / 0.2);
+    --shadow-soft: 0 1px 3px hsl(30 10% 15% / 0.06), 0 4px 16px -4px hsl(30 10% 15% / 0.08);
+    --shadow-medium: 0 2px 8px hsl(30 10% 15% / 0.06), 0 12px 32px -8px hsl(30 10% 15% / 0.14);
+    --shadow-elevated: 0 4px 16px hsl(30 10% 15% / 0.08), 0 24px 52px -12px hsl(30 10% 15% / 0.18);
+    --shadow-glow: 0 0 0 1px hsl(32 95% 44% / 0.15), 0 0 40px hsl(32 95% 44% / 0.18);
 
     /* Gradients */
     --gradient-warm: linear-gradient(135deg, hsl(32 95% 44%), hsl(43 96% 56%));

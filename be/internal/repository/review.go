@@ -34,7 +34,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		f.Limit = 20
 	}
 
-	conditions := []string{"1=1"}
+	conditions := []string{"r.is_approved = 1"}
 	args := []any{}
 
 	if f.Category != "" {
@@ -86,7 +86,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
-			r.created_at
+			r.created_at, r.is_approved
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -96,7 +96,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		LEFT JOIN review_images ri ON r.id = ri.review_id
 		%s
 		GROUP BY r.id, r.title, r.content, r.rating, p.category, p.id, p.name,
-		         u.id, u.username, u.avatar_url, r.created_at
+		         u.id, u.username, u.avatar_url, r.created_at, r.is_approved
 		%s
 		ORDER BY %s
 		LIMIT ? OFFSET ?`, whereClause, having, orderBy)
@@ -114,7 +114,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		var productName string
 		var authorID int64
 		var username, avatarURL string
-		var isTimeline int
+		var isTimeline, isApproved int
 		var imagesStr sql.NullString
 
 		if err := rows.Scan(
@@ -123,13 +123,14 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			&authorID, &username, &avatarURL,
 			&rv.LikesCount, &rv.CommentsCount,
 			&isTimeline, &rv.TimelineUpdatesCount,
-			&imagesStr, &rv.CreatedAt,
+			&imagesStr, &rv.CreatedAt, &isApproved,
 		); err != nil {
 			return nil, 0, err
 		}
 		rv.Product = &models.ProductRef{ID: productID, Name: productName}
 		rv.Author = &models.AuthorRef{ID: authorID, Username: username, AvatarURL: absURL(r.baseURL, avatarURL)}
 		rv.IsTimeline = isTimeline == 1
+		rv.IsApproved = isApproved == 1
 		rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
 		reviews = append(reviews, &rv)
 	}
@@ -160,7 +161,7 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	var productName, productImageURL string
 	var authorID int64
 	var username, avatarURL string
-	var isTimeline int
+	var isTimeline, isApproved int
 	var imagesStr sql.NullString
 
 	err := r.db.QueryRowContext(ctx, `
@@ -171,7 +172,8 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 			COUNT(DISTINCT rl.user_id) AS likes_count,
 			COUNT(DISTINCT c.id)       AS comments_count,
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
-			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images
+			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
+			r.is_approved
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -179,14 +181,14 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 		LEFT JOIN comments c ON r.id = c.review_id AND c.is_approved = 1
 		LEFT JOIN timeline_entries te ON r.id = te.review_id
 		LEFT JOIN review_images ri ON r.id = ri.review_id
-		WHERE r.id = ?
+		WHERE r.id = ? AND r.is_approved = 1
 		GROUP BY r.id, r.title, r.content, r.rating, p.category, r.views_count,
-		         p.id, p.name, p.image_url, u.id, u.username, u.avatar_url`, id,
+		         p.id, p.name, p.image_url, u.id, u.username, u.avatar_url, r.is_approved`, id,
 	).Scan(
 		&rv.ID, &rv.Title, &rv.Content, &rv.Rating, &rv.Category, &rv.ViewsCount,
 		&productID, &productName, &productImageURL,
 		&authorID, &username, &avatarURL,
-		&rv.LikesCount, &rv.CommentsCount, &isTimeline, &imagesStr,
+		&rv.LikesCount, &rv.CommentsCount, &isTimeline, &imagesStr, &isApproved,
 	)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -197,6 +199,7 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 
 	rv.Product = &models.ProductRef{ID: productID, Name: productName, ImageURL: absURL(r.baseURL, productImageURL)}
 	rv.Author = &models.AuthorRef{ID: authorID, Username: username, AvatarURL: absURL(r.baseURL, avatarURL)}
+	rv.IsApproved = isApproved == 1
 	rv.IsTimeline = isTimeline == 1
 	rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
 
@@ -218,12 +221,17 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 
 	cRows, err := r.db.QueryContext(ctx, `
 		SELECT c.id, c.content, COUNT(DISTINCT cl.user_id) AS likes_count,
-		       u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''), c.created_at
+		       u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''), c.created_at,
+		       (p.owner_id = u.id AND u.is_product_owner = 1 AND u.owner_verified = 1) AS is_owner_reply,
+		       COALESCE(u.company_name,'') AS company_name
 		FROM comments c
 		INNER JOIN users u ON c.user_id = u.id
+		INNER JOIN reviews rv2 ON rv2.id = c.review_id
+		INNER JOIN products p ON p.id = rv2.product_id
 		LEFT JOIN comment_likes cl ON c.id = cl.comment_id
 		WHERE c.review_id = ? AND c.is_approved = 1
-		GROUP BY c.id, c.content, u.id, u.username, u.avatar_url, c.created_at
+		GROUP BY c.id, c.content, u.id, u.username, u.avatar_url, c.created_at,
+		         p.owner_id, u.is_product_owner, u.owner_verified, u.company_name
 		ORDER BY c.created_at ASC`, id)
 	if err == nil {
 		defer cRows.Close()
@@ -231,8 +239,11 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 			var cm models.Comment
 			var aID int64
 			var aUsername, aAvatarURL string
-			cRows.Scan(&cm.ID, &cm.Content, &cm.LikesCount, &aID, &aUsername, &aAvatarURL, &cm.CreatedAt)
+			var isOwnerReply int
+			cRows.Scan(&cm.ID, &cm.Content, &cm.LikesCount, &aID, &aUsername, &aAvatarURL, &cm.CreatedAt,
+				&isOwnerReply, &cm.CompanyName)
 			cm.Author = &models.AuthorRef{ID: aID, Username: aUsername, AvatarURL: absURL(r.baseURL, aAvatarURL)}
+			cm.IsOwnerReply = isOwnerReply == 1
 			rv.Comments = append(rv.Comments, cm)
 		}
 	}

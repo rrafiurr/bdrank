@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -75,8 +76,46 @@ export default function ProductReviews() {
     );
   }
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const productJsonLd = product
+    ? [
+        {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: product.name,
+          ...(product.image_url ? { image: product.image_url } : {}),
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.avg_rating.toFixed(1),
+            reviewCount: product.review_count,
+            bestRating: "5",
+            worstRating: "1",
+          },
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: origin },
+            { "@type": "ListItem", position: 2, name: "Categories", item: `${origin}/categories` },
+            { "@type": "ListItem", position: 3, name: product.name, item: `${origin}/product/${id}` },
+          ],
+        },
+      ]
+    : [];
+
   return (
     <div className="min-h-screen bg-background">
+      <PageHead
+        title={product ? `${product.name} Reviews` : "Product Reviews"}
+        description={
+          product
+            ? `Read ${product.review_count} honest review${product.review_count !== 1 ? "s" : ""} for ${product.name}. Average rating: ${product.avg_rating.toFixed(1)}/5.`
+            : "Read honest product reviews from our community."
+        }
+        ogType="article"
+        jsonLd={productJsonLd}
+      />
       <Header />
 
       <main className="container px-4 py-8 md:py-12">
@@ -168,7 +207,7 @@ export default function ProductReviews() {
                       {review.author.avatar_url ? (
                         <img
                           src={review.author.avatar_url}
-                          alt={review.author.username}
+                          alt={`${review.author.username}'s profile photo`}
                           className="w-10 h-10 rounded-full object-cover"
                         />
                       ) : (

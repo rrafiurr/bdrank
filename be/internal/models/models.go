@@ -3,13 +3,17 @@ package models
 import "time"
 
 type User struct {
-	ID        int64     `json:"id"`
-	Email     string    `json:"email"`
-	FullName  string    `json:"full_name"`
-	Username  string    `json:"username"`
-	Bio       string    `json:"bio"`
-	AvatarURL string    `json:"avatar_url"`
-	CreatedAt time.Time `json:"created_at"`
+	ID             int64     `json:"id"`
+	Email          string    `json:"email"`
+	FullName       string    `json:"full_name"`
+	Username       string    `json:"username"`
+	Bio            string    `json:"bio"`
+	AvatarURL      string    `json:"avatar_url"`
+	IsAdmin        bool      `json:"is_admin"`
+	IsProductOwner bool      `json:"is_product_owner"`
+	OwnerVerified  bool      `json:"owner_verified"`
+	CompanyName    string    `json:"company_name,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 type Product struct {
@@ -29,6 +33,7 @@ type Review struct {
 	Excerpt              string          `json:"excerpt,omitempty"`
 	Rating               int             `json:"rating"`
 	Category             string          `json:"category"`
+	IsApproved           bool            `json:"is_approved"`
 	Product              *ProductRef     `json:"product,omitempty"`
 	Author               *AuthorRef      `json:"author,omitempty"`
 	Images               []string        `json:"images"`
@@ -65,11 +70,13 @@ type TimelineEntry struct {
 }
 
 type Comment struct {
-	ID         int64      `json:"id"`
-	Content    string     `json:"content"`
-	LikesCount int        `json:"likes_count"`
-	Author     *AuthorRef `json:"author"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID           int64      `json:"id"`
+	Content      string     `json:"content"`
+	LikesCount   int        `json:"likes_count"`
+	Author       *AuthorRef `json:"author"`
+	IsOwnerReply bool       `json:"is_owner_reply"`
+	CompanyName  string     `json:"company_name,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
 }
 
 type Category struct {

@@ -4,20 +4,20 @@ import (
 	"net/http"
 	"strconv"
 
-	"final-review/be/internal/config"
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 
 type ReviewHandler struct {
 	reviews  *repository.ReviewRepo
 	products *repository.ProductRepo
-	cfg      *config.Config
+	storage  storage.Storage
 }
 
-func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, cfg *config.Config) *ReviewHandler {
-	return &ReviewHandler{reviews: reviews, products: products, cfg: cfg}
+func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage) *ReviewHandler {
+	return &ReviewHandler{reviews: reviews, products: products, storage: s}
 }
 
 func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -124,12 +124,12 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				continue
 			}
-			url, err := saveOpenFile(f, fh, h.cfg.UploadDir, 5<<20)
+			path, err := h.storage.Store(r.Context(), f, fh.Filename, 5<<20)
 			f.Close()
 			if err != nil {
 				continue
 			}
-			h.reviews.AddImage(r.Context(), reviewID, url)
+			h.reviews.AddImage(r.Context(), reviewID, path)
 		}
 	}
 
