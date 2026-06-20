@@ -3,6 +3,7 @@ package router
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 
 	"final-review/be/internal/config"
 	"final-review/be/internal/handlers"
@@ -14,17 +15,38 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
+// buildCORSMiddleware returns a handler that allows only the configured origins.
+// When allowedOrigins is "*" every origin is permitted (suitable for local dev).
+func buildCORSMiddleware(allowedOrigins string) func(http.Handler) http.Handler {
+	origins := map[string]bool{}
+	wildcard := false
+	for _, o := range strings.Split(allowedOrigins, ",") {
+		o = strings.TrimSpace(o)
+		if o == "*" {
+			wildcard = true
+		} else if o != "" {
+			origins[o] = true
 		}
-		next.ServeHTTP(w, r)
-	})
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			if wildcard {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			} else if origins[origin] {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Add("Vary", "Origin")
+			}
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
@@ -50,13 +72,14 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	pageH     := handlers.NewPageHandler(pageRepo)
 	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store)
 	sitemapH  := handlers.NewSitemapHandler(db, cfg.SiteURL)
+	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(corsMiddleware)
+	r.Use(buildCORSMiddleware(cfg.AllowedOrigins))
 
 	// serve uploaded files
 	r.Handle("/uploads/*", http.StripPrefix("/uploads/",
@@ -64,6 +87,12 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 
 	// sitemap (served at root, not under /api/v1)
 	r.Get("/sitemap.xml", sitemapH.Sitemap)
+
+	// external API — Basic Auth, no JWT
+	r.Route("/api/v1/external", func(r chi.Router) {
+		r.Post("/reviews", externalH.CreateReview)
+		r.Get("/sources", externalH.ListSources)
+	})
 
 	r.Route("/api/v1", func(r chi.Router) {
 		// public
@@ -85,6 +114,18 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 		r.Get("/pages/{slug}", pageH.Get)
 
 		r.Get("/search", searchH.Search)
+
+		r.Get("/stats", func(w http.ResponseWriter, r *http.Request) {
+			var reviews, timelines, members int
+			db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM reviews WHERE is_approved = 1`).Scan(&reviews)
+			db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM reviews WHERE is_approved = 1 AND is_timeline = 1`).Scan(&timelines)
+			db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users WHERE email != 'import-bot@system.internal'`).Scan(&members)
+			handlers.WritePublicJSON(w, map[string]int{
+				"reviews":   reviews,
+				"timelines": timelines,
+				"members":   members,
+			})
+		})
 
 		// authenticated
 		r.Group(func(r chi.Router) {

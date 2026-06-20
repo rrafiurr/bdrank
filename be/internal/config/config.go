@@ -7,20 +7,23 @@ import (
 )
 
 type Config struct {
-	Port          string
-	DBHost        string
-	DBPort        string
-	DBUser        string
-	DBPassword    string
-	DBName        string
-	RedisAddr     string
-	RedisPassword string
-	RedisDB       int
-	JWTSecret     string
-	TokenTTL      time.Duration
-	UploadDir     string
-	BaseURL       string
-	SiteURL       string
+	Port           string
+	DBHost         string
+	DBPort         string
+	DBUser         string
+	DBPassword     string
+	DBName         string
+	RedisAddr      string
+	RedisPassword  string
+	RedisDB        int
+	JWTSecret      string
+	TokenTTL       time.Duration
+	UploadDir      string
+	BaseURL        string
+	SiteURL        string
+	AllowedOrigins string // comma-separated; "*" allows all (dev default)
+	ExternalUser   string
+	ExternalPass   string
 }
 
 func Load() *Config {
@@ -38,8 +41,11 @@ func Load() *Config {
 		JWTSecret:     getEnv("JWT_SECRET", "change-me-in-production"),
 		TokenTTL:      24 * time.Hour,
 		UploadDir:     getEnv("UPLOAD_DIR", "./uploads"),
-		BaseURL:       getEnv("BASE_URL", "http://localhost:8080"),
-		SiteURL:       getEnv("SITE_URL", "http://localhost:5173"),
+		BaseURL:        getEnv("BASE_URL", "http://localhost:8080"),
+		SiteURL:        getEnv("SITE_URL", "http://localhost:5173"),
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "*"),
+		ExternalUser:   getEnv("EXTERNAL_USER", "external_admin"),
+		ExternalPass:  getEnv("EXTERNAL_PASS", ""),
 	}
 }
 

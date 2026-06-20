@@ -20,7 +20,7 @@ export function FeaturesSection() {
     {
       icon: Users,
       title: "Trusted Community",
-      description: "Join thousands of honest reviewers. Build your reputation as a trusted voice.",
+      description: "Join a growing community of honest reviewers. Build your reputation as a trusted voice.",
     },
     {
       icon: Star,

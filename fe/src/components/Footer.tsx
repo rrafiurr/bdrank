@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiCategory, type ApiPageListItem } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import logo from "@/assets/logo-tight.png";
-import { Mail, Facebook, Twitter } from "lucide-react";
+import { Mail } from "lucide-react";
 
 const EXPLORE_LINKS = [
   { label: "Browse Reviews", to: "/browse" },
-  { label: "Timeline Reviews", to: "/timeline" },
   { label: "Categories", to: "/categories" },
   { label: "Write a Review", to: "/write-review" },
+  { label: "Product Owner Portal", to: "/owner-register" },
 ];
 
 const ACCOUNT_LINKS = [
@@ -39,32 +39,14 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-2">
             <Link to="/" className="inline-block mb-4">
-              <img src={logo} alt="BdRanks" className="h-10 w-auto object-contain" />
+              <img src={logo} alt="ReviewHub" className="h-10 w-auto object-contain" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Real reviews from real people. Track products over time. Rank. Trust. Choose Better.
+              Real reviews from real people. Track products over time and make better buying decisions.
             </p>
             <div className="flex items-center gap-3 mt-5">
               <a
-                href="https://facebook.com/bdranks"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <Facebook className="h-4 w-4" />
-              </a>
-              <a
-                href="https://twitter.com/bdranks"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Twitter / X"
-                className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <Twitter className="h-4 w-4" />
-              </a>
-              <a
-                href="mailto:hello@bdranks.com"
+                href="mailto:hello@reviewhub.app"
                 aria-label="Email"
                 className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
@@ -152,7 +134,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} BdRanks. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ReviewHub. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link to="/page/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link to="/page/terms" className="hover:text-foreground transition-colors">Terms</Link>

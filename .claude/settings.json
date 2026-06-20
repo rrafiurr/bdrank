@@ -35,7 +35,9 @@
       "Bash(curl -s http://localhost:5173/sitemap.xml)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/sitemap.xml)",
-      "Bash(curl -s http://localhost:8081/)"
+      "Bash(curl -s http://localhost:8081/)",
+      "Bash(chmod +x /home/rafiur/Desktop/projects/final-review/scripts/fetch-google-reviews.mjs)",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}' -X POST http://localhost:8080/api/v1/external/reviews -H 'Content-Type: application/json' -H 'Authorization: Basic __CMDSUB_OUTPUT__')"
     ]
   }
 }

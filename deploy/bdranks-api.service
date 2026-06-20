@@ -1,0 +1,19 @@
+[Unit]
+Description=BdRanks API Server
+After=network.target mysql.service redis-server.service
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/reviewhub/be
+EnvironmentFile=/home/deploy/reviewhub/be/.env.prod
+ExecStart=/home/deploy/reviewhub/be/server
+Restart=always
+RestartSec=5
+
+# Logging — view with: journalctl -u bdranks-api -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
