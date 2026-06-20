@@ -4,4 +4,3 @@
 tmp/
 uploads/*
 !uploads/.gitkeep
-go.sum
