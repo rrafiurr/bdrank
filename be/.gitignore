@@ -1,6 +1,6 @@
 .env
 .env.prod
-server
+/server
 tmp/
 uploads/*
 !uploads/.gitkeep
