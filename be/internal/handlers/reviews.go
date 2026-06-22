@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -101,6 +102,7 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		product, err := h.products.FindOrCreate(r.Context(), productName, category)
 		if err != nil {
+			log.Printf("ERROR FindOrCreate product name=%q category=%q: %v", productName, category, err)
 			writeError(w, http.StatusInternalServerError, "failed to find or create product")
 			return
 		}
@@ -109,6 +111,7 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	reviewID, err := h.reviews.Create(r.Context(), userID, productID, title, content, rating)
 	if err != nil {
+		log.Printf("ERROR Create review userID=%d productID=%d: %v", userID, productID, err)
 		writeError(w, http.StatusInternalServerError, "failed to create review")
 		return
 	}
