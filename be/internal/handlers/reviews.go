@@ -137,13 +137,10 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	review, err := h.reviews.FindByID(r.Context(), reviewID)
-	if err != nil {
-		log.Printf("ERROR FindByID after create reviewID=%d: %v", reviewID, err)
-		writeError(w, http.StatusInternalServerError, "failed to fetch created review")
-		return
-	}
-	writeJSON(w, http.StatusCreated, review)
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id":      reviewID,
+		"message": "Review submitted successfully and is pending approval",
+	})
 }
 
 func (h *ReviewHandler) Like(w http.ResponseWriter, r *http.Request) {
