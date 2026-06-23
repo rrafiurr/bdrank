@@ -52,6 +52,7 @@ func (h *ReviewHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		log.Printf("ERROR FindByID reviewID=%d: %v", id, err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch review")
 		return
 	}
@@ -138,6 +139,7 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	review, err := h.reviews.FindByID(r.Context(), reviewID)
 	if err != nil {
+		log.Printf("ERROR FindByID after create reviewID=%d: %v", reviewID, err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch created review")
 		return
 	}
