@@ -52,7 +52,7 @@ func (r *ProductRepo) List(ctx context.Context, f ProductFilter) ([]*models.Prod
 		SELECT p.id, p.name, p.category, COALESCE(p.image_url,''),
 		       COUNT(r.id) as review_count,
 		       COALESCE(AVG(r.rating), 0) as avg_rating,
-		       p.created_at
+		       COALESCE(p.created_at, NOW())
 		FROM products p
 		LEFT JOIN reviews r ON p.id = r.product_id
 		` + whereClause + `
@@ -93,7 +93,7 @@ func (r *ProductRepo) FindByID(ctx context.Context, id int64) (*models.Product, 
 	var p models.Product
 	err := r.db.QueryRowContext(ctx, `
 		SELECT p.id, p.name, p.category, COALESCE(p.image_url,''),
-		       COUNT(r.id), COALESCE(AVG(r.rating), 0), p.created_at
+		       COUNT(r.id), COALESCE(AVG(r.rating), 0), COALESCE(p.created_at, NOW())
 		FROM products p
 		LEFT JOIN reviews r ON p.id = r.product_id
 		WHERE p.id = ?
@@ -115,7 +115,7 @@ func (r *ProductRepo) Exists(ctx context.Context, id int64) bool {
 func (r *ProductRepo) FindOrCreate(ctx context.Context, name, category string) (*models.Product, error) {
 	var p models.Product
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, name, category, COALESCE(image_url,''), created_at FROM products WHERE name = ? AND category = ?`,
+		`SELECT id, name, category, COALESCE(image_url,''), COALESCE(created_at, NOW()) FROM products WHERE name = ? AND category = ?`,
 		name, category,
 	).Scan(&p.ID, &p.Name, &p.Category, &p.ImageURL, &p.CreatedAt)
 	if err == nil {
