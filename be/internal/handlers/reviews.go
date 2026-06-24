@@ -131,9 +131,12 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 			path, err := h.storage.Store(r.Context(), f, fh.Filename, 5<<20)
 			f.Close()
 			if err != nil {
+				log.Printf("ERROR storing image for reviewID=%d filename=%q: %v", reviewID, fh.Filename, err)
 				continue
 			}
-			h.reviews.AddImage(r.Context(), reviewID, path)
+			if err := h.reviews.AddImage(r.Context(), reviewID, path); err != nil {
+				log.Printf("ERROR AddImage reviewID=%d path=%q: %v", reviewID, path, err)
+			}
 		}
 	}
 
