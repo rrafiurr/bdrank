@@ -118,14 +118,17 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// up to 3 image files
+	var imageCount int
 	if r.MultipartForm != nil && r.MultipartForm.File != nil {
 		files := r.MultipartForm.File["images[]"]
+		log.Printf("INFO reviewID=%d image files received=%d", reviewID, len(files))
 		if len(files) > 3 {
 			files = files[:3]
 		}
 		for _, fh := range files {
 			f, err := fh.Open()
 			if err != nil {
+				log.Printf("ERROR opening image for reviewID=%d filename=%q: %v", reviewID, fh.Filename, err)
 				continue
 			}
 			path, err := h.storage.Store(r.Context(), f, fh.Filename, 5<<20)
@@ -136,9 +139,14 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := h.reviews.AddImage(r.Context(), reviewID, path); err != nil {
 				log.Printf("ERROR AddImage reviewID=%d path=%q: %v", reviewID, path, err)
+				continue
 			}
+			imageCount++
 		}
+	} else {
+		log.Printf("INFO reviewID=%d no multipart file data (MultipartForm=%v)", reviewID, r.MultipartForm != nil)
 	}
+	log.Printf("INFO reviewID=%d images saved=%d", reviewID, imageCount)
 
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"id":      reviewID,
