@@ -16,6 +16,7 @@ import ProductReviews from "./pages/ProductReviews";
 import StaticPage from "./pages/StaticPage";
 import OwnerRegister from "./pages/OwnerRegister";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import OwnerQR from "./pages/OwnerQR";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/page/:slug" element={<StaticPage />} />
             <Route path="/owner-register" element={<OwnerRegister />} />
             <Route path="/owner-dashboard" element={<OwnerDashboard />} />
+            <Route path="/owner-qr" element={<OwnerQR />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
