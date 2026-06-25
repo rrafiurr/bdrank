@@ -8,6 +8,10 @@ export interface User {
   username: string;
   bio: string;
   avatar_url: string;
+  is_admin: boolean;
+  is_product_owner: boolean;
+  owner_verified: boolean;
+  company_name?: string;
   created_at: string;
 }
 

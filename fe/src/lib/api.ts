@@ -84,6 +84,12 @@ export interface ApiPageListItem {
   meta_description: string;
 }
 
+export interface ApiOwnerProduct {
+  id: number;
+  name: string;
+  category: string;
+}
+
 export interface ApiPage extends ApiPageListItem {
   content: string;
   is_published: boolean;
@@ -122,6 +128,12 @@ export async function apiFetch<T>(
   if (res.status === 204) return undefined as T;
 
   const data = await res.json().catch(() => ({ error: res.statusText }));
+
+  if (res.status === 401) {
+    localStorage.removeItem("auth_session");
+    window.location.href = "/auth";
+    throw new Error("Session expired");
+  }
 
   if (!res.ok) {
     throw new Error(data.error ?? "Request failed");
