@@ -73,7 +73,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store)
 	sitemapH  := handlers.NewSitemapHandler(db, cfg.SiteURL)
 	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass)
-	ownerH    := handlers.NewOwnerHandler(reviewRepo, productRepo)
+	ownerH    := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)

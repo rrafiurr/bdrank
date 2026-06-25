@@ -12,14 +12,20 @@ import (
 type OwnerHandler struct {
 	reviews  *repository.ReviewRepo
 	products *repository.ProductRepo
+	users    *repository.UserRepo
 }
 
-func NewOwnerHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo) *OwnerHandler {
-	return &OwnerHandler{reviews: reviews, products: products}
+func NewOwnerHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, users *repository.UserRepo) *OwnerHandler {
+	return &OwnerHandler{reviews: reviews, products: products, users: users}
 }
 
 func (h *OwnerHandler) ListReviews(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromCtx(r.Context())
+
+	if !h.users.IsVerifiedOwner(r.Context(), userID) {
+		writeError(w, http.StatusForbidden, "account pending verification")
+		return
+	}
 
 	var productID int64
 	if s := r.URL.Query().Get("product_id"); s != "" {

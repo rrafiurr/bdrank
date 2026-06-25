@@ -93,6 +93,12 @@ export async function apiFetch<T>(
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({ error: res.statusText }));
+  if (res.status === 401) {
+    localStorage.removeItem("cms_session");
+    window.location.href = "/login";
+    throw new Error("Session expired");
+  }
+
   if (!res.ok) throw new Error(data.error ?? "Request failed");
   return data as T;
 }
