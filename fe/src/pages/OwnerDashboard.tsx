@@ -36,14 +36,14 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function OwnerDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (user && !user.is_product_owner) navigate("/");
-  }, [user, navigate]);
+    if (!loading && (!user || !user.is_product_owner)) navigate("/");
+  }, [user, loading, navigate]);
 
   const { data: products = [] } = useQuery<ApiOwnerProduct[]>({
     queryKey: ["owner-products"],
@@ -80,7 +80,7 @@ export default function OwnerDashboard() {
     setPage(0);
   };
 
-  if (!user) return null;
+  if (loading || !user) return null;
 
   return (
     <div className="min-h-screen bg-background">
