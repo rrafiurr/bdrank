@@ -27,7 +27,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate(user.is_product_owner ? "/owner-dashboard" : "/");
     }
   }, [user, navigate]);
 
