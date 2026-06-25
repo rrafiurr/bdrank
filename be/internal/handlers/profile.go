@@ -107,6 +107,34 @@ func (h *ProfileHandler) MyComments(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, list)
 }
 
+func (h *ProfileHandler) MyProducts(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserIDFromCtx(r.Context())
+
+	rows, err := h.db.QueryContext(r.Context(),
+		`SELECT id, name, category FROM products WHERE owner_id = ? ORDER BY name ASC`, userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to fetch products")
+		return
+	}
+	defer rows.Close()
+
+	type product struct {
+		ID       int64  `json:"id"`
+		Name     string `json:"name"`
+		Category string `json:"category"`
+	}
+	var list []product
+	for rows.Next() {
+		var p product
+		rows.Scan(&p.ID, &p.Name, &p.Category)
+		list = append(list, p)
+	}
+	if list == nil {
+		list = []product{}
+	}
+	writeJSON(w, http.StatusOK, list)
+}
+
 func (h *ProfileHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromCtx(r.Context())
 

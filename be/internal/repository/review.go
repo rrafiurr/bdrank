@@ -326,6 +326,94 @@ func (r *ReviewRepo) IsAuthor(ctx context.Context, reviewID, userID int64) bool 
 	return count > 0
 }
 
+func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, limit, offset int) ([]*models.Review, int, error) {
+	if limit == 0 {
+		limit = 20
+	}
+
+	conditions := []string{"r.is_approved = 1", "p.owner_id = ?"}
+	args := []any{ownerID}
+	if productID > 0 {
+		conditions = append(conditions, "r.product_id = ?")
+		args = append(args, productID)
+	}
+	whereClause := "WHERE " + strings.Join(conditions, " AND ")
+
+	dataQuery := fmt.Sprintf(`
+		SELECT
+			r.id, r.title, LEFT(r.content, 200) AS excerpt, r.rating, p.category,
+			p.id, p.name,
+			u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''),
+			COUNT(DISTINCT rl.user_id) AS likes_count,
+			COUNT(DISTINCT c.id)       AS comments_count,
+			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
+			COUNT(DISTINCT te.id)      AS timeline_updates_count,
+			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
+			r.created_at, r.is_approved
+		FROM reviews r
+		INNER JOIN products p ON r.product_id = p.id
+		INNER JOIN users u ON r.user_id = u.id
+		LEFT JOIN review_likes rl ON r.id = rl.review_id
+		LEFT JOIN comments c ON r.id = c.review_id AND c.is_approved = 1
+		LEFT JOIN timeline_entries te ON r.id = te.review_id
+		LEFT JOIN review_images ri ON r.id = ri.review_id
+		%s
+		GROUP BY r.id, r.title, r.content, r.rating, p.category,
+		         p.id, p.name, u.id, u.username, u.avatar_url, r.created_at, r.is_approved
+		ORDER BY r.created_at DESC
+		LIMIT ? OFFSET ?`, whereClause)
+
+	rows, err := r.db.QueryContext(ctx, dataQuery, append(args, limit, offset)...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var reviews []*models.Review
+	for rows.Next() {
+		var rv models.Review
+		var pID int64
+		var pName string
+		var aID int64
+		var username, avatarURL string
+		var isTimeline, isApproved int
+		var imagesStr sql.NullString
+
+		if err := rows.Scan(
+			&rv.ID, &rv.Title, &rv.Excerpt, &rv.Rating, &rv.Category,
+			&pID, &pName,
+			&aID, &username, &avatarURL,
+			&rv.LikesCount, &rv.CommentsCount,
+			&isTimeline, &rv.TimelineUpdatesCount,
+			&imagesStr, &rv.CreatedAt, &isApproved,
+		); err != nil {
+			return nil, 0, err
+		}
+		rv.Product = &models.ProductRef{ID: pID, Name: pName}
+		rv.Author = &models.AuthorRef{ID: aID, Username: username, AvatarURL: absURL(r.baseURL, avatarURL)}
+		rv.IsTimeline = isTimeline == 1
+		rv.IsApproved = isApproved == 1
+		rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
+		reviews = append(reviews, &rv)
+	}
+	if reviews == nil {
+		reviews = []*models.Review{}
+	}
+
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*) FROM (
+			SELECT r.id
+			FROM reviews r
+			INNER JOIN products p ON r.product_id = p.id
+			%s
+			GROUP BY r.id
+		) AS sub`, whereClause)
+	var total int
+	r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
+
+	return reviews, total, nil
+}
+
 func splitImages(s sql.NullString) []string {
 	if !s.Valid || s.String == "" {
 		return []string{}

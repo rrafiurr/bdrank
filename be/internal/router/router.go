@@ -73,6 +73,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store)
 	sitemapH  := handlers.NewSitemapHandler(db, cfg.SiteURL)
 	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass)
+	ownerH    := handlers.NewOwnerHandler(reviewRepo, productRepo)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -138,6 +139,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Put("/profile", profileH.Update)
 			r.Get("/profile/reviews", profileH.MyReviews)
 			r.Get("/profile/comments", profileH.MyComments)
+			r.Get("/profile/products", profileH.MyProducts)
+			r.Get("/owner/reviews", ownerH.ListReviews)
 
 			r.Post("/upload/image", uploadH.Image)
 

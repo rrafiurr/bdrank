@@ -153,6 +153,15 @@ func (r *ProductRepo) ListCategories(ctx context.Context) ([]*models.Category, e
 	return cats, nil
 }
 
+// OwnedBy returns true if the product exists and its owner_id matches userID.
+func (r *ProductRepo) OwnedBy(ctx context.Context, productID, userID int64) bool {
+	var count int
+	r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM products WHERE id = ? AND owner_id = ?`, productID, userID,
+	).Scan(&count)
+	return count > 0
+}
+
 func (r *ProductRepo) CategoryStats(ctx context.Context) ([]*models.CategoryStat, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT p.category, COUNT(r.id) as review_count
