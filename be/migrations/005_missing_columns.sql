@@ -12,6 +12,10 @@ ALTER TABLE users
   ADD COLUMN IF NOT EXISTS owner_verified   TINYINT(1)   NOT NULL DEFAULT 0 AFTER is_product_owner,
   ADD COLUMN IF NOT EXISTS company_name     VARCHAR(255) NULL     DEFAULT NULL AFTER owner_verified;
 
+-- comments: approval flag
+ALTER TABLE comments
+  ADD COLUMN IF NOT EXISTS is_approved TINYINT(1) NOT NULL DEFAULT 1 AFTER content;
+
 -- products: link to the owner user
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS owner_id BIGINT NULL DEFAULT NULL AFTER image_url;

@@ -2,15 +2,26 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 
 	"final-review/be/internal/auth"
 	"final-review/be/internal/config"
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func isDuplicateEmail(err error) bool {
+	var me *mysql.MySQLError
+	if errors.As(err, &me) {
+		return me.Number == 1062
+	}
+	return false
+}
 
 type AuthHandler struct {
 	users *repository.UserRepo
@@ -43,7 +54,12 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := h.users.Create(r.Context(), body.Email, string(hash), body.FullName)
 	if err != nil {
-		writeError(w, http.StatusConflict, "email already in use")
+		if isDuplicateEmail(err) {
+			writeError(w, http.StatusConflict, "email already in use")
+		} else {
+			log.Printf("ERROR Create user email=%q: %v", body.Email, err)
+			writeError(w, http.StatusInternalServerError, "internal error")
+		}
 		return
 	}
 	token, err := auth.NewToken(user.ID, h.cfg.JWTSecret, h.cfg.TokenTTL, h.redis)
@@ -111,7 +127,12 @@ func (h *AuthHandler) RegisterOwner(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := h.users.CreateOwner(r.Context(), body.Email, string(hash), body.FullName, body.CompanyName)
 	if err != nil {
-		writeError(w, http.StatusConflict, "email already in use")
+		if isDuplicateEmail(err) {
+			writeError(w, http.StatusConflict, "email already in use")
+		} else {
+			log.Printf("ERROR CreateOwner email=%q: %v", body.Email, err)
+			writeError(w, http.StatusInternalServerError, "internal error")
+		}
 		return
 	}
 	// No token issued — owner must wait for admin verification before logging in
