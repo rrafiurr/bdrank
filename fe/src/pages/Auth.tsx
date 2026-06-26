@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Facebook } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
+import { isFacebookConfigured, loadFacebookSDK, facebookLogin } from "@/lib/facebook";
 import { z } from "zod";
 
 const authSchema = z.object({
@@ -23,13 +25,21 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, signInWithFacebook } = useAuth();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const [fbReady, setFbReady] = useState(false);
 
   useEffect(() => {
     if (user) {
       navigate(user.is_product_owner ? "/owner-dashboard" : "/");
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (isFacebookConfigured()) {
+      loadFacebookSDK().then(() => setFbReady(true)).catch(() => setFbReady(false));
+    }
+  }, []);
 
   const validateForm = () => {
     try {
@@ -46,6 +56,31 @@ export default function Auth() {
         setErrors(fieldErrors);
       }
       return false;
+    }
+  };
+
+  const handleGoogle = async (credential: string) => {
+    setLoading(true);
+    try {
+      await signInWithGoogle(credential);
+      toast({ title: "Welcome!", description: "Signed in with Google." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebook = async () => {
+    setLoading(true);
+    try {
+      const accessToken = await facebookLogin();
+      await signInWithFacebook(accessToken);
+      toast({ title: "Welcome!", description: "Signed in with Facebook." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -152,6 +187,48 @@ export default function Auth() {
               {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
+
+          {(googleClientId || isFacebookConfigured()) && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or continue with</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {googleClientId && (
+                  <div className="flex justify-center">
+                    <GoogleLogin
+                      onSuccess={(cred) => {
+                        if (cred.credential) handleGoogle(cred.credential);
+                      }}
+                      onError={() =>
+                        toast({ title: "Google login failed", variant: "destructive" })
+                      }
+                      width="320"
+                    />
+                  </div>
+                )}
+
+                {isFacebookConfigured() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleFacebook}
+                    disabled={loading || !fbReady}
+                  >
+                    <Facebook className="h-4 w-4" />
+                    Continue with Facebook
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Toggle */}
           <p className="text-center text-sm text-muted-foreground mt-6">
