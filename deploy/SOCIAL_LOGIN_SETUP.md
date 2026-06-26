@@ -71,7 +71,13 @@ End result: an **App ID** and an **App Secret**. (~15 minutes.)
 2. Log in. First time only: top-right **Get Started** → register as a developer and verify your account (phone/email).
 3. Top-right → **My Apps** → **Create App**.
 4. **Use case** screen → select **Authenticate and request data from users with Facebook Login** → **Next**.
-5. If asked about a **business portfolio**, choose **I don't want to connect a business portfolio yet** (or pick one) → **Next**.
+5. You **may or may not** be asked about a **business portfolio** (Meta changes
+   this flow often):
+   - If the step doesn't appear → just continue.
+   - If it appears and is skippable → leave it empty / choose "later" → **Next**.
+   - If it forces a choice → **Create new business portfolio**, give it any
+     name (e.g. `BDRanks`), continue. It's only an org container and has no
+     effect on our setup.
 6. **App name:** `BDRanks`; add your contact email → **Create app** (may ask for your Facebook password).
 
 ### Part B — Confirm the Facebook Login product is added
