@@ -100,6 +100,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 		r.Post("/auth/register", authH.Register)
 		r.Post("/auth/register/owner", authH.RegisterOwner)
 		r.Post("/auth/login", authH.Login)
+		r.Post("/auth/google", authH.GoogleLogin)
+		r.Post("/auth/facebook", authH.FacebookLogin)
 
 		r.Get("/products", productH.List)
 		r.Get("/products/{id}", productH.GetByID)

@@ -10,6 +10,8 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
+var ErrElevatedAccount = errors.New("elevated account requires email login")
+
 type UserRepo struct {
 	db      *sql.DB
 	baseURL string
@@ -41,6 +43,47 @@ func (r *UserRepo) CreateOwner(ctx context.Context, email, passwordHash, fullNam
 		return nil, err
 	}
 	id, _ := res.LastInsertId()
+	return r.FindByID(ctx, id)
+}
+
+// FindOrCreateSocial logs in or registers an end user from a verified social
+// profile. If the email already belongs to an admin or product owner it returns
+// ErrElevatedAccount, enforcing email-only login for elevated roles.
+func (r *UserRepo) FindOrCreateSocial(ctx context.Context, email, name, avatarURL, provider string) (*models.User, error) {
+	var (
+		id             int64
+		isAdmin        int
+		isProductOwner int
+		currentAvatar  sql.NullString
+	)
+	err := r.db.QueryRowContext(ctx,
+		`SELECT id, is_admin, is_product_owner, avatar_url FROM users WHERE email = ?`, email,
+	).Scan(&id, &isAdmin, &isProductOwner, &currentAvatar)
+
+	if err == sql.ErrNoRows {
+		res, cerr := r.db.ExecContext(ctx,
+			`INSERT INTO users (email, full_name, avatar_url, auth_provider, password_hash)
+			 VALUES (?, ?, ?, ?, NULL)`,
+			email, name, avatarURL, provider,
+		)
+		if cerr != nil {
+			return nil, cerr
+		}
+		newID, _ := res.LastInsertId()
+		return r.FindByID(ctx, newID)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if isAdmin == 1 || isProductOwner == 1 {
+		return nil, ErrElevatedAccount
+	}
+
+	// Existing regular user: backfill avatar if it is currently empty.
+	if (!currentAvatar.Valid || currentAvatar.String == "") && avatarURL != "" {
+		r.db.ExecContext(ctx, `UPDATE users SET avatar_url = ? WHERE id = ?`, avatarURL, id)
+	}
 	return r.FindByID(ctx, id)
 }
 

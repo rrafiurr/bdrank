@@ -142,6 +142,64 @@ func (h *AuthHandler) RegisterOwner(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Credential string `json:"credential"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Credential == "" {
+		writeError(w, http.StatusBadRequest, "credential required")
+		return
+	}
+	profile, err := auth.VerifyGoogle(r.Context(), body.Credential, h.cfg.GoogleClientID)
+	if err != nil {
+		log.Printf("ERROR Google verify: %v", err)
+		writeError(w, http.StatusBadRequest, "social login failed")
+		return
+	}
+	h.completeSocialLogin(w, r, profile)
+}
+
+func (h *AuthHandler) FacebookLogin(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.AccessToken == "" {
+		writeError(w, http.StatusBadRequest, "access_token required")
+		return
+	}
+	profile, err := auth.VerifyFacebook(r.Context(), body.AccessToken, h.cfg.FacebookAppID, h.cfg.FacebookAppSecret)
+	if err == auth.ErrNoEmail {
+		writeError(w, http.StatusBadRequest, "Your Facebook account has no email; please sign up with email instead")
+		return
+	}
+	if err != nil {
+		log.Printf("ERROR Facebook verify: %v", err)
+		writeError(w, http.StatusBadRequest, "social login failed")
+		return
+	}
+	h.completeSocialLogin(w, r, profile)
+}
+
+// completeSocialLogin applies the account rules and issues a JWT.
+func (h *AuthHandler) completeSocialLogin(w http.ResponseWriter, r *http.Request, profile *auth.SocialProfile) {
+	user, err := h.users.FindOrCreateSocial(r.Context(), profile.Email, profile.Name, profile.AvatarURL, profile.Provider)
+	if err == repository.ErrElevatedAccount {
+		writeError(w, http.StatusForbidden, "This account must sign in with email and password")
+		return
+	}
+	if err != nil {
+		log.Printf("ERROR FindOrCreateSocial email=%q: %v", profile.Email, err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	token, err := auth.NewToken(user.ID, h.cfg.JWTSecret, h.cfg.TokenTTL, h.redis)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"token": token, "user": user})
+}
+
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromCtx(r.Context())
 	user, err := h.users.FindByID(r.Context(), userID)
