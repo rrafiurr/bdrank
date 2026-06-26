@@ -52,7 +52,7 @@ func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*models.User,
 	err := r.db.QueryRowContext(ctx,
 		`SELECT id, email, COALESCE(full_name,''), COALESCE(username,''), COALESCE(bio,''),
 		        COALESCE(avatar_url,''), is_admin, is_product_owner, owner_verified,
-		        COALESCE(company_name,''), password_hash, created_at
+		        COALESCE(company_name,''), COALESCE(password_hash,''), created_at
 		 FROM users WHERE email = ?`, email,
 	).Scan(&u.ID, &u.Email, &u.FullName, &u.Username, &u.Bio, &u.AvatarURL,
 		&u.IsAdmin, &isProductOwner, &ownerVerified, &companyName, &hash, &u.CreatedAt)

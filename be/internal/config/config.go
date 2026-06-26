@@ -24,6 +24,9 @@ type Config struct {
 	AllowedOrigins string // comma-separated; "*" allows all (dev default)
 	ExternalUser   string
 	ExternalPass   string
+	GoogleClientID    string
+	FacebookAppID     string
+	FacebookAppSecret string
 }
 
 func Load() *Config {
@@ -46,6 +49,9 @@ func Load() *Config {
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "*"),
 		ExternalUser:   getEnv("EXTERNAL_USER", "external_admin"),
 		ExternalPass:  getEnv("EXTERNAL_PASS", ""),
+		GoogleClientID:    getEnv("GOOGLE_CLIENT_ID", ""),
+		FacebookAppID:     getEnv("FACEBOOK_APP_ID", ""),
+		FacebookAppSecret: getEnv("FACEBOOK_APP_SECRET", ""),
 	}
 }
 

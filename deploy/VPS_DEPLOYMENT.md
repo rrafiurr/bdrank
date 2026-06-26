@@ -152,6 +152,14 @@ SITE_URL=https://bdranks.com
 ALLOWED_ORIGINS=https://bdranks.com,https://www.bdranks.com,https://cms.bdranks.com
 ```
 
+For social login, also set in `.env.prod`:
+
+```env
+GOOGLE_CLIENT_ID=...
+FACEBOOK_APP_ID=...
+FACEBOOK_APP_SECRET=...
+```
+
 ---
 
 ## Step 7 — Configure Nginx with Cloudflare Origin Cert
