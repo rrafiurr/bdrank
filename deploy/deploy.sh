@@ -59,4 +59,22 @@ if [ "$SKIP_FRONTEND" = false ]; then
   sudo nginx -t && sudo systemctl reload nginx
 fi
 
+# ── Health monitor cron (activates only once the secret env file is present) ───
+HM_ENV="$REPO_DIR/scripts/health-monitor.env"
+HM_SH="$REPO_DIR/scripts/health-monitor.sh"
+HM_LOG="$REPO_DIR/scripts/health-monitor.cron.log"
+HM_MARKER="# bdranks-health-monitor"
+if [ -f "$HM_ENV" ]; then
+  chmod +x "$HM_SH" || true
+  if crontab -l 2>/dev/null | grep -qF "$HM_MARKER"; then
+    echo "==> Health-monitor cron already installed"
+  else
+    ( crontab -l 2>/dev/null; \
+      echo "*/5 * * * * . $HM_ENV && $HM_SH >> $HM_LOG 2>&1 $HM_MARKER" ) | crontab -
+    echo "==> Installed health-monitor cron (every 5 min)"
+  fi
+else
+  echo "==> Skipping health-monitor cron (create scripts/health-monitor.env to enable)"
+fi
+
 echo "==> Done."
