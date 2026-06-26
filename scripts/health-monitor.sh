@@ -134,6 +134,17 @@ maybe_restart() {
     && echo "(auto-restart triggered)" || echo "(auto-restart FAILED)"
 }
 
+# ── Test mode: send a sample alert and exit (verifies channel config) ─────────
+if [ "${1:-}" = "--test" ] || [ "${TEST:-}" = "1" ]; then
+  if send_alert "🔔 bdranks health-monitor test alert — $TS_HUMAN. If you can read this, alerting works."; then
+    echo "[$TS_HUMAN] test alert sent via '$WEBHOOK_KIND'"
+    exit 0
+  else
+    echo "[$TS_HUMAN] test alert FAILED — check WEBHOOK_KIND and credentials" >&2
+    exit 1
+  fi
+fi
+
 # ── Probe all endpoints ───────────────────────────────────────────────────────
 declare -a FAILED=()
 OUTAGE=false
