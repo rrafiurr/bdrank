@@ -29,10 +29,12 @@ LOG_WINDOW="${LOG_WINDOW:-5m}"          # how far back to scan logs on failure
 LOG_MAX_LINES="${LOG_MAX_LINES:-25}"    # max error lines to include in an alert
 
 # Alerting: WEBHOOK_KIND = slack | discord | telegram
-WEBHOOK_KIND="${WEBHOOK_KIND:-slack}"
-WEBHOOK_URL="${WEBHOOK_URL:-}"                       # slack/discord
-TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"         # telegram
-TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"            # telegram
+# Normalize: strip whitespace/CR (CRLF env files) and lowercase, so a stray
+# carriage return or capitalization can't silently fall through to the default.
+WEBHOOK_KIND="$(printf '%s' "${WEBHOOK_KIND:-slack}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')"
+WEBHOOK_URL="$(printf '%s' "${WEBHOOK_URL:-}" | tr -d '[:space:]')"                   # slack/discord
+TELEGRAM_BOT_TOKEN="$(printf '%s' "${TELEGRAM_BOT_TOKEN:-}" | tr -d '[:space:]')"     # telegram
+TELEGRAM_CHAT_ID="$(printf '%s' "${TELEGRAM_CHAT_ID:-}" | tr -d '[:space:]')"        # telegram
 
 # Recovery from a hard outage (connection refused / 502 / 503 / 504).
 AUTO_RESTART="${AUTO_RESTART:-false}"
@@ -107,7 +109,9 @@ send_alert() {
         -d "{\"content\": $payload}" "$WEBHOOK_URL" >/dev/null
       ;;
     slack|*)
-      [ -n "$WEBHOOK_URL" ] || { echo "[$TS_HUMAN] WEBHOOK_URL not set" >&2; return 1; }
+      [ -n "$WEBHOOK_URL" ] || {
+        echo "[$TS_HUMAN] WEBHOOK_URL not set (WEBHOOK_KIND='$WEBHOOK_KIND'). For Telegram set WEBHOOK_KIND=telegram + TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID; for Slack/Discord set WEBHOOK_URL." >&2
+        return 1; }
       local payload; payload="$(printf '%s' "$text" | json_escape)"
       curl -s --max-time 15 -H "Content-Type: application/json" \
         -d "{\"text\": $payload}" "$WEBHOOK_URL" >/dev/null
