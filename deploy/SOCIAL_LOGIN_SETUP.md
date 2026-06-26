@@ -139,6 +139,19 @@ export VITE_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
 export VITE_FACEBOOK_APP_ID=000000000000000
 ```
 
+### Kill switch (temporarily turn social login off)
+
+Set the frontend env var **`VITE_SOCIAL_LOGIN_ENABLED=false`** to hide both
+Google and Facebook buttons, regardless of whether the provider IDs are set.
+Unset (or any value other than `false`) = enabled.
+
+- Local: in `fe/.env` → `VITE_SOCIAL_LOGIN_ENABLED=false`, restart `npm run dev`.
+- Production: export `VITE_SOCIAL_LOGIN_ENABLED=false` before `./deploy/deploy.sh`
+  (or set it as a CI variable). It is a **build-time** value, so the FE must be
+  rebuilt for a change to take effect.
+
+To turn social login back on, set it to `true` (or remove it) and rebuild.
+
 ### Common mistakes
 | Symptom | Cause |
 |---|---|

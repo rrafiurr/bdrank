@@ -39,6 +39,7 @@ if [ "$SKIP_FRONTEND" = false ]; then
   echo "VITE_API_BASE_URL=$API_URL" > .env.production
   echo "VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-}" >> .env.production
   echo "VITE_FACEBOOK_APP_ID=${VITE_FACEBOOK_APP_ID:-}" >> .env.production
+  echo "VITE_SOCIAL_LOGIN_ENABLED=${VITE_SOCIAL_LOGIN_ENABLED:-}" >> .env.production
   npm ci --silent
   npm run build
 

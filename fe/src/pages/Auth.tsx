@@ -26,7 +26,11 @@ export default function Auth() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, signIn, signUp, signInWithGoogle, signInWithFacebook } = useAuth();
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  // Kill switch: set VITE_SOCIAL_LOGIN_ENABLED=false to hide all social login.
+  // Unset/anything-else = enabled.
+  const socialEnabled = import.meta.env.VITE_SOCIAL_LOGIN_ENABLED !== "false";
+  const googleEnabled = socialEnabled && !!(import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined);
+  const facebookEnabled = socialEnabled && isFacebookConfigured();
   const [fbReady, setFbReady] = useState(false);
 
   useEffect(() => {
@@ -36,10 +40,10 @@ export default function Auth() {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (isFacebookConfigured()) {
+    if (facebookEnabled) {
       loadFacebookSDK().then(() => setFbReady(true)).catch(() => setFbReady(false));
     }
-  }, []);
+  }, [facebookEnabled]);
 
   const validateForm = () => {
     try {
@@ -188,7 +192,7 @@ export default function Auth() {
             </Button>
           </form>
 
-          {(googleClientId || isFacebookConfigured()) && (
+          {(googleEnabled || facebookEnabled) && (
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
@@ -200,7 +204,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                {googleClientId && (
+                {googleEnabled && (
                   <div className="flex justify-center">
                     <GoogleLogin
                       onSuccess={(cred) => {
@@ -214,7 +218,7 @@ export default function Auth() {
                   </div>
                 )}
 
-                {isFacebookConfigured() && (
+                {facebookEnabled && (
                   <Button
                     type="button"
                     variant="outline"
