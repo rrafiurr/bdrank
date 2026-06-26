@@ -25,6 +25,8 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: (credential: string) => Promise<void>;
+  signInWithFacebook: (accessToken: string) => Promise<void>;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: (user: User) => void;
@@ -35,6 +37,8 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   loading: true,
   signIn: async () => {},
+  signInWithGoogle: async () => {},
+  signInWithFacebook: async () => {},
   signUp: async () => {},
   signOut: async () => {},
   setUser: () => {},
@@ -83,6 +87,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserState(res.user);
   };
 
+  const signInWithGoogle = async (credential: string) => {
+    const res = await apiFetch<{ token: string; user: User }>(
+      "/auth/google",
+      { method: "POST", body: JSON.stringify({ credential }) },
+      null
+    );
+    saveSession(res);
+    setToken(res.token);
+    setUserState(res.user);
+  };
+
+  const signInWithFacebook = async (accessToken: string) => {
+    const res = await apiFetch<{ token: string; user: User }>(
+      "/auth/facebook",
+      { method: "POST", body: JSON.stringify({ access_token: accessToken }) },
+      null
+    );
+    saveSession(res);
+    setToken(res.token);
+    setUserState(res.user);
+  };
+
   const signUp = async (email: string, password: string, fullName?: string) => {
     const res = await apiFetch<{ token: string; user: User }>(
       "/auth/register",
@@ -114,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut, setUser }}>
+    <AuthContext.Provider value={{ user, token, loading, signIn, signInWithGoogle, signInWithFacebook, signUp, signOut, setUser }}>
       {children}
     </AuthContext.Provider>
   );

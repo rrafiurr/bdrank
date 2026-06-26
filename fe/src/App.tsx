@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import Index from "./pages/Index";
 import ReviewDetails from "./pages/ReviewDetails";
 import Categories from "./pages/Categories";
@@ -21,7 +22,9 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+const AppTree = (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
@@ -50,5 +53,12 @@ const App = () => (
     </AuthProvider>
   </QueryClientProvider>
 );
+
+const App = () =>
+  googleClientId ? (
+    <GoogleOAuthProvider clientId={googleClientId}>{AppTree}</GoogleOAuthProvider>
+  ) : (
+    AppTree
+  );
 
 export default App;
