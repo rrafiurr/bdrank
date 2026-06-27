@@ -17,5 +17,20 @@
     "browse": "Browse",
     "categories": "Categories",
     "ownerDashboard": "Owner Dashboard"
+  },
+  "footer": {
+    "tagline": "Real reviews from real people. Track products over time and make better buying decisions.",
+    "explore": "Explore",
+    "categories": "Categories",
+    "company": "Company",
+    "browseReviews": "Browse Reviews",
+    "writeAReview": "Write a Review",
+    "productOwnerPortal": "Product Owner Portal",
+    "signIn": "Sign In",
+    "myProfile": "My Profile",
+    "rights": "All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "contact": "Contact"
   }
 }

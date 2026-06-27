@@ -1,23 +1,26 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { apiFetch, type ApiCategory, type ApiPageListItem } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import logo from "@/assets/logo-tight.png";
 import { Mail } from "lucide-react";
 
 const EXPLORE_LINKS = [
-  { label: "Browse Reviews", to: "/browse" },
-  { label: "Categories", to: "/categories" },
-  { label: "Write a Review", to: "/write-review" },
-  { label: "Product Owner Portal", to: "/owner-register" },
+  { labelKey: "footer.browseReviews", to: "/browse" },
+  { labelKey: "nav.categories", to: "/categories" },
+  { labelKey: "footer.writeAReview", to: "/write-review" },
+  { labelKey: "footer.productOwnerPortal", to: "/owner-register" },
 ];
 
 const ACCOUNT_LINKS = [
-  { label: "Sign In", to: "/auth" },
-  { label: "My Profile", to: "/profile" },
+  { labelKey: "footer.signIn", to: "/auth" },
+  { labelKey: "footer.myProfile", to: "/profile" },
 ];
 
 export function Footer() {
+  const { t } = useTranslation();
+
   const { data: categories = [] } = useQuery<ApiCategory[]>({
     queryKey: ["categories"],
     queryFn: () => apiFetch<ApiCategory[]>("/categories"),
@@ -42,7 +45,7 @@ export function Footer() {
               <img src={logo} alt="ReviewHub" className="h-10 w-auto object-contain" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Real reviews from real people. Track products over time and make better buying decisions.
+              {t("footer.tagline")}
             </p>
             <div className="flex items-center gap-3 mt-5">
               <a
@@ -58,7 +61,7 @@ export function Footer() {
           {/* Explore column */}
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm tracking-wide uppercase">
-              Explore
+              {t("footer.explore")}
             </h4>
             <ul className="space-y-2.5">
               {EXPLORE_LINKS.map((link) => (
@@ -67,7 +70,7 @@ export function Footer() {
                     to={link.to}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -77,7 +80,7 @@ export function Footer() {
           {/* Categories column — dynamic */}
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm tracking-wide uppercase">
-              Categories
+              {t("footer.categories")}
             </h4>
             <ul className="space-y-2.5">
               {categories.map((cat) => {
@@ -101,7 +104,7 @@ export function Footer() {
           {/* Company column — dynamic from pages API */}
           <div>
             <h4 className="font-semibold text-foreground mb-4 text-sm tracking-wide uppercase">
-              Company
+              {t("footer.company")}
             </h4>
             <ul className="space-y-2.5">
               {pages.map((page) => (
@@ -124,7 +127,7 @@ export function Footer() {
                     to={link.to}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 </li>
               ))}
@@ -134,11 +137,11 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} ReviewHub. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ReviewHub. {t("footer.rights")}</p>
           <div className="flex items-center gap-4">
-            <Link to="/page/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/page/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link to="/page/contact" className="hover:text-foreground transition-colors">Contact</Link>
+            <Link to="/page/privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</Link>
+            <Link to="/page/terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</Link>
+            <Link to="/page/contact" className="hover:text-foreground transition-colors">{t("footer.contact")}</Link>
           </div>
         </div>
       </div>
