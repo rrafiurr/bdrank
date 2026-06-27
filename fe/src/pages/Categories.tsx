@@ -11,7 +11,7 @@ import { apiFetch, type ApiReviewListItem, type ApiCategoryStat, type ApiCategor
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
 
-function toCardProps(r: ApiReviewListItem) {
+function toCardProps(r: ApiReviewListItem, locale: string) {
   return {
     id: String(r.id),
     title: r.title,
@@ -26,7 +26,7 @@ function toCardProps(r: ApiReviewListItem) {
     likesCount: r.likes_count,
     isTimeline: r.is_timeline,
     timelineUpdates: r.timeline_updates_count,
-    createdAt: new Date(r.created_at).toLocaleDateString("en-US", {
+    createdAt: new Date(r.created_at).toLocaleDateString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -35,7 +35,8 @@ function toCardProps(r: ApiReviewListItem) {
 }
 
 export default function Categories() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "bn" ? "bn-BD" : "en-US";
   const [searchParams] = useSearchParams();
   const selectedCategory = searchParams.get("type");
 
@@ -158,7 +159,7 @@ export default function Categories() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {reviews.map((review) => (
-                <ReviewCard key={review.id} {...toCardProps(review)} />
+                <ReviewCard key={review.id} {...toCardProps(review, locale)} />
               ))}
             </div>
           )}
