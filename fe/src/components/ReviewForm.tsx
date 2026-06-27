@@ -11,12 +11,14 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiCategory, type ApiProduct } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
+import { useTranslation } from "react-i18next";
 
 interface ReviewFormProps {
   onClose?: () => void;
 }
 
 export function ReviewForm({ onClose }: ReviewFormProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -50,8 +52,8 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
   // Debounce product search
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(productName.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedQuery(productName.trim()), 300);
+    return () => clearTimeout(timer);
   }, [productName]);
 
   const { data: productSearchData, isFetching: searchFetching } = useQuery({
@@ -129,17 +131,17 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     const accepted: File[] = [];
     for (const f of files.slice(0, remaining)) {
       if (!f.type.startsWith("image/")) {
-        toast({ title: "Invalid file", description: `${f.name} is not an image.`, variant: "destructive" });
+        toast({ title: t("reviewForm.invalidFile"), description: `${f.name} is not an image.`, variant: "destructive" });
         continue;
       }
       if (f.size > 5 * 1024 * 1024) {
-        toast({ title: "File too large", description: `${f.name} exceeds 5MB.`, variant: "destructive" });
+        toast({ title: t("reviewForm.fileTooLarge"), description: `${f.name} exceeds 5MB.`, variant: "destructive" });
         continue;
       }
       accepted.push(f);
     }
     if (files.length > remaining) {
-      toast({ title: "Image limit", description: `You can upload up to ${MAX_IMAGES} images.` });
+      toast({ title: t("reviewForm.imageLimit"), description: t("reviewForm.imageLimitDesc", { max: MAX_IMAGES }) });
     }
     setImages((prev) => [...prev, ...accepted]);
     setImagePreviews((prev) => [...prev, ...accepted.map((f) => URL.createObjectURL(f))]);
@@ -163,13 +165,13 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     e.preventDefault();
 
     if (!user) {
-      toast({ title: "Sign in required", description: "Please sign in to submit a review.", variant: "destructive" });
+      toast({ title: t("reviewForm.signInRequired"), description: t("reviewForm.signInRequiredDesc"), variant: "destructive" });
       navigate("/auth");
       return;
     }
 
     if (!productName.trim() || !formData.title || !formData.category || formData.rating === 0 || !formData.content) {
-      toast({ title: "Missing fields", description: "Please fill in all required fields.", variant: "destructive" });
+      toast({ title: t("reviewForm.missingFields"), description: t("reviewForm.missingFieldsDesc"), variant: "destructive" });
       return;
     }
 
@@ -191,11 +193,11 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
       await apiFetch("/reviews", { method: "POST", body: fd });
 
-      toast({ title: "Review submitted!", description: "Your review has been published." });
+      toast({ title: t("reviewForm.reviewSubmitted"), description: t("reviewForm.reviewSubmittedDesc") });
       navigate("/browse");
       onClose?.();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message ?? "Failed to submit review.", variant: "destructive" });
+      toast({ title: t("reviewForm.errorTitle"), description: err.message ?? t("reviewForm.failedToSubmit"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -205,12 +207,12 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Product name with autocomplete */}
       <div className="space-y-2">
-        <Label htmlFor="product">Product / Service *</Label>
+        <Label htmlFor="product">{t("reviewForm.productLabel")}</Label>
         <div ref={productWrapperRef} className="relative">
           <div className="relative">
             <Input
               id="product"
-              placeholder="Enter product or service name..."
+              placeholder={t("reviewForm.productPlaceholder")}
               value={productName}
               onChange={handleProductNameChange}
               onKeyDown={handleKeyDown}
@@ -239,7 +241,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
           {selectedProduct && (
             <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
               <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-xs font-medium text-primary">Existing product selected</span>
+              <span className="text-xs font-medium text-primary">{t("reviewForm.existingSelected")}</span>
               <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                 {selectedProduct.review_count > 0 && (
                   <span className="flex items-center gap-1">
@@ -259,9 +261,9 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {suggestions.length} existing product{suggestions.length !== 1 ? "s" : ""} found
+                  {t("reviewForm.existingProducts", { count: suggestions.length })}
                 </span>
-                <span className="text-xs text-muted-foreground hidden sm:block">↑↓ to navigate · Enter to select</span>
+                <span className="text-xs text-muted-foreground hidden sm:block">{t("reviewForm.navigateHint")}</span>
               </div>
 
               {/* Product rows */}
@@ -301,7 +303,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
                             {p.review_count} review{p.review_count !== 1 ? "s" : ""}
                           </span>
                         ) : (
-                          <span className="text-[11px] text-muted-foreground">No reviews yet</span>
+                          <span className="text-[11px] text-muted-foreground">{t("reviewForm.noReviewsYet")}</span>
                         )}
                       </div>
                     </div>
@@ -322,7 +324,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
               {/* Footer hint */}
               <div className="px-3 py-2 bg-muted/30 border-t border-border">
                 <p className="text-[11px] text-muted-foreground">
-                  Not what you need? Keep typing to add a new product.
+                  {t("reviewForm.notWhatYouNeed")}
                 </p>
               </div>
             </div>
@@ -332,10 +334,10 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
       {/* Title */}
       <div className="space-y-2">
-        <Label htmlFor="title">Review Title *</Label>
+        <Label htmlFor="title">{t("reviewForm.titleLabel")}</Label>
         <Input
           id="title"
-          placeholder="Give your review a title..."
+          placeholder={t("reviewForm.titlePlaceholder")}
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           className="bg-background"
@@ -345,9 +347,9 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       {/* Category — locked when an existing product is selected */}
       <div className="space-y-2">
         <Label>
-          Category *
+          {t("reviewForm.categoryLabel")}
           {selectedProduct && (
-            <span className="ml-2 text-xs text-muted-foreground font-normal">(set by selected product)</span>
+            <span className="ml-2 text-xs text-muted-foreground font-normal">{t("reviewForm.categorySetByProduct")}</span>
           )}
         </Label>
         <div className="flex flex-wrap gap-2">
@@ -368,7 +370,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
       {/* Rating */}
       <div className="space-y-2">
-        <Label>Rating *</Label>
+        <Label>{t("reviewForm.ratingLabel")}</Label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
@@ -393,10 +395,10 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
       {/* Content */}
       <div className="space-y-2">
-        <Label htmlFor="content">Your Review *</Label>
+        <Label htmlFor="content">{t("reviewForm.contentLabel")}</Label>
         <Textarea
           id="content"
-          placeholder="Share your experience with this product or service..."
+          placeholder={t("reviewForm.contentPlaceholder")}
           value={formData.content}
           onChange={(e) => setFormData({ ...formData, content: e.target.value })}
           className="min-h-[150px] bg-background"
@@ -405,7 +407,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
       {/* Images */}
       <div className="space-y-2">
-        <Label>Photos (optional, up to {MAX_IMAGES})</Label>
+        <Label>{t("reviewForm.photosLabel", { max: MAX_IMAGES })}</Label>
         <div className="flex flex-wrap gap-3">
           {imagePreviews.map((src, i) => (
             <div key={src} className="relative h-24 w-24 rounded-lg overflow-hidden border border-border group">
@@ -427,7 +429,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
               className="h-24 w-24 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-accent/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
             >
               <Upload className="h-5 w-5" />
-              <span className="text-xs">Add photo</span>
+              <span className="text-xs">{t("reviewForm.addPhoto")}</span>
             </button>
           )}
         </div>
@@ -439,16 +441,16 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
           className="hidden"
           onChange={handleImageSelect}
         />
-        <p className="text-xs text-muted-foreground">JPG, PNG or WEBP. Max 5MB each.</p>
+        <p className="text-xs text-muted-foreground">{t("reviewForm.photoHint")}</p>
       </div>
 
       {/* Submit */}
       <div className="flex gap-3 pt-4">
         <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={submitting}>
-          Cancel
+          {t("reviewForm.cancel")}
         </Button>
         <Button type="submit" variant="hero" className="flex-1" disabled={submitting}>
-          {submitting ? "Submitting..." : "Submit Review"}
+          {submitting ? t("reviewForm.submitting") : t("reviewForm.submit")}
         </Button>
       </div>
     </form>

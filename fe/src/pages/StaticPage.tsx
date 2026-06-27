@@ -6,8 +6,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Home } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function StaticPage() {
+  const { t, i18n } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
 
   const { data: page, isLoading, isError } = useQuery<ApiPage>({
@@ -57,7 +59,7 @@ export default function StaticPage() {
             <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Link to="/" className="flex items-center gap-1 hover:text-foreground transition-colors">
                 <Home className="h-3.5 w-3.5" />
-                Home
+                {t("staticPage.home")}
               </Link>
               <ChevronRight className="h-3.5 w-3.5" />
               {isLoading ? (
@@ -84,12 +86,12 @@ export default function StaticPage() {
           {isError && (
             <div className="text-center py-24">
               <p className="text-4xl font-bold text-muted-foreground mb-4">404</p>
-              <p className="text-xl font-semibold text-foreground mb-2">Page not found</p>
+              <p className="text-xl font-semibold text-foreground mb-2">{t("staticPage.notFound")}</p>
               <p className="text-muted-foreground mb-8">
-                This page doesn't exist or isn't published yet.
+                {t("staticPage.notFoundDesc")}
               </p>
               <Link to="/" className="text-primary hover:underline">
-                Back to Home
+                {t("staticPage.backToHome")}
               </Link>
             </div>
           )}
@@ -109,9 +111,11 @@ export default function StaticPage() {
                 dangerouslySetInnerHTML={{ __html: page.content }}
               />
               <p className="mt-12 text-xs text-muted-foreground border-t border-border pt-4">
-                Last updated: {new Date(page.updated_at).toLocaleDateString("en-GB", {
-                  year: "numeric", month: "long", day: "numeric",
-                })}
+                {t("staticPage.lastUpdated")}{" "}
+                {new Date(page.updated_at).toLocaleDateString(
+                  i18n.language === "bn" ? "bn-BD" : "en-GB",
+                  { year: "numeric", month: "long", day: "numeric" }
+                )}
               </p>
             </>
           )}

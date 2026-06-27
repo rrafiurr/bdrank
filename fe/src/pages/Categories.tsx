@@ -9,6 +9,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem, type ApiCategoryStat, type ApiCategory } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
+import { useTranslation } from "react-i18next";
 
 function toCardProps(r: ApiReviewListItem) {
   return {
@@ -34,6 +35,7 @@ function toCardProps(r: ApiReviewListItem) {
 }
 
 export default function Categories() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const selectedCategory = searchParams.get("type");
 
@@ -63,7 +65,7 @@ export default function Categories() {
     stats?.find((s) => s.category === slug)?.review_count ?? 0;
 
   const selectedLabel =
-    categories.find((c) => c.slug === selectedCategory)?.label ?? "All Reviews";
+    categories.find((c) => c.slug === selectedCategory)?.label ?? t("categories.allReviews");
 
   const catTitle = selectedCategory
     ? `${selectedLabel} Reviews - ReviewHub`
@@ -85,10 +87,10 @@ export default function Categories() {
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Browse by Category
+            {t("categories.title")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore reviews organized by product type. Find exactly what you're looking for.
+            {t("categories.subtitle")}
           </p>
         </div>
 
@@ -110,7 +112,7 @@ export default function Categories() {
                     <Icon className="h-6 w-6 text-foreground" />
                   </div>
                   <Badge variant="secondary" className="text-xs">
-                    {count} reviews
+                    {t("categories.reviews", { count })}
                   </Badge>
                 </div>
 
@@ -119,7 +121,7 @@ export default function Categories() {
                 </h3>
 
                 <div className="flex items-center text-sm font-medium text-primary group-hover:gap-2 transition-all">
-                  View Reviews
+                  {t("categories.viewReviews")}
                   <ArrowRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
@@ -132,15 +134,17 @@ export default function Categories() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="font-serif text-2xl font-semibold text-foreground">
-                {selectedCategory ? selectedLabel : "All Reviews"}
+                {selectedCategory ? selectedLabel : t("categories.allReviews")}
               </h2>
               <p className="text-muted-foreground text-sm mt-1">
-                {reviewsLoading ? "Loading..." : `${reviews.length} reviews found`}
+                {reviewsLoading
+                  ? t("common.loading")
+                  : t("categories.found", { count: reviews.length })}
               </p>
             </div>
             {selectedCategory && (
               <Button variant="outline" size="sm" asChild>
-                <Link to="/categories">View All Categories</Link>
+                <Link to="/categories">{t("categories.viewAllCategories")}</Link>
               </Button>
             )}
           </div>

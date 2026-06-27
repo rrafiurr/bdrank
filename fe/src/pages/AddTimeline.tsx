@@ -11,8 +11,10 @@ import { Footer } from "@/components/Footer";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const AddTimeline = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [rating, setRating] = useState(0);
@@ -40,15 +42,15 @@ const AddTimeline = () => {
     e.preventDefault();
 
     if (!title.trim()) {
-      toast({ title: "Title required", description: "Please enter a title for your timeline entry.", variant: "destructive" });
+      toast({ title: t("timeline.titleRequired"), description: t("timeline.titleRequiredDesc"), variant: "destructive" });
       return;
     }
     if (!content.trim()) {
-      toast({ title: "Content required", description: "Please describe your experience.", variant: "destructive" });
+      toast({ title: t("timeline.contentRequired"), description: t("timeline.contentRequiredDesc"), variant: "destructive" });
       return;
     }
     if (rating === 0) {
-      toast({ title: "Rating required", description: "Please select a rating.", variant: "destructive" });
+      toast({ title: t("timeline.ratingRequired"), description: t("timeline.ratingRequiredDesc"), variant: "destructive" });
       return;
     }
 
@@ -62,10 +64,10 @@ const AddTimeline = () => {
 
       await apiFetch(`/reviews/${id}/timeline`, { method: "POST", body: fd });
 
-      toast({ title: "Timeline entry added!", description: "Your timeline update has been saved successfully." });
+      toast({ title: t("timeline.successTitle"), description: t("timeline.successDesc") });
       navigate(`/review/${id}`);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message ?? "Failed to save timeline entry.", variant: "destructive" });
+      toast({ title: t("timeline.errorTitle"), description: err.message ?? t("timeline.errorDesc"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -73,35 +75,35 @@ const AddTimeline = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageHead title="Add Timeline Update" noindex />
+      <PageHead title={t("timeline.pageTitle")} noindex />
       <Header />
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-2xl">
           {/* Back Button */}
-          <Link 
-            to={`/review/${id}`} 
+          <Link
+            to={`/review/${id}`}
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Review
+            {t("timeline.backToReview")}
           </Link>
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-display text-2xl">Add Timeline Entry</CardTitle>
+              <CardTitle className="font-display text-2xl">{t("timeline.cardTitle")}</CardTitle>
               <CardDescription>
-                Update your review with a new timeline entry to track how the product has evolved over time.
+                {t("timeline.cardDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title">Entry Title</Label>
+                  <Label htmlFor="title">{t("timeline.entryTitle")}</Label>
                   <Input
                     id="title"
-                    placeholder="e.g., 6 Month Update, 1 Year Review"
+                    placeholder={t("timeline.entryTitlePlaceholder")}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
@@ -109,7 +111,7 @@ const AddTimeline = () => {
 
                 {/* Rating */}
                 <div className="space-y-2">
-                  <Label>Current Rating</Label>
+                  <Label>{t("timeline.currentRating")}</Label>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -130,17 +132,19 @@ const AddTimeline = () => {
                       </button>
                     ))}
                     <span className="ml-3 text-sm text-muted-foreground">
-                      {rating > 0 ? `${rating} star${rating !== 1 ? 's' : ''}` : 'Select rating'}
+                      {rating > 0
+                        ? t("timeline.star", { count: rating })
+                        : t("timeline.selectRating")}
                     </span>
                   </div>
                 </div>
 
                 {/* Content */}
                 <div className="space-y-2">
-                  <Label htmlFor="content">Your Update</Label>
+                  <Label htmlFor="content">{t("timeline.yourUpdate")}</Label>
                   <Textarea
                     id="content"
-                    placeholder="Describe how the product is performing now. What's changed since your last update? Any new observations?"
+                    placeholder={t("timeline.updatePlaceholder")}
                     className="min-h-[150px] resize-none"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
@@ -149,7 +153,7 @@ const AddTimeline = () => {
 
                 {/* Image Upload */}
                 <div className="space-y-2">
-                  <Label>Photo (Optional)</Label>
+                  <Label>{t("timeline.photo")}</Label>
                   <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                     {imagePreview ? (
                       <div className="space-y-4">
@@ -168,7 +172,7 @@ const AddTimeline = () => {
                             setImagePreview(null);
                           }}
                         >
-                          Remove Photo
+                          {t("timeline.removePhoto")}
                         </Button>
                       </div>
                     ) : (
@@ -184,10 +188,10 @@ const AddTimeline = () => {
                             <Camera className="w-6 h-6 text-primary" />
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Click to upload a photo
+                            {t("timeline.clickToUpload")}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            PNG, JPG up to 10MB
+                            {t("timeline.pngJpgLimit")}
                           </p>
                         </div>
                       </label>
@@ -198,7 +202,7 @@ const AddTimeline = () => {
                 {/* Submit */}
                 <div className="flex gap-4 pt-4">
                   <Button type="submit" className="flex-1" disabled={submitting}>
-                    {submitting ? "Saving..." : "Add Timeline Entry"}
+                    {submitting ? t("timeline.saving") : t("timeline.addEntry")}
                   </Button>
                   <Button
                     type="button"
@@ -206,7 +210,7 @@ const AddTimeline = () => {
                     onClick={() => navigate(`/review/${id}`)}
                     disabled={submitting}
                   >
-                    Cancel
+                    {t("timeline.cancel")}
                   </Button>
                 </div>
               </form>

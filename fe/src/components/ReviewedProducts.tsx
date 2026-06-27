@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Package, Briefcase, Monitor } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiProduct } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const categoryIcon = (c: string) => {
   if (c === "service") return Briefcase;
@@ -11,6 +12,7 @@ const categoryIcon = (c: string) => {
 };
 
 export function ReviewedProducts() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ["products", { limit: 12 }],
     queryFn: () => apiFetch<{ data: ApiProduct[]; total: number }>("/products?limit=12"),
@@ -31,7 +33,7 @@ export function ReviewedProducts() {
   if (products.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        No reviewed products yet. Be the first to write a review!
+        {t("reviewedProducts.noProducts")}
       </p>
     );
   }
@@ -69,7 +71,7 @@ export function ReviewedProducts() {
                   <Star className="h-4 w-4 fill-gold text-gold" />
                   {product.avg_rating.toFixed(1)}
                 </span>
-                <span>{product.review_count} review{product.review_count !== 1 ? "s" : ""}</span>
+                <span>{t("reviewedProducts.review", { count: product.review_count })}</span>
               </div>
             </div>
           </Link>

@@ -150,7 +150,7 @@ export function Header() {
                 <div className="p-1.5">
                   {(searchResults!.reviews ?? []).length > 0 && (
                     <>
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1.5">Reviews</p>
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1.5">{t("common.reviews")}</p>
                       <ul>
                         {searchResults!.reviews.map((r) => (
                           <li key={`r-${r.id}`}>
@@ -173,7 +173,7 @@ export function Header() {
                   )}
                   {(searchResults!.products ?? []).length > 0 && (
                     <>
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1.5 mt-1">Products</p>
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-1.5 mt-1">{t("common.products")}</p>
                       <ul>
                         {searchResults!.products.map((p) => (
                           <li key={`p-${p.id}`}>
@@ -199,13 +199,13 @@ export function Header() {
                       onClick={handleSearchSubmit as any}
                       className="text-xs text-primary hover:underline"
                     >
-                      See all results for "{searchQuery}" →
+                      {t("header.seeAllResults", { query: searchQuery })}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="px-4 py-3 text-sm text-muted-foreground text-center">
-                  No results for "<span className="font-medium text-foreground">{searchQuery}</span>"
+                  {t("header.noResults")} "<span className="font-medium text-foreground">{searchQuery}</span>"
                 </div>
               )}
             </div>

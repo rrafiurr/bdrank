@@ -15,12 +15,14 @@ import {
 import { Star, MessageCircle, Heart, PenSquare, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiProduct, type ApiReviewListItem } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 type SortOrder = "newest" | "oldest" | "highest" | "lowest" | "most_liked";
 
 const toLabel = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function ProductReviews() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
@@ -43,11 +45,14 @@ export default function ProductReviews() {
   const reviews = reviewsData?.data ?? [];
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    new Date(iso).toLocaleDateString(
+      i18n.language === "bn" ? "bn-BD" : "en-US",
+      {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }
+    );
 
   if (productLoading) {
     return (
@@ -69,7 +74,7 @@ export default function ProductReviews() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container px-4 py-8">
-          <div className="text-center py-20 text-muted-foreground">Product not found.</div>
+          <div className="text-center py-20 text-muted-foreground">{t("product.notFound")}</div>
         </main>
         <Footer />
       </div>
@@ -121,7 +126,7 @@ export default function ProductReviews() {
       <main className="container px-4 py-8 md:py-12">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
+          {t("product.back")}
         </Button>
 
         {/* Product header */}
@@ -147,14 +152,14 @@ export default function ProductReviews() {
                 </div>
                 <span className="font-semibold text-foreground">{product.avg_rating.toFixed(1)}</span>
                 <span className="text-muted-foreground text-sm">
-                  ({product.review_count} {product.review_count === 1 ? "review" : "reviews"})
+                  ({t("product.review", { count: product.review_count })})
                 </span>
               </div>
             </div>
 
             <Button variant="hero" onClick={() => navigate("/write-review")}>
               <PenSquare className="h-4 w-4 mr-2" />
-              Write a Review
+              {t("product.writeReview")}
             </Button>
           </div>
         </section>
@@ -162,19 +167,19 @@ export default function ProductReviews() {
         {/* Sort + reviews list */}
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-serif text-2xl font-semibold text-foreground">Reviews</h2>
+            <h2 className="font-serif text-2xl font-semibold text-foreground">{t("product.reviews")}</h2>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground hidden sm:inline">Sort by:</span>
+              <span className="text-sm text-muted-foreground hidden sm:inline">{t("product.sortBy")}</span>
               <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest first</SelectItem>
-                  <SelectItem value="oldest">Oldest first</SelectItem>
-                  <SelectItem value="highest">Highest rated</SelectItem>
-                  <SelectItem value="lowest">Lowest rated</SelectItem>
-                  <SelectItem value="most_liked">Most liked</SelectItem>
+                  <SelectItem value="newest">{t("product.sortNewest")}</SelectItem>
+                  <SelectItem value="oldest">{t("product.sortOldest")}</SelectItem>
+                  <SelectItem value="highest">{t("product.sortHighest")}</SelectItem>
+                  <SelectItem value="lowest">{t("product.sortLowest")}</SelectItem>
+                  <SelectItem value="most_liked">{t("product.sortMostLiked")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -189,10 +194,10 @@ export default function ProductReviews() {
           ) : reviews.length === 0 ? (
             <div className="text-center py-16 bg-card border border-border rounded-xl">
               <p className="text-muted-foreground mb-4">
-                No reviews yet. Be the first to share your experience!
+                {t("product.noReviews")}
               </p>
               <Button variant="hero" onClick={() => navigate("/write-review")}>
-                Write the first review
+                {t("product.writeFirst")}
               </Button>
             </div>
           ) : (
@@ -252,7 +257,7 @@ export default function ProductReviews() {
                       to={`/review/${review.id}`}
                       className="ml-auto text-sm text-primary hover:underline"
                     >
-                      View details →
+                      {t("product.viewDetails")}
                     </Link>
                   </div>
                 </article>

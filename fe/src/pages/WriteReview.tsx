@@ -3,8 +3,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ReviewForm } from "@/components/ReviewForm";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function WriteReview() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -15,24 +17,24 @@ export default function WriteReview() {
         noindex
       />
       <Header />
-      
+
       <main className="container px-4 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Write a Review
+              {t("writeReview.title")}
             </h1>
             <p className="text-muted-foreground">
-              Share your experience and help others make informed decisions.
+              {t("writeReview.subtitle")}
             </p>
           </div>
-          
+
           <div className="bg-card border border-border rounded-xl p-6 md:p-8 shadow-elegant">
             <ReviewForm onClose={() => navigate("/")} />
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

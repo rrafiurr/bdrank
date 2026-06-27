@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Package, Briefcase, Monitor } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiProduct } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const categoryIcon = (c: string) => {
   if (c === "service") return Briefcase;
@@ -11,6 +12,7 @@ const categoryIcon = (c: string) => {
 };
 
 export function ReviewedProductsGrid() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ["products", { sort: "review_count", limit: 12 }],
     queryFn: () =>
@@ -62,7 +64,7 @@ export function ReviewedProductsGrid() {
                   <Star className="h-4 w-4 fill-gold text-gold" />
                   {product.avg_rating.toFixed(1)}
                 </span>
-                <span>{product.review_count} review{product.review_count !== 1 ? "s" : ""}</span>
+                <span>{t("reviewedProducts.review", { count: product.review_count })}</span>
               </div>
             </div>
           </Link>

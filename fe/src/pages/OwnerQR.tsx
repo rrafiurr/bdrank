@@ -17,8 +17,10 @@ import { Printer, ArrowLeft, Copy, Check } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiFetch, type ApiOwnerProduct } from "@/lib/api";
 import logo from "@/assets/logo.png";
+import { useTranslation } from "react-i18next";
 
 export default function OwnerQR() {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -59,7 +61,7 @@ export default function OwnerQR() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PageHead title="Product QR Code" noindex />
+      <PageHead title={t("ownerQr.pageTitle")} noindex />
 
       {/* Screen-only header */}
       <div className="print:hidden">
@@ -76,35 +78,35 @@ export default function OwnerQR() {
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
+              {t("ownerQr.backToDashboard")}
             </button>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
-                <h1 className="font-serif text-2xl font-bold text-foreground">Product QR Code</h1>
+                <h1 className="font-serif text-2xl font-bold text-foreground">{t("ownerQr.heading")}</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Print or share a QR code that links directly to your product's review page.
+                  {t("ownerQr.subtitle")}
                 </p>
               </div>
 
               <div className="flex gap-2 shrink-0">
                 <Button variant="outline" size="sm" className="gap-2" onClick={handleCopy} disabled={!productUrl}>
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  {copied ? "Copied!" : "Copy Link"}
+                  {copied ? t("ownerQr.copied") : t("ownerQr.copyLink")}
                 </Button>
                 <Button variant="hero" size="sm" className="gap-2" onClick={handlePrint} disabled={!selectedProduct}>
                   <Printer className="h-4 w-4" />
-                  Print
+                  {t("ownerQr.print")}
                 </Button>
               </div>
             </div>
 
             {products.length > 1 && (
               <div className="mb-6">
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Select product</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">{t("ownerQr.selectProduct")}</label>
                 <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                   <SelectTrigger className="h-9 w-full sm:w-[280px] rounded-lg text-sm">
-                    <SelectValue placeholder="Choose a product" />
+                    <SelectValue placeholder={t("ownerQr.chooseProduct")} />
                   </SelectTrigger>
                   <SelectContent>
                     {products.map((p) => (
@@ -119,7 +121,7 @@ export default function OwnerQR() {
 
             {products.length === 0 && (
               <div className="rounded-lg border border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
-                No products linked to your account yet. Contact an admin to link your products.
+                {t("ownerQr.noProducts")}
               </div>
             )}
           </div>
@@ -149,7 +151,7 @@ export default function OwnerQR() {
                   {selectedProduct.name}
                 </h2>
                 <p className="text-sm print:text-base text-muted-foreground mb-10 print:mb-14">
-                  Scan to read honest reviews from real customers
+                  {t("ownerQr.scanCta")}
                 </p>
 
                 {/* QR Code */}
@@ -175,15 +177,15 @@ export default function OwnerQR() {
 
                 {/* CTA */}
                 <p className="text-base print:text-xl font-semibold text-foreground mb-1">
-                  Loved our product?
+                  {t("ownerQr.lovedProduct")}
                 </p>
                 <p className="text-sm print:text-base text-muted-foreground">
-                  Share your experience — your review helps others make better decisions.
+                  {t("ownerQr.shareExperience")}
                 </p>
 
                 {/* Footer branding */}
                 <p className="text-xs text-muted-foreground/60 mt-10 print:mt-16">
-                  Powered by <span className="font-medium">ReviewHub</span> · bdranks.com
+                  {t("ownerQr.poweredBy")} <span className="font-medium">ReviewHub</span> · bdranks.com
                 </p>
               </div>
             </div>

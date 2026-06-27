@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, ArrowRight, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TimelineEntry {
   date: string;
@@ -22,6 +23,8 @@ export function TimelinePreview({
   author,
   entries,
 }: TimelinePreviewProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-card rounded-xl shadow-soft overflow-hidden">
       <div className="flex flex-col md:flex-row">
@@ -34,7 +37,7 @@ export function TimelinePreview({
           <div className="absolute top-3 left-3">
             <Badge variant="gold" className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              Timeline Review
+              {t("timelinePreview.badge")}
             </Badge>
           </div>
         </div>
@@ -43,7 +46,7 @@ export function TimelinePreview({
           <h3 className="font-serif text-xl font-semibold text-card-foreground mb-2">
             {productName}
           </h3>
-          <p className="text-sm text-muted-foreground mb-6">by {author}</p>
+          <p className="text-sm text-muted-foreground mb-6">{t("timelinePreview.by")} {author}</p>
 
           <div className="relative">
             {/* Timeline line */}
@@ -54,8 +57,8 @@ export function TimelinePreview({
                 <div key={index} className="flex gap-4 relative">
                   <div className="relative z-10">
                     <div className={`w-4 h-4 rounded-full border-2 ${
-                      index === entries.length - 1 
-                        ? "bg-primary border-primary" 
+                      index === entries.length - 1
+                        ? "bg-primary border-primary"
                         : "bg-card border-primary"
                     }`} />
                   </div>
@@ -80,7 +83,7 @@ export function TimelinePreview({
           </div>
 
           <Button variant="ghost" size="sm" className="mt-4 group">
-            View Full Timeline
+            {t("timelinePreview.viewFull")}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Button>
         </div>
