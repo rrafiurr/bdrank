@@ -23,6 +23,7 @@ type AdminHandler struct {
 	products *repository.ProductRepo
 	pages    *repository.PageRepo
 	storage  storage.Storage
+	embeds   *repository.EmbedRepo
 }
 
 func NewAdminHandler(
@@ -32,8 +33,9 @@ func NewAdminHandler(
 	products *repository.ProductRepo,
 	pages *repository.PageRepo,
 	s storage.Storage,
+	embeds *repository.EmbedRepo,
 ) *AdminHandler {
-	return &AdminHandler{db: db, users: users, reviews: reviews, products: products, pages: pages, storage: s}
+	return &AdminHandler{db: db, users: users, reviews: reviews, products: products, pages: pages, storage: s, embeds: embeds}
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -49,6 +51,8 @@ func (h *AdminHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM pages WHERE is_published = 1`).Scan(&totalPages)
 	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM categories`).Scan(&totalCategories)
 	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users WHERE is_product_owner = 1 AND owner_verified = 0`).Scan(&pendingOwners)
+	var pendingEmbeds int
+	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM embed_tokens WHERE status = 'pending'`).Scan(&pendingEmbeds)
 	writeJSON(w, http.StatusOK, map[string]int{
 		"total_users":      totalUsers,
 		"total_reviews":    totalReviews,
@@ -59,6 +63,7 @@ func (h *AdminHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		"total_pages":      totalPages,
 		"total_categories": totalCategories,
 		"pending_owners":   pendingOwners,
+		"pending_embeds":   pendingEmbeds,
 	})
 }
 
@@ -601,4 +606,43 @@ func parseIntList(s string) []int64 {
 		}
 	}
 	return out
+}
+
+// ── Embed Tokens ──────────────────────────────────────────────────────────────
+
+func (h *AdminHandler) ListEmbeds(w http.ResponseWriter, r *http.Request) {
+	status := r.URL.Query().Get("status")
+	tokens, err := h.embeds.ListAll(r.Context(), status)
+	if err != nil {
+		log.Printf("ERROR admin ListEmbeds: %v", err)
+		writeError(w, http.StatusInternalServerError, "failed to fetch embeds")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": tokens})
+}
+
+func (h *AdminHandler) UpdateEmbed(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var body struct {
+		Status    string `json:"status"`
+		AdminNote string `json:"admin_note"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if body.Status != "approved" && body.Status != "revoked" {
+		writeError(w, http.StatusBadRequest, "status must be 'approved' or 'revoked'")
+		return
+	}
+	if err := h.embeds.UpdateStatus(r.Context(), id, body.Status, body.AdminNote); err != nil {
+		log.Printf("ERROR admin UpdateEmbed id=%d: %v", id, err)
+		writeError(w, http.StatusInternalServerError, "failed to update embed")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
