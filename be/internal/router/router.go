@@ -68,6 +68,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	reviewRepo  := repository.NewReviewRepo(db, cfg.BaseURL)
 	commentRepo := repository.NewCommentRepo(db, cfg.BaseURL)
 	pageRepo    := repository.NewPageRepo(db)
+	embedRepo   := repository.NewEmbedRepo(db, cfg.SiteURL)
 
 	// storage — swap NewLocal for a CDN implementation to change hosting
 	store := storage.NewLocal(cfg.UploadDir, cfg.BaseURL)
@@ -82,10 +83,11 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	commentH  := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo)
 	searchH   := handlers.NewSearchHandler(db)
 	pageH     := handlers.NewPageHandler(pageRepo)
-	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store)
+	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo)
 	sitemapH  := handlers.NewSitemapHandler(db, cfg.SiteURL)
 	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass)
-	ownerH    := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo)
+	ownerH    := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo, embedRepo)
+	widgetH   := handlers.NewWidgetHandler(embedRepo)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -128,6 +130,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 		r.Get("/pages", pageH.List)
 		r.Get("/pages/{slug}", pageH.Get)
 
+		r.Get("/widget/{token}", widgetH.GetWidget)
+
 		r.Get("/search", searchH.Search)
 
 		r.Get("/stats", func(w http.ResponseWriter, r *http.Request) {
@@ -155,6 +159,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Get("/profile/comments", profileH.MyComments)
 			r.Get("/profile/products", profileH.MyProducts)
 			r.Get("/owner/reviews", ownerH.ListReviews)
+			r.Post("/owner/embed", ownerH.RequestEmbed)
+			r.Get("/owner/embed", ownerH.ListEmbeds)
 
 			r.Post("/upload/image", uploadH.Image)
 
@@ -197,6 +203,9 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Post("/admin/products", adminH.CreateProduct)
 			r.Patch("/admin/products/{id}", adminH.UpdateProduct)
 			r.Delete("/admin/products/{id}", adminH.DeleteProduct)
+
+			r.Get("/admin/embeds", adminH.ListEmbeds)
+			r.Patch("/admin/embeds/{id}", adminH.UpdateEmbed)
 		})
 	})
 
