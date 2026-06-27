@@ -86,7 +86,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
-			r.created_at, r.is_approved
+			COALESCE(r.created_at, NOW()), r.is_approved
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -204,7 +204,7 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
 
 	teRows, err := r.db.QueryContext(ctx,
-		`SELECT id, title, content, rating, COALESCE(image_url,''), created_at
+		`SELECT id, title, content, rating, COALESCE(image_url,''), COALESCE(created_at, NOW())
 		 FROM timeline_entries WHERE review_id = ? ORDER BY created_at ASC`, id)
 	if err == nil {
 		defer teRows.Close()
@@ -221,7 +221,7 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 
 	cRows, err := r.db.QueryContext(ctx, `
 		SELECT c.id, c.content, COUNT(DISTINCT cl.user_id) AS likes_count,
-		       u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''), c.created_at,
+		       u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''), COALESCE(c.created_at, NOW()),
 		       (p.owner_id = u.id AND u.is_product_owner = 1 AND u.owner_verified = 1) AS is_owner_reply,
 		       COALESCE(u.company_name,'') AS company_name
 		FROM comments c
@@ -349,7 +349,7 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
-			r.created_at, r.is_approved
+			COALESCE(r.created_at, NOW()), r.is_approved
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
