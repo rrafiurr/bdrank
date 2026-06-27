@@ -19,7 +19,7 @@ export function Layout({ children, title, action }: Props) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar pendingComments={stats?.pending_comments} pendingOwners={stats?.pending_owners} />
+      <Sidebar pendingComments={stats?.pending_comments} pendingOwners={stats?.pending_owners} pendingEmbeds={stats?.pending_embeds} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}

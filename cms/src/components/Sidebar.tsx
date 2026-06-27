@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, MessageSquare, Package,
-  Tag, BookOpen, Users, LogOut, ChevronRight, Building2,
+  Tag, BookOpen, Users, LogOut, ChevronRight, Building2, Code2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-tight.png";
@@ -15,15 +15,17 @@ const NAV = [
   { label: "Categories", icon: Tag, to: "/categories" },
   { label: "Pages", icon: BookOpen, to: "/pages" },
   { label: "Owners", icon: Building2, to: "/owners", badge: "owners" },
+  { label: "Embeds", icon: Code2, to: "/embeds", badge: "embeds" },
   { label: "Users", icon: Users, to: "/users" },
 ];
 
 interface Props {
   pendingComments?: number;
   pendingOwners?: number;
+  pendingEmbeds?: number;
 }
 
-export function Sidebar({ pendingComments = 0, pendingOwners = 0 }: Props) {
+export function Sidebar({ pendingComments = 0, pendingOwners = 0, pendingEmbeds = 0 }: Props) {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
 
@@ -62,6 +64,11 @@ export function Sidebar({ pendingComments = 0, pendingOwners = 0 }: Props) {
                   {badge === "owners" && pendingOwners > 0 && (
                     <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                       {pendingOwners}
+                    </span>
+                  )}
+                  {badge === "embeds" && pendingEmbeds > 0 && (
+                    <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {pendingEmbeds}
                     </span>
                   )}
                   {active && <ChevronRight className="h-3.5 w-3.5 text-white/40" />}

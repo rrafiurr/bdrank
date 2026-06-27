@@ -22,6 +22,7 @@ export interface AdminStats {
   total_pages: number;
   total_categories: number;
   pending_owners: number;
+  pending_embeds: number;
 }
 
 export interface AdminReview {

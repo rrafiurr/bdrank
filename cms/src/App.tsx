@@ -12,6 +12,7 @@ import Categories from "@/pages/Categories";
 import Pages from "@/pages/Pages";
 import Users from "@/pages/Users";
 import Owners from "@/pages/Owners";
+import Embeds from "@/pages/Embeds";
 
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } });
 
@@ -36,6 +37,7 @@ function AppRoutes() {
       <Route path="/pages" element={<ProtectedRoute><Pages /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
       <Route path="/owners" element={<ProtectedRoute><Owners /></ProtectedRoute>} />
+      <Route path="/embeds" element={<ProtectedRoute><Embeds /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
