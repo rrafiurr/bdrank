@@ -31,6 +31,18 @@ func buildCORSMiddleware(allowedOrigins string) func(http.Handler) http.Handler 
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Widget endpoint is always open — browsers need wildcard CORS to fetch cross-origin.
+			if strings.HasPrefix(r.URL.Path, "/api/v1/widget/") {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			origin := r.Header.Get("Origin")
 			if wildcard {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
