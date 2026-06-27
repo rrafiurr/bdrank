@@ -1,0 +1,16 @@
+{
+  "language": {
+    "english": "English",
+    "bangla": "বাংলা",
+    "change": "ভাষা পরিবর্তন করুন"
+  },
+  "common": {
+    "search": "রিভিউ, পণ্য খুঁজুন…",
+    "signIn": "সাইন ইন",
+    "signOut": "সাইন আউট",
+    "writeReview": "রিভিউ লিখুন",
+    "myProfile": "আমার প্রোফাইল",
+    "loading": "লোড হচ্ছে...",
+    "clearFilters": "ফিল্টার মুছুন"
+  }
+}

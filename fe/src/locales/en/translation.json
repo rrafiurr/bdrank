@@ -1,0 +1,16 @@
+{
+  "language": {
+    "english": "English",
+    "bangla": "বাংলা",
+    "change": "Change language"
+  },
+  "common": {
+    "search": "Search reviews, products…",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "writeReview": "Write Review",
+    "myProfile": "My Profile",
+    "loading": "Loading...",
+    "clearFilters": "Clear Filters"
+  }
+}
