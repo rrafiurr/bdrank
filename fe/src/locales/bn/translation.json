@@ -349,7 +349,10 @@
     "reviewSubmitted": "রিভিউ জমা হয়েছে!",
     "reviewSubmittedDesc": "আপনার রিভিউ প্রকাশিত হয়েছে।",
     "errorTitle": "ত্রুটি",
-    "failedToSubmit": "রিভিউ জমা দিতে ব্যর্থ।"
+    "failedToSubmit": "রিভিউ জমা দিতে ব্যর্থ।",
+    "review_one": "{{count}} রিভিউ",
+    "review_other": "{{count}} রিভিউ",
+    "select": "নির্বাচন করুন"
   },
   "timelinePreview": {
     "badge": "টাইমলাইন রিভিউ",
@@ -363,6 +366,6 @@
   },
   "header": {
     "seeAllResults": "\"{{query}}\" এর সব ফলাফল দেখুন →",
-    "noResults": "কোনো ফলাফল নেই"
+    "noResults": "এর জন্য কোনো ফলাফল নেই:"
   }
 }

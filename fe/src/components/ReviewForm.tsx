@@ -248,7 +248,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                     {selectedProduct.avg_rating.toFixed(1)}
                     <span className="text-border/70">·</span>
-                    {selectedProduct.review_count} review{selectedProduct.review_count !== 1 ? "s" : ""}
+                    {t("reviewForm.review", { count: selectedProduct.review_count })}
                   </span>
                 )}
               </div>
@@ -300,7 +300,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
                             <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                             {p.avg_rating.toFixed(1)}
                             <span className="text-border">·</span>
-                            {p.review_count} review{p.review_count !== 1 ? "s" : ""}
+                            {t("reviewForm.review", { count: p.review_count })}
                           </span>
                         ) : (
                           <span className="text-[11px] text-muted-foreground">{t("reviewForm.noReviewsYet")}</span>
@@ -314,7 +314,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
                         isHighlighted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                       }`}
                     >
-                      Select
+                      {t("reviewForm.select")}
                       <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                   </button>

@@ -349,7 +349,10 @@
     "reviewSubmitted": "Review submitted!",
     "reviewSubmittedDesc": "Your review has been published.",
     "errorTitle": "Error",
-    "failedToSubmit": "Failed to submit review."
+    "failedToSubmit": "Failed to submit review.",
+    "review_one": "{{count}} review",
+    "review_other": "{{count}} reviews",
+    "select": "Select"
   },
   "timelinePreview": {
     "badge": "Timeline Review",
