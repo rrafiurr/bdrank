@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem, type ApiReviewDetail } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 function toCardProps(r: ApiReviewListItem) {
   return {
@@ -39,6 +40,7 @@ function toCardProps(r: ApiReviewListItem) {
 }
 
 const Index = () => {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("all");
 
   // Latest reviews (category-filtered)
@@ -73,14 +75,14 @@ const Index = () => {
         productName: featured.title,
         productImage: featured.product.image_url || featured.images?.[0] || "",
         author: featured.author.username,
-        entries: featured.timeline.map((t) => ({
-          date: new Date(t.created_at).toLocaleDateString("en-US", {
+        entries: featured.timeline.map((tl) => ({
+          date: new Date(tl.created_at).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
           }),
-          period: t.title,
-          rating: t.rating,
-          summary: t.content,
+          period: tl.title,
+          rating: tl.rating,
+          summary: tl.content,
         })),
       }
     : null;
@@ -111,15 +113,15 @@ const Index = () => {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
-                  Featured Timeline Review
+                  {t("home.featuredTimeline")}
                 </h2>
                 <p className="text-muted-foreground">
-                  See how products perform over time
+                  {t("home.featuredTimelineSubtitle")}
                 </p>
               </div>
               <Link to="/browse">
                 <Button variant="ghost" className="group hidden sm:flex">
-                  View All Timelines
+                  {t("home.viewAllTimelines")}
                   <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
@@ -132,10 +134,10 @@ const Index = () => {
         <section className="py-8 container px-4">
           <div className="mb-6">
             <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
-              Products Reviewed by Our Community
+              {t("home.productsReviewed")}
             </h2>
             <p className="text-muted-foreground">
-              Browse products that users have shared their experience with
+              {t("home.productsReviewedSubtitle")}
             </p>
           </div>
           <ReviewedProducts />
@@ -145,10 +147,10 @@ const Index = () => {
         <section className="py-8 container px-4">
           <div className="mb-6">
             <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
-              Top Reviewed Products & Brands
+              {t("home.topReviewed")}
             </h2>
             <p className="text-muted-foreground">
-              The most reviewed products and brands across our community
+              {t("home.topReviewedSubtitle")}
             </p>
           </div>
           <ReviewedProductsGrid />
@@ -160,10 +162,10 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
               <div>
                 <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
-                  Latest Reviews
+                  {t("home.latestReviews")}
                 </h2>
                 <p className="text-muted-foreground">
-                  Fresh insights from our community
+                  {t("home.latestReviewsSubtitle")}
                 </p>
               </div>
               <CategoryFilter
@@ -192,14 +194,14 @@ const Index = () => {
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-12">
-                No reviews found.
+                {t("home.noReviews")}
               </p>
             )}
 
             <div className="text-center mt-12">
               <Link to="/browse">
                 <Button variant="outline" size="lg" className="group">
-                  Load More Reviews
+                  {t("home.loadMore")}
                   <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
@@ -213,14 +215,14 @@ const Index = () => {
         <section className="py-20 bg-gradient-warm">
           <div className="container px-4 text-center">
             <h2 className="font-serif text-3xl font-bold text-primary-foreground mb-4">
-              Ready to Share Your Experience?
+              {t("home.ctaHeading")}
             </h2>
             <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-              Join thousands of reviewers helping others make informed decisions. Your honest opinion matters.
+              {t("home.ctaSubtitle")}
             </p>
             <Link to="/auth">
               <Button variant="secondary" size="xl" className="shadow-elevated">
-                Create Your Account
+                {t("home.ctaButton")}
               </Button>
             </Link>
           </div>

@@ -10,6 +10,7 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 function toCardProps(r: ApiReviewListItem) {
   return {
@@ -35,6 +36,7 @@ function toCardProps(r: ApiReviewListItem) {
 }
 
 const BrowseReviews = () => {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -42,8 +44,8 @@ const BrowseReviews = () => {
   const [ratingFilter, setRatingFilter] = useState("all");
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const { data, isLoading } = useQuery({
@@ -76,10 +78,10 @@ const BrowseReviews = () => {
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Browse Reviews
+              {t("browse.title")}
             </h1>
             <p className="text-muted-foreground text-lg">
-              Discover honest reviews from our community
+              {t("browse.subtitle")}
             </p>
           </div>
 
@@ -90,7 +92,7 @@ const BrowseReviews = () => {
               <div className="relative flex items-center">
                 <Search className="absolute left-4 h-5 w-5 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Search reviews by title, product, or author…"
+                  placeholder={t("browse.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-11 h-12 rounded-xl bg-muted/40 border-transparent text-base focus:bg-background focus:border-border focus:ring-2 focus:ring-primary/10"
@@ -119,26 +121,26 @@ const BrowseReviews = () => {
                     <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger className="h-8 text-sm rounded-full border-border bg-background px-3 gap-1 w-[140px]">
-                        <SelectValue placeholder="Sort by" />
+                        <SelectValue placeholder={t("browse.sortBy")} />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
-                        <SelectItem value="latest">Latest</SelectItem>
-                        <SelectItem value="popular">Most Popular</SelectItem>
-                        <SelectItem value="rating">Highest Rated</SelectItem>
-                        <SelectItem value="comments">Most Discussed</SelectItem>
+                        <SelectItem value="latest">{t("browse.sortLatest")}</SelectItem>
+                        <SelectItem value="popular">{t("browse.sortPopular")}</SelectItem>
+                        <SelectItem value="rating">{t("browse.sortRating")}</SelectItem>
+                        <SelectItem value="comments">{t("browse.sortComments")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <Select value={ratingFilter} onValueChange={setRatingFilter}>
                     <SelectTrigger className="h-8 text-sm rounded-full border-border bg-background px-3 gap-1 w-[130px]">
-                      <SelectValue placeholder="Rating" />
+                      <SelectValue placeholder={t("browse.ratingAll")} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="all">All Ratings</SelectItem>
-                      <SelectItem value="5">⭐ 5 Stars</SelectItem>
-                      <SelectItem value="4">⭐ 4+ Stars</SelectItem>
-                      <SelectItem value="3">⭐ 3+ Stars</SelectItem>
+                      <SelectItem value="all">{t("browse.ratingAll")}</SelectItem>
+                      <SelectItem value="5">{t("browse.rating5")}</SelectItem>
+                      <SelectItem value="4">{t("browse.rating4")}</SelectItem>
+                      <SelectItem value="3">{t("browse.rating3")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -148,11 +150,11 @@ const BrowseReviews = () => {
           {/* Results Count */}
           <div className="mb-6">
             <p className="text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{reviews.length}</span>
+              {t("browse.showing")} <span className="font-medium text-foreground">{reviews.length}</span>
               {total > reviews.length && (
-                <> of <span className="font-medium text-foreground">{total}</span></>
+                <> {t("browse.of")} <span className="font-medium text-foreground">{total}</span></>
               )}{" "}
-              reviews
+              {t("browse.reviews")}
             </p>
           </div>
 
@@ -180,9 +182,9 @@ const BrowseReviews = () => {
               <div className="text-muted-foreground mb-4">
                 <Search className="h-12 w-12 mx-auto opacity-50" />
               </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">No reviews found</h3>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t("browse.noResults")}</h3>
               <p className="text-muted-foreground mb-4">
-                Try adjusting your search or filters
+                {t("browse.noResultsHint")}
               </p>
               <Button
                 variant="outline"
@@ -192,7 +194,7 @@ const BrowseReviews = () => {
                   setRatingFilter("all");
                 }}
               >
-                Clear Filters
+                {t("common.clearFilters")}
               </Button>
             </div>
           )}

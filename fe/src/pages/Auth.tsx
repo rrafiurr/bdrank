@@ -10,13 +10,16 @@ import { Mail, Lock, User, Facebook } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { isFacebookConfigured, loadFacebookSDK, facebookLogin } from "@/lib/facebook";
 import { z } from "zod";
-
-const authSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+import { useTranslation } from "react-i18next";
 
 export default function Auth() {
+  const { t } = useTranslation();
+
+  const authSchema = z.object({
+    email: z.string().email(t("auth.invalidEmail")),
+    password: z.string().min(6, t("auth.passwordTooShort")),
+  });
+
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,9 +70,9 @@ export default function Auth() {
     setLoading(true);
     try {
       await signInWithGoogle(credential);
-      toast({ title: "Welcome!", description: "Signed in with Google." });
+      toast({ title: t("auth.welcomeToast"), description: t("auth.signedInGoogle") });
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -80,9 +83,9 @@ export default function Auth() {
     try {
       const accessToken = await facebookLogin();
       await signInWithFacebook(accessToken);
-      toast({ title: "Welcome!", description: "Signed in with Facebook." });
+      toast({ title: t("auth.welcomeToast"), description: t("auth.signedInFacebook") });
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -96,16 +99,16 @@ export default function Auth() {
     try {
       if (isLogin) {
         await signIn(email, password);
-        toast({ title: "Welcome back!", description: "You have been signed in." });
+        toast({ title: t("auth.welcomeBack2"), description: t("auth.signedIn") });
       } else {
         await signUp(email, password, fullName);
         toast({
-          title: "Account created!",
-          description: "You have been signed in.",
+          title: t("auth.accountCreated"),
+          description: t("auth.signedIn"),
         });
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -113,7 +116,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <PageHead title={isLogin ? "Sign In" : "Create Account"} noindex />
+      <PageHead title={isLogin ? t("auth.signIn") : t("auth.createAccount")} noindex />
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -121,12 +124,10 @@ export default function Auth() {
             <span className="text-primary-foreground font-serif font-bold text-2xl">R</span>
           </div>
           <h1 className="font-serif text-3xl font-bold text-foreground">
-            {isLogin ? "Welcome Back" : "Join ReviewHub"}
+            {isLogin ? t("auth.welcomeBack") : t("auth.joinReviewHub")}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isLogin
-              ? "Sign in to continue to your account"
-              : "Create an account to start reviewing"}
+            {isLogin ? t("auth.signInSubtitle") : t("auth.signUpSubtitle")}
           </p>
         </div>
 
@@ -136,13 +137,13 @@ export default function Auth() {
           <form onSubmit={handleEmailAuth} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">{t("auth.fullName")}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder={t("auth.fullNamePlaceholder")}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="pl-10"
@@ -152,7 +153,7 @@ export default function Auth() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -170,7 +171,7 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -188,7 +189,7 @@ export default function Auth() {
             </div>
 
             <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-              {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
+              {loading ? t("auth.loading") : isLogin ? t("auth.signIn") : t("auth.createAccount")}
             </Button>
           </form>
 
@@ -199,7 +200,7 @@ export default function Auth() {
                   <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">or continue with</span>
+                  <span className="bg-card px-2 text-muted-foreground">{t("auth.orContinueWith")}</span>
                 </div>
               </div>
 
@@ -211,7 +212,7 @@ export default function Auth() {
                         if (cred.credential) handleGoogle(cred.credential);
                       }}
                       onError={() =>
-                        toast({ title: "Google login failed", variant: "destructive" })
+                        toast({ title: t("auth.googleLoginFailed"), variant: "destructive" })
                       }
                       width="320"
                     />
@@ -227,7 +228,7 @@ export default function Auth() {
                     disabled={loading || !fbReady}
                   >
                     <Facebook className="h-4 w-4" />
-                    Continue with Facebook
+                    {t("auth.continueWithFacebook")}
                   </Button>
                 )}
               </div>
@@ -236,7 +237,7 @@ export default function Auth() {
 
           {/* Toggle */}
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            {isLogin ? t("auth.noAccount") : t("auth.haveAccount")}{" "}
             <button
               type="button"
               onClick={() => {
@@ -245,7 +246,7 @@ export default function Auth() {
               }}
               className="text-primary hover:underline font-medium"
             >
-              {isLogin ? "Sign up" : "Sign in"}
+              {isLogin ? t("auth.signUp") : t("auth.signInLink")}
             </button>
           </p>
         </div>

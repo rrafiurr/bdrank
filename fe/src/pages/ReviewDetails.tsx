@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewDetail, type ApiComment } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
@@ -42,6 +43,7 @@ const ReviewDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
 
   const { data: review, isLoading, isError } = useQuery({
     queryKey: ["review", id ? Number(id) : null],
@@ -96,9 +98,9 @@ const ReviewDetails = () => {
         body: JSON.stringify({ content: commentInput.trim() }),
       });
       setCommentInput("");
-      toast({ title: "Comment submitted", description: "Your comment is awaiting moderation approval." });
+      toast({ title: t("review.commentSubmitted"), description: t("review.commentModeration") });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message ?? "Failed to post comment.", variant: "destructive" });
+      toast({ title: t("review.error"), description: err.message ?? t("review.failedToPostComment"), variant: "destructive" });
     } finally {
       setPostingComment(false);
     }
@@ -116,7 +118,7 @@ const ReviewDetails = () => {
   };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", {
+    new Date(iso).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -144,7 +146,7 @@ const ReviewDetails = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="pt-24 pb-16 container mx-auto px-4 max-w-4xl">
-          <div className="text-center py-20 text-muted-foreground">Review not found.</div>
+          <div className="text-center py-20 text-muted-foreground">{t("review.notFound")}</div>
         </main>
         <Footer />
       </div>
@@ -196,7 +198,7 @@ const ReviewDetails = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" />
-            Back to Reviews
+            {t("review.backToReviews")}
           </Link>
 
           <article>
@@ -275,14 +277,14 @@ const ReviewDetails = () => {
                 className="gap-2"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  toast({ title: "Link copied!" });
+                  toast({ title: t("review.linkCopied") });
                 }}
               >
                 <Share2 className="w-4 h-4" />
-                Share
+                {t("review.share")}
               </Button>
               <span className="ml-auto text-sm text-muted-foreground">
-                {(review.views_count ?? 0).toLocaleString()} views
+                {(review.views_count ?? 0).toLocaleString()} {t("review.views")}
               </span>
             </div>
 
@@ -292,13 +294,13 @@ const ReviewDetails = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
                     <Clock className="w-6 h-6 text-primary" />
-                    Product Timeline
+                    {t("review.productTimeline")}
                   </h2>
                   {isAuthor && (
                     <Link to={`/review/${id}/add-timeline`}>
                       <Button variant="outline" size="sm" className="gap-2">
                         <Clock className="w-4 h-4" />
-                        Add Update
+                        {t("review.addUpdate")}
                       </Button>
                     </Link>
                   )}
@@ -315,7 +317,7 @@ const ReviewDetails = () => {
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <div>
                                 <p className="text-sm text-primary font-medium">
-                                  {new Date(entry.created_at).toLocaleDateString("en-US", {
+                                  {new Date(entry.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US", {
                                     year: "numeric",
                                     month: "long",
                                   })}
@@ -353,7 +355,7 @@ const ReviewDetails = () => {
                 <Link to={`/review/${id}/add-timeline`}>
                   <Button variant="outline" className="gap-2">
                     <Clock className="w-4 h-4" />
-                    Add Timeline Entry
+                    {t("review.addTimelineEntry")}
                   </Button>
                 </Link>
               </div>
@@ -365,7 +367,7 @@ const ReviewDetails = () => {
             <section>
               <h2 className="font-display text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6 text-primary" />
-                Comments ({comments.length})
+                {t("review.comments")} ({comments.length})
               </h2>
 
               {/* Add Comment */}
@@ -380,7 +382,7 @@ const ReviewDetails = () => {
                     </Avatar>
                     <div className="flex-1 space-y-3">
                       <Textarea
-                        placeholder={user ? "Share your thoughts..." : "Sign in to comment"}
+                        placeholder={user ? t("review.commentPlaceholder") : t("review.signInToComment")}
                         className="min-h-[100px] resize-none"
                         value={commentInput}
                         onChange={(e) => setCommentInput(e.target.value)}
@@ -391,7 +393,7 @@ const ReviewDetails = () => {
                           onClick={handlePostComment}
                           disabled={!user || postingComment || !commentInput.trim()}
                         >
-                          {postingComment ? "Posting..." : "Post Comment"}
+                          {postingComment ? t("review.posting") : t("review.postComment")}
                         </Button>
                       </div>
                     </div>
@@ -408,7 +410,7 @@ const ReviewDetails = () => {
                       {/* Header strip */}
                       <div className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground">
                         <BadgeCheck className="w-4 h-4 flex-shrink-0" />
-                        <span className="text-sm font-semibold tracking-wide">Official Response</span>
+                        <span className="text-sm font-semibold tracking-wide">{t("review.officialResponse")}</span>
                         <span className="text-primary-foreground/70 text-sm">·</span>
                         <span className="text-sm font-medium text-primary-foreground/90">{comment.company_name}</span>
                       </div>
@@ -425,7 +427,7 @@ const ReviewDetails = () => {
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-semibold text-foreground">{comment.author.username}</span>
                               <span className="text-sm text-muted-foreground">
-                                · {new Date(comment.created_at).toLocaleDateString()}
+                                · {new Date(comment.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}
                               </span>
                             </div>
                             <p className="text-foreground/85 mb-3 leading-relaxed">{comment.content}</p>
@@ -457,7 +459,7 @@ const ReviewDetails = () => {
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-semibold text-foreground">{comment.author.username}</span>
                               <span className="text-sm text-muted-foreground">
-                                · {new Date(comment.created_at).toLocaleDateString()}
+                                · {new Date(comment.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}
                               </span>
                             </div>
                             <p className="text-foreground/80 mb-3">{comment.content}</p>

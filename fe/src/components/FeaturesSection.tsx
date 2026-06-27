@@ -1,36 +1,39 @@
 import { Clock, Image, MessageCircle, Users, Star, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function FeaturesSection() {
+  const { t } = useTranslation();
+
   const features = [
     {
       icon: Clock,
-      title: "Timeline Reviews",
-      description: "Track how products hold up over time. Update your review at 1 month, 1 year, and beyond.",
+      title: t("features.timelineTitle"),
+      description: t("features.timelineDesc"),
     },
     {
       icon: Image,
-      title: "Rich Media",
-      description: "Upload photos to show real-world usage. A picture is worth a thousand words.",
+      title: t("features.mediaTitle"),
+      description: t("features.mediaDesc"),
     },
     {
       icon: MessageCircle,
-      title: "Community Discussion",
-      description: "Engage with other reviewers. Ask questions and share experiences in comments.",
+      title: t("features.communityTitle"),
+      description: t("features.communityDesc"),
     },
     {
       icon: Users,
-      title: "Trusted Community",
-      description: "Join a growing community of honest reviewers. Build your reputation as a trusted voice.",
+      title: t("features.trustedTitle"),
+      description: t("features.trustedDesc"),
     },
     {
       icon: Star,
-      title: "Detailed Ratings",
-      description: "Rate products on multiple criteria. Help others make informed decisions.",
+      title: t("features.ratingsTitle"),
+      description: t("features.ratingsDesc"),
     },
     {
       icon: Shield,
-      title: "Verified Reviews",
-      description: "All reviews are from real users. No fake reviews, no paid promotions.",
+      title: t("features.verifiedTitle"),
+      description: t("features.verifiedDesc"),
     },
   ];
 
@@ -39,10 +42,10 @@ export function FeaturesSection() {
       <div className="container px-4">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl font-bold text-foreground mb-4">
-            Why ReviewHub?
+            {t("features.heading")}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            We're building the most honest and comprehensive review platform on the web.
+            {t("features.subtitle")}
           </p>
         </div>
 

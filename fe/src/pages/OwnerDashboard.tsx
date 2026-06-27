@@ -15,6 +15,7 @@ import {
 import { Star, Heart, MessageCircle, ChevronLeft, ChevronRight, QrCode } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiFetch, type ApiReviewListItem, type ApiOwnerProduct } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +37,7 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function OwnerDashboard() {
+  const { t, i18n } = useTranslation();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState("all");
@@ -85,7 +87,7 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <PageHead
-        title={`${user.company_name ?? "Company"} Dashboard`}
+        title={`${user.company_name ?? "Company"} ${t("owner.dashboard")}`}
         noindex
       />
       <Header />
@@ -94,24 +96,23 @@ export default function OwnerDashboard() {
           {/* Header strip */}
           <div className="mb-8">
             <h1 className="font-serif text-3xl font-bold text-foreground mb-1">
-              {user.company_name ?? "Company Dashboard"}
+              {user.company_name ?? `Company ${t("owner.dashboard")}`}
             </h1>
 
             {!user.owner_verified ? (
               <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Your account is pending admin verification. Reviews will appear
-                here once your account is approved.
+                {t("owner.pendingVerification")}
               </div>
             ) : (
               <div className="flex items-center gap-3 mt-3 flex-wrap">
                 <div className="rounded-lg border border-border bg-card px-4 py-2 text-sm">
-                  <span className="text-muted-foreground">Total Reviews</span>
+                  <span className="text-muted-foreground">{t("owner.totalReviews")}</span>
                   <span className="ml-2 font-semibold text-foreground">
                     {total}
                   </span>
                 </div>
                 <div className="rounded-lg border border-border bg-card px-4 py-2 text-sm">
-                  <span className="text-muted-foreground">Avg Rating</span>
+                  <span className="text-muted-foreground">{t("owner.avgRating")}</span>
                   <span className="ml-2 font-semibold text-foreground">
                     {avgRating}
                   </span>
@@ -119,7 +120,7 @@ export default function OwnerDashboard() {
                 <Link to="/owner-qr" className="ml-auto">
                   <Button variant="outline" size="sm" className="gap-2">
                     <QrCode className="h-4 w-4" />
-                    Get QR Code
+                    {t("owner.getQrCode")}
                   </Button>
                 </Link>
               </div>
@@ -136,10 +137,10 @@ export default function OwnerDashboard() {
                     onValueChange={handleProductChange}
                   >
                     <SelectTrigger className="h-9 w-[220px] text-sm rounded-lg">
-                      <SelectValue placeholder="All Products" />
+                      <SelectValue placeholder={t("owner.allProducts")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Products</SelectItem>
+                      <SelectItem value="all">{t("owner.allProducts")}</SelectItem>
                       {products.map((p) => (
                         <SelectItem key={p.id} value={String(p.id)}>
                           {p.name}
@@ -163,7 +164,7 @@ export default function OwnerDashboard() {
               ) : reviews.length === 0 ? (
                 <div className="py-16 text-center text-muted-foreground">
                   <MessageCircle className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p>No reviews yet for this product.</p>
+                  <p>{t("owner.noReviews")}</p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-border overflow-hidden bg-card">
@@ -188,7 +189,7 @@ export default function OwnerDashboard() {
                       )}
                       <span className="text-xs text-muted-foreground shrink-0">
                         {new Date(review.created_at).toLocaleDateString(
-                          "en-US",
+                          i18n.language === "bn" ? "bn-BD" : "en-US",
                           { year: "numeric", month: "short", day: "numeric" }
                         )}
                       </span>
@@ -217,10 +218,10 @@ export default function OwnerDashboard() {
                     disabled={page === 0}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
+                    {t("owner.previous")}
                   </Button>
                   <span className="text-sm text-muted-foreground">
-                    Page {page + 1} of {totalPages}
+                    {t("owner.page")} {page + 1} {t("owner.of")} {totalPages}
                   </span>
                   <Button
                     variant="outline"
@@ -228,7 +229,7 @@ export default function OwnerDashboard() {
                     onClick={() => setPage((p) => p + 1)}
                     disabled={page >= totalPages - 1}
                   >
-                    Next
+                    {t("owner.next")}
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>

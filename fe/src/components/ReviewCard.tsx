@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, MessageCircle, Clock, Heart, Package } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface ReviewCardProps {
   id: string;
@@ -36,6 +37,7 @@ export function ReviewCard({
   timelineUpdates,
   createdAt,
 }: ReviewCardProps) {
+  const { t } = useTranslation();
   const categoryLabel =
     category.charAt(0).toUpperCase() + category.slice(1);
 
@@ -59,7 +61,7 @@ export function ReviewCard({
             {isTimeline && (
               <Badge variant="gold" className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {timelineUpdates} updates
+                {t("review.timelineUpdates", { count: timelineUpdates ?? 0 })}
               </Badge>
             )}
           </div>
