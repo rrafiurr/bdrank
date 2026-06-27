@@ -69,8 +69,8 @@ export default function Categories() {
     categories.find((c) => c.slug === selectedCategory)?.label ?? t("categories.allReviews");
 
   const catTitle = selectedCategory
-    ? `${selectedLabel} Reviews - ReviewHub`
-    : "Browse by Category - ReviewHub";
+    ? `${selectedLabel} Reviews - BdRanks`
+    : "Browse by Category - BdRanks";
 
   return (
     <div className="min-h-screen bg-background">

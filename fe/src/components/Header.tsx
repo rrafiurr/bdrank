@@ -91,7 +91,7 @@ export function Header() {
 
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
-          <img src={logo} alt="ReviewHub" className="h-10 md:h-11 w-auto object-contain" />
+          <img src={logo} alt="BdRanks" className="h-10 md:h-11 w-auto object-contain" />
         </Link>
 
         {/* Desktop Nav */}

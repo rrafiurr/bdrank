@@ -140,7 +140,7 @@ export default function OwnerQR() {
 
                 {/* Logo + Brand */}
                 <div className="flex items-center gap-2.5 mb-10 print:mb-14">
-                  <img src={logo} alt="ReviewHub" className="h-9 print:h-12 w-auto object-contain" />
+                  <img src={logo} alt="BdRanks" className="h-9 print:h-12 w-auto object-contain" />
                 </div>
 
                 {/* Company + headline */}
@@ -185,7 +185,7 @@ export default function OwnerQR() {
 
                 {/* Footer branding */}
                 <p className="text-xs text-muted-foreground/60 mt-10 print:mt-16">
-                  {t("ownerQr.poweredBy")} <span className="font-medium">ReviewHub</span> · bdranks.com
+                  {t("ownerQr.poweredBy")} <span className="font-medium">BdRanks</span> · bdranks.com
                 </p>
               </div>
             </div>

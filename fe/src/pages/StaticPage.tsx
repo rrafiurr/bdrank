@@ -20,7 +20,7 @@ export default function StaticPage() {
     retry: false,
   });
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const articleJsonLd = page
     ? [
         {
@@ -29,7 +29,7 @@ export default function StaticPage() {
           headline: page.title,
           ...(page.meta_description ? { description: page.meta_description } : {}),
           dateModified: page.updated_at,
-          publisher: { "@type": "Organization", name: "ReviewHub", url: origin },
+          publisher: { "@type": "Organization", name: "BdRanks", url: origin },
         },
         {
           "@context": "https://schema.org",

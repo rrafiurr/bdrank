@@ -64,8 +64,8 @@ const BrowseReviews = () => {
   const total = data?.total ?? 0;
 
   const pageTitle = debouncedSearch
-    ? `Search: "${debouncedSearch}" - ReviewHub`
-    : "Browse Reviews - ReviewHub";
+    ? `Search: "${debouncedSearch}" - BdRanks`
+    : "Browse Reviews - BdRanks";
 
   return (
     <div className="min-h-screen bg-background">

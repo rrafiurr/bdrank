@@ -10,7 +10,7 @@ interface PageHeadProps {
   jsonLd?: object | object[];
 }
 
-const SITE_NAME = "ReviewHub";
+const SITE_NAME = "BdRanks";
 const DEFAULT_DESC =
   "Honest, time-tested product reviews from a real community. Read reviews that track products over months and years.";
 
@@ -25,7 +25,7 @@ export function PageHead({
 }: PageHeadProps) {
   const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
   const desc = description ?? DEFAULT_DESC;
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const canonicalUrl = canonical ?? (typeof window !== "undefined" ? window.location.href : origin);
   const schemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 

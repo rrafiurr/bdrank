@@ -91,8 +91,8 @@ const Index = () => {
   const orgSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "ReviewHub",
-    url: typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app",
+    name: "BdRanks",
+    url: typeof window !== "undefined" ? window.location.origin : "https://bdranks.com",
     description:
       "Honest, time-tested product reviews from a real community. Track how products perform over months and years.",
   };
@@ -100,7 +100,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <PageHead
-        title="ReviewHub - Honest Reviews Over Time"
+        title="BdRanks - Honest Reviews Over Time"
         description="Discover honest, time-tested product reviews. Our community tracks products over months and years so you get the full picture before you buy."
         jsonLd={orgSchema}
       />

@@ -42,14 +42,14 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-2">
             <Link to="/" className="inline-block mb-4">
-              <img src={logo} alt="ReviewHub" className="h-10 w-auto object-contain" />
+              <img src={logo} alt="BdRanks" className="h-10 w-auto object-contain" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               {t("footer.tagline")}
             </p>
             <div className="flex items-center gap-3 mt-5">
               <a
-                href="mailto:hello@reviewhub.app"
+                href="mailto:hello@bdranks.com"
                 aria-label="Email"
                 className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
@@ -137,7 +137,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} ReviewHub. {t("footer.rights")}</p>
+          <p>© {new Date().getFullYear()} BdRanks. {t("footer.rights")}</p>
           <div className="flex items-center gap-4">
             <Link to="/page/privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</Link>
             <Link to="/page/terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</Link>

@@ -13,7 +13,7 @@ export default function WriteReview() {
     <div className="min-h-screen bg-background">
       <PageHead
         title="Write a Review"
-        description="Share your honest product experience with the ReviewHub community. Help others make informed decisions."
+        description="Share your honest product experience with the BdRanks community. Help others make informed decisions."
         noindex
       />
       <Header />

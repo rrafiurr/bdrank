@@ -67,7 +67,7 @@
     "statsMembers": "Members"
   },
   "features": {
-    "heading": "Why ReviewHub?",
+    "heading": "Why BdRanks?",
     "subtitle": "We're building the most honest and comprehensive review platform on the web.",
     "timelineTitle": "Timeline Reviews",
     "timelineDesc": "Track how products hold up over time. Update your review at 1 month, 1 year, and beyond.",
@@ -104,7 +104,7 @@
   },
   "auth": {
     "welcomeBack": "Welcome Back",
-    "joinReviewHub": "Join ReviewHub",
+    "joinReviewHub": "Join BdRanks",
     "signInSubtitle": "Sign in to continue to your account",
     "signUpSubtitle": "Create an account to start reviewing",
     "fullName": "Full Name",

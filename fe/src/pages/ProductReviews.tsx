@@ -81,7 +81,7 @@ export default function ProductReviews() {
     );
   }
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const productJsonLd = product
     ? [
         {

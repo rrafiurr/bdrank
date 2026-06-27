@@ -63,7 +63,7 @@ export default function OwnerRegister() {
     <div className="min-h-screen bg-background">
       <PageHead
         title="Product Owner Portal"
-        description="Register as a verified product owner on ReviewHub to respond to reviews and engage with your customers."
+        description="Register as a verified product owner on BdRanks to respond to reviews and engage with your customers."
         noindex
       />
       <Header />

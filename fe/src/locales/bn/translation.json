@@ -67,7 +67,7 @@
     "statsMembers": "সদস্য"
   },
   "features": {
-    "heading": "কেন ReviewHub?",
+    "heading": "কেন BdRanks?",
     "subtitle": "আমরা ওয়েবের সবচেয়ে সৎ ও ব্যাপক রিভিউ প্ল্যাটফর্ম তৈরি করছি।",
     "timelineTitle": "টাইমলাইন রিভিউ",
     "timelineDesc": "পণ্য সময়ের সাথে কীভাবে টিকে থাকে তা ট্র্যাক করুন। ১ মাস, ১ বছর এবং তার পরেও আপনার রিভিউ আপডেট করুন।",
@@ -104,7 +104,7 @@
   },
   "auth": {
     "welcomeBack": "আবার স্বাগতম",
-    "joinReviewHub": "ReviewHub-এ যোগ দিন",
+    "joinReviewHub": "BdRanks-এ যোগ দিন",
     "signInSubtitle": "আপনার অ্যাকাউন্টে প্রবেশ করতে সাইন ইন করুন",
     "signUpSubtitle": "রিভিউ শুরু করতে একটি অ্যাকাউন্ট তৈরি করুন",
     "fullName": "পুরো নাম",

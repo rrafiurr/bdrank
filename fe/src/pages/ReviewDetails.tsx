@@ -155,7 +155,7 @@ const ReviewDetails = () => {
 
   const isAuthor = user && user.id === review.author.id;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://reviewhub.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const reviewJsonLd = [
     {
       "@context": "https://schema.org",
