@@ -182,6 +182,7 @@
   },
   "owner": {
     "dashboard": "Dashboard",
+    "company": "Company",
     "pendingVerification": "Your account is pending admin verification. Reviews will appear here once your account is approved.",
     "totalReviews": "Total Reviews",
     "avgRating": "Avg Rating",

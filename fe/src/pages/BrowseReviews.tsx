@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 
-function toCardProps(r: ApiReviewListItem) {
+function toCardProps(r: ApiReviewListItem, locale: string) {
   return {
     id: String(r.id),
     title: r.title,
@@ -27,7 +27,7 @@ function toCardProps(r: ApiReviewListItem) {
     likesCount: r.likes_count,
     isTimeline: r.is_timeline,
     timelineUpdates: r.timeline_updates_count,
-    createdAt: new Date(r.created_at).toLocaleDateString("en-US", {
+    createdAt: new Date(r.created_at).toLocaleDateString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -36,7 +36,8 @@ function toCardProps(r: ApiReviewListItem) {
 }
 
 const BrowseReviews = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "bn" ? "bn-BD" : "en-US";
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -173,7 +174,7 @@ const BrowseReviews = () => {
                   className="animate-fade-in"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <ReviewCard {...toCardProps(review)} />
+                  <ReviewCard {...toCardProps(review, locale)} />
                 </div>
               ))}
             </div>

@@ -87,7 +87,7 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <PageHead
-        title={`${user.company_name ?? "Company"} ${t("owner.dashboard")}`}
+        title={`${user.company_name ?? t("owner.company")} ${t("owner.dashboard")}`}
         noindex
       />
       <Header />
@@ -96,7 +96,7 @@ export default function OwnerDashboard() {
           {/* Header strip */}
           <div className="mb-8">
             <h1 className="font-serif text-3xl font-bold text-foreground mb-1">
-              {user.company_name ?? `Company ${t("owner.dashboard")}`}
+              {user.company_name ?? `${t("owner.company")} ${t("owner.dashboard")}`}
             </h1>
 
             {!user.owner_verified ? (
