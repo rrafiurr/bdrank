@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, PenSquare, User, Menu, LogOut, X, LayoutDashboard } from "lucide-react";
+import { Search, PenSquare, User, Menu, LogOut, X, LayoutDashboard, Code2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-tight.png";
@@ -249,12 +249,20 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                   {user.is_product_owner && (
-                    <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
-                      <Link to="/owner-dashboard" className="flex items-center">
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        {t("nav.ownerDashboard")}
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
+                        <Link to="/owner-dashboard" className="flex items-center">
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          {t("nav.ownerDashboard")}
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
+                        <Link to="/owner-embed" className="flex items-center">
+                          <Code2 className="h-4 w-4 mr-2" />
+                          {t("nav.embedCodes")}
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -327,13 +335,22 @@ export function Header() {
               </Link>
             )}
             {user?.is_product_owner && (
-              <Link
-                to="/owner-dashboard"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
-              >
-                {t("nav.ownerDashboard")}
-              </Link>
+              <>
+                <Link
+                  to="/owner-dashboard"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
+                >
+                  {t("nav.ownerDashboard")}
+                </Link>
+                <Link
+                  to="/owner-embed"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
+                >
+                  {t("nav.embedCodes")}
+                </Link>
+              </>
             )}
           </nav>
 

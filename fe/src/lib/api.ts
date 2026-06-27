@@ -90,6 +90,22 @@ export interface ApiOwnerProduct {
   category: string;
 }
 
+export interface ApiEmbedToken {
+  id: number;
+  token: string;
+  product_id: number;
+  product_name: string;
+  domain: string;
+  status: "pending" | "approved" | "revoked";
+  show_rating: boolean;
+  show_count: boolean;
+  show_breakdown: boolean;
+  show_snippet: boolean;
+  admin_note: string;
+  created_at: string;
+  approved_at?: string;
+}
+
 export interface ApiPage extends ApiPageListItem {
   content: string;
   is_published: boolean;

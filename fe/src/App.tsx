@@ -18,6 +18,8 @@ import StaticPage from "./pages/StaticPage";
 import OwnerRegister from "./pages/OwnerRegister";
 import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerQR from "./pages/OwnerQR";
+import OwnerEmbed from "./pages/OwnerEmbed";
+import EmbedPage from "./pages/EmbedPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ const AppTree = (
             <Route path="/owner-register" element={<OwnerRegister />} />
             <Route path="/owner-dashboard" element={<OwnerDashboard />} />
             <Route path="/owner-qr" element={<OwnerQR />} />
+            <Route path="/owner-embed" element={<OwnerEmbed />} />
+            <Route path="/embed/:token" element={<EmbedPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

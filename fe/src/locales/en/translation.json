@@ -21,7 +21,8 @@
   "nav": {
     "browse": "Browse",
     "categories": "Categories",
-    "ownerDashboard": "Owner Dashboard"
+    "ownerDashboard": "Owner Dashboard",
+    "embedCodes": "Embed Codes"
   },
   "footer": {
     "tagline": "Real reviews from real people. Track products over time and make better buying decisions.",
