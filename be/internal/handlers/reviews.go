@@ -34,6 +34,7 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	reviews, total, err := h.reviews.List(r.Context(), f)
 	if err != nil {
+		log.Printf("ERROR List reviews sort=%q category=%q q=%q: %v", f.Sort, f.Category, f.Query, err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
