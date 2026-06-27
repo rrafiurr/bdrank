@@ -12,5 +12,10 @@
     "myProfile": "আমার প্রোফাইল",
     "loading": "লোড হচ্ছে...",
     "clearFilters": "ফিল্টার মুছুন"
+  },
+  "nav": {
+    "browse": "ব্রাউজ",
+    "categories": "ক্যাটাগরি",
+    "ownerDashboard": "ওনার ড্যাশবোর্ড"
   }
 }

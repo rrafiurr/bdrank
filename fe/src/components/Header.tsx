@@ -15,8 +15,11 @@ import logo from "@/assets/logo-tight.png";
 import { useAuth } from "@/hooks/useAuth";
 import { apiFetch, type ApiSearchResult } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function Header() {
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ApiSearchResult | null>(null);
@@ -97,13 +100,13 @@ export function Header() {
             to="/browse"
             className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-1.5 rounded-lg transition-colors"
           >
-            Browse
+            {t("nav.browse")}
           </Link>
           <Link
             to="/categories"
             className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-1.5 rounded-lg transition-colors"
           >
-            Categories
+            {t("nav.categories")}
           </Link>
         </nav>
 
@@ -118,7 +121,7 @@ export function Header() {
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Search reviews, products…"
+                placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
@@ -214,9 +217,11 @@ export function Header() {
           <Link to="/write-review" className="hidden sm:block">
             <Button variant="hero" size="sm" className="gap-1.5 rounded-full px-4">
               <PenSquare className="h-3.5 w-3.5" />
-              Write Review
+              {t("common.writeReview")}
             </Button>
           </Link>
+
+          <LanguageSwitcher />
 
           {!loading && (
             user ? (
@@ -240,14 +245,14 @@ export function Header() {
                   <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
                     <Link to="/profile" className="flex items-center">
                       <User className="h-4 w-4 mr-2" />
-                      My Profile
+                      {t("common.myProfile")}
                     </Link>
                   </DropdownMenuItem>
                   {user.is_product_owner && (
                     <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
                       <Link to="/owner-dashboard" className="flex items-center">
                         <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Owner Dashboard
+                        {t("nav.ownerDashboard")}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -257,7 +262,7 @@ export function Header() {
                     className="text-destructive focus:text-destructive cursor-pointer rounded-xl mx-1 mb-1"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                    {t("common.signOut")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -265,7 +270,7 @@ export function Header() {
               <Link to="/auth" className="hidden sm:block">
                 <Button variant="outline" size="sm" className="gap-1.5 rounded-full px-4">
                   <User className="h-3.5 w-3.5" />
-                  Sign In
+                  {t("common.signIn")}
                 </Button>
               </Link>
             )
@@ -290,7 +295,7 @@ export function Header() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="text"
-              placeholder="Search reviews, products…"
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-10 rounded-full bg-muted/70 border-transparent"
@@ -303,14 +308,14 @@ export function Header() {
               onClick={() => setIsMenuOpen(false)}
               className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
             >
-              Browse Reviews
+              {t("nav.browse")}
             </Link>
             <Link
               to="/categories"
               onClick={() => setIsMenuOpen(false)}
               className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
             >
-              Categories
+              {t("nav.categories")}
             </Link>
             {user && (
               <Link
@@ -318,7 +323,7 @@ export function Header() {
                 onClick={() => setIsMenuOpen(false)}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
               >
-                My Profile
+                {t("common.myProfile")}
               </Link>
             )}
             {user?.is_product_owner && (
@@ -327,7 +332,7 @@ export function Header() {
                 onClick={() => setIsMenuOpen(false)}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
               >
-                Owner Dashboard
+                {t("nav.ownerDashboard")}
               </Link>
             )}
           </nav>
@@ -336,22 +341,23 @@ export function Header() {
             <Link to="/write-review" className="flex-1">
               <Button variant="hero" size="sm" className="w-full gap-2 rounded-full">
                 <PenSquare className="h-4 w-4" />
-                Write Review
+                {t("common.writeReview")}
               </Button>
             </Link>
             {user ? (
               <Button variant="outline" size="sm" className="flex-1 gap-2 rounded-full" onClick={signOut}>
                 <LogOut className="h-4 w-4" />
-                Sign Out
+                {t("common.signOut")}
               </Button>
             ) : (
               <Link to="/auth" className="flex-1">
                 <Button variant="outline" size="sm" className="w-full gap-2 rounded-full">
                   <User className="h-4 w-4" />
-                  Sign In
+                  {t("common.signIn")}
                 </Button>
               </Link>
             )}
+            <LanguageSwitcher />
           </div>
         </div>
       )}

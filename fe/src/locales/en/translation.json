@@ -12,5 +12,10 @@
     "myProfile": "My Profile",
     "loading": "Loading...",
     "clearFilters": "Clear Filters"
+  },
+  "nav": {
+    "browse": "Browse",
+    "categories": "Categories",
+    "ownerDashboard": "Owner Dashboard"
   }
 }
