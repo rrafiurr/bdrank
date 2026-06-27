@@ -80,6 +80,20 @@ func (s *LocalStorage) URL(path string) string {
 	return strings.TrimRight(s.baseURL, "/") + "/" + strings.TrimLeft(path, "/")
 }
 
+// Delete removes a previously stored file from the upload directory. Empty
+// paths and external (http) URLs are ignored; a missing file is not an error.
+// Only the basename of the stored path is used, preventing path traversal.
+func (s *LocalStorage) Delete(_ context.Context, path string) error {
+	if path == "" || strings.HasPrefix(path, "http") {
+		return nil
+	}
+	full := filepath.Join(s.uploadDir, filepath.Base(path))
+	if err := os.Remove(full); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 func mimeExt(ct string) string {
 	switch ct {
 	case "image/jpeg":

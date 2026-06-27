@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -259,8 +260,57 @@ func (h *AdminHandler) DeleteReview(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
-	h.db.ExecContext(r.Context(), `DELETE FROM reviews WHERE id = ?`, id)
+
+	// Collect stored image paths before the DB cascade removes their rows:
+	// review images and timeline-entry images both live in the uploads folder.
+	paths := h.reviewImagePaths(r.Context(), id)
+
+	if _, err := h.db.ExecContext(r.Context(), `DELETE FROM reviews WHERE id = ?`, id); err != nil {
+		log.Printf("ERROR DeleteReview id=%d: %v", id, err)
+		writeError(w, http.StatusInternalServerError, "failed to delete review")
+		return
+	}
+
+	// Best-effort: remove files from disk. The DB is already consistent, so a
+	// file-deletion failure is logged but does not fail the request.
+	for _, p := range paths {
+		if err := h.storage.Delete(r.Context(), p); err != nil {
+			log.Printf("WARN DeleteReview id=%d failed to remove image %q: %v", id, p, err)
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// reviewImagePaths returns the stored paths of all images belonging to a review
+// (its review_images plus any timeline-entry image_url).
+func (h *AdminHandler) reviewImagePaths(ctx context.Context, reviewID int64) []string {
+	var paths []string
+
+	if rows, err := h.db.QueryContext(ctx,
+		`SELECT url FROM review_images WHERE review_id = ?`, reviewID); err == nil {
+		for rows.Next() {
+			var p string
+			if rows.Scan(&p) == nil && p != "" {
+				paths = append(paths, p)
+			}
+		}
+		rows.Close()
+	}
+
+	if rows, err := h.db.QueryContext(ctx,
+		`SELECT image_url FROM timeline_entries WHERE review_id = ? AND image_url IS NOT NULL AND image_url != ''`,
+		reviewID); err == nil {
+		for rows.Next() {
+			var p string
+			if rows.Scan(&p) == nil && p != "" {
+				paths = append(paths, p)
+			}
+		}
+		rows.Close()
+	}
+
+	return paths
 }
 
 // ── Comments ─────────────────────────────────────────────────────────────────

@@ -16,4 +16,9 @@ type Storage interface {
 	// URL converts a stored path to a full public URL.
 	// If path already starts with "http" (external/legacy URL) it is returned unchanged.
 	URL(path string) string
+
+	// Delete removes a previously stored file. Implementations must no-op
+	// (return nil) for empty paths and external/absolute "http" URLs, which are
+	// not stored locally. A missing file must not be treated as an error.
+	Delete(ctx context.Context, path string) error
 }
