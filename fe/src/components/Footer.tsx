@@ -49,7 +49,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-3 mt-5">
               <a
-                href="mailto:hello@bdranks.com"
+                href="mailto:info@bdranks.com"
                 aria-label="Email"
                 className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
@@ -117,6 +117,17 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <a
+                  href="mailto:info@bdranks.com"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {t("footer.contactUs")}
+                </a>
+                <span className="block text-xs text-muted-foreground/70 mt-0.5">
+                  info@bdranks.com
+                </span>
+              </li>
               {/* Account links */}
               <li className="pt-2 border-t border-border mt-2">
                 {/* Spacer */}
