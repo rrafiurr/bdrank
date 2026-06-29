@@ -19,7 +19,9 @@ for arg in "$@"; do
 done
 
 echo "==> Pulling latest code"
-git -C "$REPO_DIR" pull
+git -C "$REPO_DIR" fetch origin
+git -C "$REPO_DIR" reset --hard origin/main
+git -C "$REPO_DIR" clean -fd
 
 # ── Backend ───────────────────────────────────────────────────────────────────
 if [ "$SKIP_BACKEND" = false ]; then
