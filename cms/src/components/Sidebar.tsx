@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, MessageSquare, Package,
-  Tag, BookOpen, Users, LogOut, ChevronRight, Building2, Code2,
+  Tag, BookOpen, Users, LogOut, ChevronRight, Building2, Code2, X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-tight.png";
@@ -20,21 +20,37 @@ const NAV = [
 ];
 
 interface Props {
+  open?: boolean;
+  onClose?: () => void;
   pendingComments?: number;
   pendingOwners?: number;
   pendingEmbeds?: number;
 }
 
-export function Sidebar({ pendingComments = 0, pendingOwners = 0, pendingEmbeds = 0 }: Props) {
+export function Sidebar({ open = false, onClose, pendingComments = 0, pendingOwners = 0, pendingEmbeds = 0 }: Props) {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
 
   return (
-    <aside className="w-64 flex-shrink-0 flex flex-col h-screen bg-[hsl(var(--sidebar))] text-white">
+    <aside
+      className={cn(
+        "w-64 flex-shrink-0 flex flex-col h-screen bg-[hsl(var(--sidebar))] text-white",
+        // Mobile: slide-over drawer. Desktop (lg+): static column, always visible.
+        "fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 lg:transition-none",
+        open ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-white/10">
         <img src={logo} alt="BdRanks CMS" className="h-8 w-auto object-contain brightness-0 invert" />
         <span className="ml-2 text-xs font-semibold tracking-widest uppercase text-white/50">CMS</span>
+        <button
+          onClick={onClose}
+          className="ml-auto lg:hidden p-1.5 rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Nav */}

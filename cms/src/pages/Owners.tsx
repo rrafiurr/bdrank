@@ -90,13 +90,13 @@ export default function Owners() {
           : owners.map(o => (
               <div key={o.id} className={`bg-card border rounded-lg p-4 ${o.owner_verified ? "border-border" : "border-amber-200 bg-amber-50/30"}`}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${o.owner_verified ? "bg-primary/10" : "bg-amber-100"}`}>
                       <Building2 className={`h-5 w-5 ${o.owner_verified ? "text-primary" : "text-amber-600"}`} />
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{o.company_name}</p>
-                      <p className="text-xs text-muted-foreground">{o.full_name} · {o.email}</p>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">{o.company_name}</p>
+                      <p className="text-xs text-muted-foreground break-words">{o.full_name} · {o.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

@@ -93,7 +93,7 @@ export default function Embeds() {
       )}
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5">
         {(["", "pending", "approved", "revoked"] as const).map((f) => (
           <button
             key={f}
@@ -125,7 +125,7 @@ export default function Embeds() {
           {embeds.map((embed, i) => (
             <div
               key={embed.id}
-              className={`flex items-center gap-4 px-5 py-3.5 hover:bg-muted/40 transition-colors ${
+              className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 hover:bg-muted/40 transition-colors ${
                 i < embeds.length - 1 ? "border-b border-border" : ""
               }`}
             >
@@ -145,15 +145,17 @@ export default function Embeds() {
                   <p className="text-xs text-muted-foreground mt-0.5 italic">{embed.admin_note}</p>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                {embed.show_rating && <span className="rounded bg-muted px-1.5 py-0.5">Rating</span>}
-                {embed.show_count && <span className="rounded bg-muted px-1.5 py-0.5">Count</span>}
-                {embed.show_breakdown && <span className="rounded bg-muted px-1.5 py-0.5">Breakdown</span>}
-                {embed.show_snippet && <span className="rounded bg-muted px-1.5 py-0.5">Snippet</span>}
+              <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4 shrink-0">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  {embed.show_rating && <span className="rounded bg-muted px-1.5 py-0.5">Rating</span>}
+                  {embed.show_count && <span className="rounded bg-muted px-1.5 py-0.5">Count</span>}
+                  {embed.show_breakdown && <span className="rounded bg-muted px-1.5 py-0.5">Breakdown</span>}
+                  {embed.show_snippet && <span className="rounded bg-muted px-1.5 py-0.5">Snippet</span>}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => openDialog(embed)}>
+                  Review
+                </Button>
               </div>
-              <Button size="sm" variant="outline" onClick={() => openDialog(embed)}>
-                Review
-              </Button>
             </div>
           ))}
         </div>

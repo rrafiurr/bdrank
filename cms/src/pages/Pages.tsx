@@ -66,7 +66,7 @@ export default function Pages() {
           <p className="text-sm text-muted-foreground">{isLoading ? "Loading…" : `${pages.length} pages`}</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-muted/40">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
