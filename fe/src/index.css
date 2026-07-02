@@ -260,3 +260,83 @@
 .animation-delay-400 {
   animation-delay: 400ms;
 }
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.animate-twinkle-slow {
+  animation: twinkle 4.5s ease-in-out infinite;
+}
+
+@keyframes float-y {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes blob-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -18px) scale(1.15);
+  }
+}
+
+.animate-float {
+  animation: float-y 5s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-y 7.5s ease-in-out infinite;
+}
+
+.animate-blob-drift {
+  animation: blob-drift 14s ease-in-out infinite;
+}
+
+.animate-blob-drift-reverse {
+  animation: blob-drift 18s ease-in-out infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-float-slow,
+  .animate-blob-drift,
+  .animate-blob-drift-reverse,
+  .animate-pulse-glow,
+  .animate-gradient-x,
+  .animate-twinkle,
+  .animate-twinkle-slow {
+    animation: none;
+  }
+}

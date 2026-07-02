@@ -18,9 +18,34 @@ import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
-export function Header() {
+interface HeaderProps {
+  /** Hide the header's search pill while the hero search (#hero-search) is on screen; fade it in after scrolling past. */
+  autoHide?: boolean;
+}
+
+export function Header({ autoHide = false }: HeaderProps) {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = useState(!autoHide);
+
+  useEffect(() => {
+    if (!autoHide) return;
+    const target = document.getElementById("hero-search");
+    if (!target) {
+      setScrolledPastHero(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setScrolledPastHero(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+      },
+      { threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [autoHide]);
+
+  const searchVisible = scrolledPastHero;
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ApiSearchResult | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -113,8 +138,14 @@ export function Header() {
         {/* Spacer — pushes search + actions to the right */}
         <div className="flex-1" />
 
-        {/* Search — always visible pill */}
-        <div ref={searchRef} className="w-[260px] relative hidden sm:block">
+        {/* Search — hidden while the hero search is on screen (autoHide pages) */}
+        <div
+          ref={searchRef}
+          className={`w-[260px] relative hidden sm:block transition-all duration-300 ${
+            searchVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"
+          }`}
+          aria-hidden={!searchVisible}
+        >
           <form onSubmit={handleSearchSubmit}>
             <div className="relative flex items-center">
               <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />

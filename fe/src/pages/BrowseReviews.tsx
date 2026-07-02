@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem } from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -38,9 +39,11 @@ function toCardProps(r: ApiReviewListItem, locale: string) {
 const BrowseReviews = () => {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "bn" ? "bn-BD" : "en-US";
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get("q") ?? "";
+  const [activeCategory, setActiveCategory] = useState(searchParams.get("category") ?? "all");
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialQuery);
   const [sortBy, setSortBy] = useState("latest");
   const [ratingFilter, setRatingFilter] = useState("all");
 

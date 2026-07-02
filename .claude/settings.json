@@ -75,7 +75,17 @@
       "Read(//home/**)",
       "Bash(git -C /home/rafiur/Desktop/projects/final-review add be/internal/router/router.go be/internal/handlers/admin.go)",
       "Bash(git -C /home/rafiur/Desktop/projects/final-review commit -m ' *)",
-      "Bash(git -C /home/rafiur/Desktop/projects/final-review add fe/src/lib/api.ts fe/src/pages/OwnerEmbed.tsx fe/src/pages/EmbedPage.tsx fe/src/App.tsx fe/src/components/Header.tsx fe/src/locales/en/translation.json fe/src/locales/bn/translation.json)"
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review add fe/src/lib/api.ts fe/src/pages/OwnerEmbed.tsx fe/src/pages/EmbedPage.tsx fe/src/App.tsx fe/src/components/Header.tsx fe/src/locales/en/translation.json fe/src/locales/bn/translation.json)",
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review status --short)",
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review log --oneline -5)",
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review ls-files cms/dist/ cms/node_modules/.tmp/)",
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review log --oneline --all -- \"cms/dist/\")",
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review show --stat f3f9c5c)",
+      "Bash(git -C /home/rafiur/Desktop/projects/final-review ls-files fe/dist/)",
+      "WebSearch",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -s -o /dev/null -w \"dev server HTTP %{http_code}\\\\n\" http://localhost:8081/)"
     ]
   }
 }

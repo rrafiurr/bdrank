@@ -104,7 +104,7 @@ const Index = () => {
         description="Discover honest, time-tested product reviews. Our community tracks products over months and years so you get the full picture before you buy."
         jsonLd={orgSchema}
       />
-      <Header />
+      <Header autoHide />
       <main>
         <HeroSection />
 

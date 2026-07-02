@@ -47,13 +47,14 @@ export default function Embeds() {
   const [selected, setSelected] = useState<AdminEmbed | null>(null);
   const [note, setNote] = useState("");
 
-  const { data: embeds = [], isLoading } = useQuery<AdminEmbed[]>({
+  const { data: embedsResp, isLoading } = useQuery<{ data: AdminEmbed[] | null }>({
     queryKey: ["admin-embeds", filter],
     queryFn: () => {
       const qs = filter ? `?status=${filter}` : "";
-      return apiFetch<AdminEmbed[]>(`/admin/embeds${qs}`);
+      return apiFetch<{ data: AdminEmbed[] | null }>(`/admin/embeds${qs}`);
     },
   });
+  const embeds = embedsResp?.data ?? [];
 
   const updateMut = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
