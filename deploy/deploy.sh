@@ -18,6 +18,19 @@ for arg in "$@"; do
   esac
 done
 
+# npm ci with retries — registry downloads occasionally drop (ECONNRESET),
+# and a transient blip must not kill the whole deploy.
+npm_ci() {
+  local attempt
+  for attempt in 1 2 3; do
+    npm ci --no-audit --no-fund && return 0
+    echo "==> npm ci failed (attempt $attempt/3), retrying in 15s…" >&2
+    sleep 15
+  done
+  echo "==> npm ci failed after 3 attempts" >&2
+  return 1
+}
+
 echo "==> Pulling latest code"
 git -C "$REPO_DIR" fetch origin
 git -C "$REPO_DIR" reset --hard origin/main
@@ -42,13 +55,13 @@ if [ "$SKIP_FRONTEND" = false ]; then
   echo "VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-}" >> .env.production
   echo "VITE_FACEBOOK_APP_ID=${VITE_FACEBOOK_APP_ID:-}" >> .env.production
   echo "VITE_SOCIAL_LOGIN_ENABLED=${VITE_SOCIAL_LOGIN_ENABLED:-}" >> .env.production
-  npm ci --silent
+  npm_ci
   npm run build
 
   echo "==> Building CMS (cms/)"
   cd "$REPO_DIR/cms"
   echo "VITE_API_BASE_URL=$API_URL" > .env.production
-  npm ci --silent
+  npm_ci
   npm run build
 
   echo "==> Copying static files to $WEB_ROOT"

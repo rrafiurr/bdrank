@@ -21,6 +21,9 @@ type LocalStorage struct {
 }
 
 func NewLocal(uploadDir, baseURL string) *LocalStorage {
+	// The directory may not exist yet on a fresh host (or after an accidental
+	// deletion) — uploads must not fail until someone creates it by hand.
+	os.MkdirAll(uploadDir, 0o755)
 	return &LocalStorage{uploadDir: uploadDir, baseURL: baseURL}
 }
 

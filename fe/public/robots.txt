@@ -6,4 +6,4 @@ Disallow: /write-review
 Disallow: /owner-register
 Disallow: /review/*/add-timeline
 
-Sitemap: /sitemap.xml
+Sitemap: https://bdranks.com/sitemap.xml
