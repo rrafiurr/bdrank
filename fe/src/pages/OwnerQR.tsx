@@ -13,9 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Printer, ArrowLeft, Copy, Check } from "lucide-react";
+import { Printer, ArrowLeft, Copy, Check, Star, ScanLine, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { apiFetch, type ApiOwnerProduct } from "@/lib/api";
+import { apiFetch, type ApiOwnerProduct, type ApiProduct } from "@/lib/api";
 import logo from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
 
@@ -46,6 +46,13 @@ export default function OwnerQR() {
   const productUrl = selectedProductId
     ? `${window.location.origin}/product/${selectedProductId}`
     : "";
+
+  // Public product data carries the live avg rating + review count for the poster
+  const { data: productStats } = useQuery<ApiProduct>({
+    queryKey: ["product", selectedProductId],
+    queryFn: () => apiFetch<ApiProduct>(`/products/${selectedProductId}`),
+    enabled: !!selectedProductId,
+  });
 
   const handleCopy = () => {
     if (!productUrl) return;
@@ -136,57 +143,115 @@ export default function OwnerQR() {
                 print:fixed print:inset-0 print:w-screen print:h-screen print:flex print:items-center print:justify-center
               "
             >
-              <div className="flex flex-col items-center text-center px-10 py-12 print:px-16 print:py-16 w-full">
+              <div className="w-full print:max-w-[720px]">
+                {/* Warm top band */}
+                <div className="h-2.5 print:h-3 w-full bg-gradient-warm print-exact" />
 
-                {/* Logo + Brand */}
-                <div className="flex items-center gap-2.5 mb-10 print:mb-14">
-                  <img src={logo} alt="BdRanks" className="h-9 print:h-12 w-auto object-contain" />
+                <div className="flex flex-col items-center text-center px-8 py-10 sm:px-10 print:px-14 print:py-12 w-full">
+
+                  {/* Logo + Brand */}
+                  <img src={logo} alt="BdRanks" className="h-9 print:h-11 w-auto object-contain mb-8 print:mb-10" />
+
+                  {/* Company + headline */}
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 print:text-base">
+                    {user.company_name}
+                  </p>
+                  <h2 className="font-serif text-2xl print:text-4xl font-bold text-foreground mb-2 leading-tight">
+                    {selectedProduct.name}
+                  </h2>
+
+                  {/* Live rating */}
+                  {productStats && productStats.review_count > 0 ? (
+                    <div className="flex flex-col items-center gap-1.5 mb-8 print:mb-10">
+                      <div className="flex gap-1 print-exact">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-6 w-6 print:h-7 print:w-7 ${
+                              i < Math.round(productStats.avg_rating)
+                                ? "fill-gold text-gold"
+                                : "fill-muted text-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-2xl print:text-3xl font-bold text-foreground leading-none">
+                        {productStats.avg_rating.toFixed(1)}
+                        <span className="text-base print:text-lg font-medium text-muted-foreground"> / 5</span>
+                      </p>
+                      <p className="text-xs print:text-sm text-muted-foreground">
+                        {t("ownerQr.customerReviews", { count: productStats.review_count })}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="mb-8 print:mb-10 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm print:text-base font-medium text-primary print-exact">
+                      {t("ownerQr.noReviewsYet")}
+                    </span>
+                  )}
+
+                  <p className="text-sm print:text-base text-muted-foreground mb-8 print:mb-10">
+                    {t("ownerQr.scanCta")}
+                  </p>
+
+                  {/* QR Code with corner accents */}
+                  <div className="relative mb-3 print:mb-4">
+                    <span className="absolute -top-2 -left-2 h-6 w-6 border-t-[3px] border-l-[3px] border-primary rounded-tl-lg print-exact" />
+                    <span className="absolute -top-2 -right-2 h-6 w-6 border-t-[3px] border-r-[3px] border-primary rounded-tr-lg print-exact" />
+                    <span className="absolute -bottom-2 -left-2 h-6 w-6 border-b-[3px] border-l-[3px] border-primary rounded-bl-lg print-exact" />
+                    <span className="absolute -bottom-2 -right-2 h-6 w-6 border-b-[3px] border-r-[3px] border-primary rounded-br-lg print-exact" />
+                    <div className="rounded-2xl bg-white p-4 print:p-5 border border-border/60 shadow-soft">
+                      <QRCodeSVG
+                        value={productUrl}
+                        size={200}
+                        className="print:w-[260px] print:h-[260px]"
+                        bgColor="#ffffff"
+                        fgColor="#1a1a1a"
+                        level="M"
+                        includeMargin={false}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs print:text-sm text-muted-foreground mb-2">
+                    {t("ownerQr.scanWithCamera")}
+                  </p>
+
+                  {/* URL */}
+                  <p className="text-xs print:text-sm text-muted-foreground/70 font-mono break-all max-w-xs print:max-w-sm mb-8 print:mb-10">
+                    {productUrl}
+                  </p>
+
+                  {/* How it works — 3 steps */}
+                  <div className="grid grid-cols-3 gap-3 sm:gap-6 w-full max-w-md print:max-w-lg mb-8 print:mb-10">
+                    {[
+                      { icon: ScanLine, label: t("ownerQr.step1") },
+                      { icon: Star, label: t("ownerQr.step2") },
+                      { icon: Heart, label: t("ownerQr.step3") },
+                    ].map(({ icon: Icon, label }, i) => (
+                      <div key={i} className="flex flex-col items-center gap-2">
+                        <div className="h-10 w-10 print:h-12 print:w-12 rounded-full bg-primary/10 flex items-center justify-center print-exact">
+                          <Icon className="h-5 w-5 print:h-6 print:w-6 text-primary" />
+                        </div>
+                        <p className="text-xs print:text-sm font-medium text-foreground leading-snug">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="w-16 h-px bg-border mb-6 print:mb-8" />
+
+                  {/* CTA */}
+                  <p className="text-base print:text-xl font-semibold text-foreground mb-1">
+                    {t("ownerQr.lovedProduct")}
+                  </p>
+                  <p className="text-sm print:text-base text-muted-foreground max-w-md">
+                    {t("ownerQr.shareExperience")}
+                  </p>
+
+                  {/* Footer branding */}
+                  <p className="text-xs text-muted-foreground/60 mt-8 print:mt-10">
+                    {t("ownerQr.poweredBy")} <span className="font-medium">BdRanks</span> · bdranks.com
+                  </p>
                 </div>
-
-                {/* Company + headline */}
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 print:text-base">
-                  {user.company_name}
-                </p>
-                <h2 className="font-serif text-2xl print:text-4xl font-bold text-foreground mb-1 leading-tight">
-                  {selectedProduct.name}
-                </h2>
-                <p className="text-sm print:text-base text-muted-foreground mb-10 print:mb-14">
-                  {t("ownerQr.scanCta")}
-                </p>
-
-                {/* QR Code */}
-                <div className="rounded-2xl print:rounded-3xl bg-white p-4 print:p-6 border border-border/60 shadow-soft mb-8 print:mb-12">
-                  <QRCodeSVG
-                    value={productUrl}
-                    size={200}
-                    className="print:w-[280px] print:h-[280px]"
-                    bgColor="#ffffff"
-                    fgColor="#1a1a1a"
-                    level="M"
-                    includeMargin={false}
-                  />
-                </div>
-
-                {/* URL */}
-                <p className="text-xs print:text-sm text-muted-foreground font-mono break-all max-w-xs print:max-w-sm mb-10 print:mb-14">
-                  {productUrl}
-                </p>
-
-                {/* Divider */}
-                <div className="w-16 h-px bg-border mb-8 print:mb-10" />
-
-                {/* CTA */}
-                <p className="text-base print:text-xl font-semibold text-foreground mb-1">
-                  {t("ownerQr.lovedProduct")}
-                </p>
-                <p className="text-sm print:text-base text-muted-foreground">
-                  {t("ownerQr.shareExperience")}
-                </p>
-
-                {/* Footer branding */}
-                <p className="text-xs text-muted-foreground/60 mt-10 print:mt-16">
-                  {t("ownerQr.poweredBy")} <span className="font-medium">BdRanks</span> · bdranks.com
-                </p>
               </div>
             </div>
           )}

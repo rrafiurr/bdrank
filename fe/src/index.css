@@ -186,6 +186,12 @@
   }
 }
 
+/* Force colors when printing (browsers strip backgrounds by default) */
+.print-exact {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
 /* Animations */
 @keyframes fade-in {
   from {

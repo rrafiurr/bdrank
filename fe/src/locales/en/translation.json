@@ -317,7 +317,13 @@
     "scanCta": "Scan to read honest reviews from real customers",
     "lovedProduct": "Loved our product?",
     "shareExperience": "Share your experience — your review helps others make better decisions.",
-    "poweredBy": "Powered by"
+    "poweredBy": "Powered by",
+    "customerReviews": "{{count}} customer reviews",
+    "noReviewsYet": "Be our first reviewer!",
+    "scanWithCamera": "Open your phone camera and point it at the code",
+    "step1": "Scan the code",
+    "step2": "Rate your experience",
+    "step3": "Help others decide"
   },
   "staticPage": {
     "home": "Home",
