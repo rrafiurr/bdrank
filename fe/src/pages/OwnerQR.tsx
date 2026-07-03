@@ -16,7 +16,7 @@ import {
 import { Printer, ArrowLeft, Copy, Check, Star, ScanLine, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiFetch, type ApiOwnerProduct, type ApiProduct } from "@/lib/api";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-tight.png";
 import { useTranslation } from "react-i18next";
 
 export default function OwnerQR() {
@@ -150,7 +150,7 @@ export default function OwnerQR() {
                 <div className="flex flex-col items-center text-center px-8 py-10 sm:px-10 print:px-14 print:py-12 w-full">
 
                   {/* Logo + Brand */}
-                  <img src={logo} alt="BdRanks" className="h-16 print:h-20 w-auto object-contain mb-6 print:mb-8" />
+                  <img src={logo} alt="BdRanks" className="h-14 print:h-20 w-auto object-contain mb-6 print:mb-8" />
 
                   {/* Company + headline */}
                   <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 print:text-base">
