@@ -150,7 +150,7 @@ export default function OwnerQR() {
                 <div className="flex flex-col items-center text-center px-8 py-10 sm:px-10 print:px-14 print:py-12 w-full">
 
                   {/* Logo + Brand */}
-                  <img src={logo} alt="BdRanks" className="h-9 print:h-11 w-auto object-contain mb-8 print:mb-10" />
+                  <img src={logo} alt="BdRanks" className="h-16 print:h-20 w-auto object-contain mb-6 print:mb-8" />
 
                   {/* Company + headline */}
                   <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 print:text-base">
