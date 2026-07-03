@@ -184,6 +184,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Patch("/admin/owners/{id}", adminH.UpdateOwner)
 
 			r.Get("/admin/reviews", adminH.ListReviews)
+			r.Get("/admin/reviews/{id}", adminH.GetReview)
 			r.Patch("/admin/reviews/{id}", adminH.UpdateReview)
 			r.Delete("/admin/reviews/{id}", adminH.DeleteReview)
 

@@ -240,6 +240,54 @@ func (h *AdminHandler) ListReviews(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"data": list, "total": total})
 }
 
+// GetReview returns the full review (including content and images) for editing.
+func (h *AdminHandler) GetReview(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	var out struct {
+		ID         int64     `json:"id"`
+		Title      string    `json:"title"`
+		Content    string    `json:"content"`
+		Rating     int       `json:"rating"`
+		IsApproved bool      `json:"is_approved"`
+		Product    string    `json:"product"`
+		Author     string    `json:"author"`
+		Images     []string  `json:"images"`
+		CreatedAt  time.Time `json:"created_at"`
+	}
+	var approved int
+	err = h.db.QueryRowContext(r.Context(), `
+		SELECT r.id, r.title, r.content, r.rating, r.is_approved, p.name, COALESCE(u.username, u.email), r.created_at
+		FROM reviews r
+		INNER JOIN products p ON r.product_id = p.id
+		INNER JOIN users u ON r.user_id = u.id
+		WHERE r.id = ?`, id).
+		Scan(&out.ID, &out.Title, &out.Content, &out.Rating, &approved, &out.Product, &out.Author, &out.CreatedAt)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "review not found")
+		return
+	}
+	out.IsApproved = approved == 1
+
+	out.Images = []string{}
+	rows, err := h.db.QueryContext(r.Context(), `SELECT url FROM review_images WHERE review_id = ? ORDER BY id`, id)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var u string
+			if rows.Scan(&u) == nil {
+				out.Images = append(out.Images, u)
+			}
+		}
+	}
+
+	writeJSON(w, http.StatusOK, out)
+}
+
 func (h *AdminHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -247,7 +295,11 @@ func (h *AdminHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		IsApproved *bool `json:"is_approved"`
+		IsApproved *bool     `json:"is_approved"`
+		Title      *string   `json:"title"`
+		Content    *string   `json:"content"`
+		Rating     *int      `json:"rating"`
+		Images     *[]string `json:"images"`
 	}
 	json.NewDecoder(r.Body).Decode(&body)
 	if body.IsApproved != nil {
@@ -256,6 +308,32 @@ func (h *AdminHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 			v = 1
 		}
 		h.db.ExecContext(r.Context(), `UPDATE reviews SET is_approved = ? WHERE id = ?`, v, id)
+	}
+	if body.Title != nil {
+		if strings.TrimSpace(*body.Title) == "" {
+			writeError(w, http.StatusBadRequest, "title cannot be empty")
+			return
+		}
+		h.db.ExecContext(r.Context(), `UPDATE reviews SET title = ? WHERE id = ?`, strings.TrimSpace(*body.Title), id)
+	}
+	if body.Content != nil {
+		h.db.ExecContext(r.Context(), `UPDATE reviews SET content = ? WHERE id = ?`, *body.Content, id)
+	}
+	if body.Rating != nil {
+		if *body.Rating < 1 || *body.Rating > 5 {
+			writeError(w, http.StatusBadRequest, "rating must be between 1 and 5")
+			return
+		}
+		h.db.ExecContext(r.Context(), `UPDATE reviews SET rating = ? WHERE id = ?`, *body.Rating, id)
+	}
+	if body.Images != nil {
+		h.db.ExecContext(r.Context(), `DELETE FROM review_images WHERE review_id = ?`, id)
+		for _, u := range *body.Images {
+			u = strings.TrimSpace(u)
+			if u != "" {
+				h.db.ExecContext(r.Context(), `INSERT INTO review_images (review_id, url) VALUES (?, ?)`, id, u)
+			}
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }

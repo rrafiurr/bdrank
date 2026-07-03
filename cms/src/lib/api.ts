@@ -35,6 +35,11 @@ export interface AdminReview {
   created_at: string;
 }
 
+export interface AdminReviewDetail extends AdminReview {
+  content: string;
+  images: string[];
+}
+
 export interface AdminComment {
   id: number;
   content: string;
