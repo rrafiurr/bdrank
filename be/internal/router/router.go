@@ -197,7 +197,9 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Delete("/admin/categories/{slug}", adminH.DeleteCategory)
 
 			r.Get("/admin/pages", adminH.ListAllPages)
+			r.Get("/admin/pages/{slug}", adminH.GetPage)
 			r.Post("/admin/pages", adminH.CreatePage)
+			r.Post("/admin/upload/image", uploadH.Image)
 			r.Patch("/admin/pages/{slug}", adminH.UpdatePage)
 			r.Delete("/admin/pages/{slug}", adminH.DeletePage)
 

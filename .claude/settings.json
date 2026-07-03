@@ -85,7 +85,19 @@
       "WebSearch",
       "Skill(run)",
       "Skill(run:*)",
-      "Bash(curl -s -o /dev/null -w \"dev server HTTP %{http_code}\\\\n\" http://localhost:8081/)"
+      "Bash(curl -s -o /dev/null -w \"dev server HTTP %{http_code}\\\\n\" http://localhost:8081/)",
+      "Bash(rm -f /home/rafiur/Desktop/projects/final-review/be/uploads/b68c658219e1ec6868f0b1af.png)",
+      "Read(//home/rafiur/.cache/**)",
+      "Bash(curl -s -o /dev/null -w \"cms 3002: %{http_code}\\\\n\" http://localhost:3002/)",
+      "Bash(curl -s -o /dev/null -w \"fe 5173: %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"fe 8080v: %{http_code}\\\\n\" http://localhost:8081/)",
+      "Bash(npm init *)",
+      "Bash(npm i *)",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/auth/register -H \"Content-Type: application/json\" -d '{\"email\":\"cms-e2e-test@test.local\",\"password\":\"Test12345!\",\"full_name\":\"E2E Test\",\"username\":\"cmse2etest\"}' -o /dev/null -w \"register: %{http_code}\\\\n\")",
+      "Bash(node ui-check.mjs)",
+      "Bash(node footer-check.mjs)",
+      "Bash(node seo-check.mjs)",
+      "Bash(node save-check.mjs)"
     ]
   }
 }

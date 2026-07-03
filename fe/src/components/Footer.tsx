@@ -18,6 +18,13 @@ const ACCOUNT_LINKS = [
   { labelKey: "footer.myProfile", to: "/profile" },
 ];
 
+// Bottom-bar shortcuts — each renders only while its page is published in the CMS
+const LEGAL_LINKS = [
+  { slug: "privacy", labelKey: "footer.privacy" },
+  { slug: "terms", labelKey: "footer.terms" },
+  { slug: "contact", labelKey: "footer.contact" },
+];
+
 export function Footer() {
   const { t } = useTranslation();
 
@@ -150,9 +157,11 @@ export function Footer() {
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} BdRanks. {t("footer.rights")}</p>
           <div className="flex items-center gap-4">
-            <Link to="/page/privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</Link>
-            <Link to="/page/terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</Link>
-            <Link to="/page/contact" className="hover:text-foreground transition-colors">{t("footer.contact")}</Link>
+            {LEGAL_LINKS.filter(link => pages.some(p => p.slug === link.slug)).map(link => (
+              <Link key={link.slug} to={`/page/${link.slug}`} className="hover:text-foreground transition-colors">
+                {t(link.labelKey)}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

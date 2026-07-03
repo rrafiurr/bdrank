@@ -27,6 +27,7 @@ export function PageHead({
   const desc = description ?? DEFAULT_DESC;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const canonicalUrl = canonical ?? (typeof window !== "undefined" ? window.location.href : origin);
+  const image = ogImage ?? `${origin}/og-image.png`;
   const schemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
   return (
@@ -41,12 +42,12 @@ export function PageHead({
       <meta property="og:description" content={desc} />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:url" content={canonicalUrl} />
-      {ogImage && <meta property="og:image" content={ogImage} />}
+      <meta property="og:image" content={image} />
 
-      <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />
-      {ogImage && <meta name="twitter:image" content={ogImage} />}
+      <meta name="twitter:image" content={image} />
 
       {schemas.map((schema, i) => (
         <script key={i} type="application/ld+json">

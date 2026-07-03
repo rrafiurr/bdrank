@@ -544,6 +544,33 @@ func (h *AdminHandler) ListAllPages(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, list)
 }
 
+func (h *AdminHandler) GetPage(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	var p struct {
+		Slug            string    `json:"slug"`
+		Title           string    `json:"title"`
+		MetaDescription string    `json:"meta_description"`
+		Content         string    `json:"content"`
+		IsPublished     bool      `json:"is_published"`
+		UpdatedAt       time.Time `json:"updated_at"`
+	}
+	var pub int
+	err := h.db.QueryRowContext(r.Context(),
+		`SELECT slug, title, COALESCE(meta_description,''), content, is_published, updated_at
+		 FROM pages WHERE slug = ?`, slug).
+		Scan(&p.Slug, &p.Title, &p.MetaDescription, &p.Content, &pub, &p.UpdatedAt)
+	if err == sql.ErrNoRows {
+		writeError(w, http.StatusNotFound, "page not found")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to fetch page")
+		return
+	}
+	p.IsPublished = pub == 1
+	writeJSON(w, http.StatusOK, p)
+}
+
 func (h *AdminHandler) CreatePage(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Slug            string `json:"slug"`

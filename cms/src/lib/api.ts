@@ -74,6 +74,13 @@ export interface AdminPage {
   updated_at: string;
 }
 
+export interface AdminPageDetail extends AdminPage {
+  content: string;
+}
+
+// Public site base URL — used for "view page" links out of the CMS
+export const SITE_URL = import.meta.env.VITE_SITE_URL ?? "http://localhost:5173";
+
 // ── Fetch helper ──────────────────────────────────────────────────────────────
 function getToken(): string | null {
   try {
@@ -107,4 +114,14 @@ export async function apiFetch<T>(
 
   if (!res.ok) throw new Error(data.error ?? "Request failed");
   return data as T;
+}
+
+export async function uploadImage(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const data = await apiFetch<{ url: string }>("/admin/upload/image", {
+    method: "POST",
+    body: fd,
+  });
+  return data.url;
 }

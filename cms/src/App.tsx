@@ -10,6 +10,7 @@ import Comments from "@/pages/Comments";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
 import Pages from "@/pages/Pages";
+import PageEditor from "@/pages/PageEditor";
 import Users from "@/pages/Users";
 import Owners from "@/pages/Owners";
 import Embeds from "@/pages/Embeds";
@@ -35,6 +36,8 @@ function AppRoutes() {
       <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
       <Route path="/pages" element={<ProtectedRoute><Pages /></ProtectedRoute>} />
+      <Route path="/pages/new" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />
+      <Route path="/pages/:slug/edit" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
       <Route path="/owners" element={<ProtectedRoute><Owners /></ProtectedRoute>} />
       <Route path="/embeds" element={<ProtectedRoute><Embeds /></ProtectedRoute>} />
