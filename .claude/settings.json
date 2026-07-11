@@ -97,7 +97,9 @@
       "Bash(node ui-check.mjs)",
       "Bash(node footer-check.mjs)",
       "Bash(node seo-check.mjs)",
-      "Bash(node save-check.mjs)"
+      "Bash(node save-check.mjs)",
+      "Bash(git commit -q -m 'Add product logo & banner design spec *)",
+      "Bash(find / -name \"go\" -type f -path \"*bin*\")"
     ]
   }
 }
