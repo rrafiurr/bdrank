@@ -12,6 +12,7 @@ import WriteReview from "./pages/WriteReview";
 import Auth from "./pages/Auth";
 import AddTimeline from "./pages/AddTimeline";
 import Profile from "./pages/Profile";
+import Rewards from "./pages/Rewards";
 import BrowseReviews from "./pages/BrowseReviews";
 import ProductReviews from "./pages/ProductReviews";
 import StaticPage from "./pages/StaticPage";
@@ -42,6 +43,7 @@ const AppTree = (
             <Route path="/write-review" element={<WriteReview />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/rewards" element={<Rewards />} />
             <Route path="/product/:id" element={<ProductReviews />} />
             <Route path="/page/:slug" element={<StaticPage />} />
             <Route path="/owner-register" element={<OwnerRegister />} />
