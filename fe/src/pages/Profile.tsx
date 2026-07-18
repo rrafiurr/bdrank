@@ -13,9 +13,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { User, Mail, Camera, Save, ArrowLeft, Star, MessageSquare, ExternalLink, Clock } from "lucide-react";
+import { LevelBadge } from "@/components/LevelBadge";
+import { User, Mail, Camera, Save, ArrowLeft, Star, MessageSquare, ExternalLink, Clock, Award } from "lucide-react";
 import type { User as UserType } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
+import { rewardsApi, type RewardMe } from "@/lib/rewardsApi";
 
 interface MyReview {
   id: number;
@@ -77,6 +79,12 @@ export default function Profile() {
   const { data: myComments = [] } = useQuery<MyComment[]>({
     queryKey: ["my-comments"],
     queryFn: () => apiFetch("/profile/comments", {}, token),
+    enabled: !!token,
+  });
+
+  const { data: rewardsMe } = useQuery<RewardMe>({
+    queryKey: ["rewards-me"],
+    queryFn: () => rewardsApi.me(token),
     enabled: !!token,
   });
 
@@ -155,6 +163,26 @@ export default function Profile() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-3">{user?.email}</p>
+
+            {rewardsMe && (
+              <Link
+                to="/rewards"
+                className="mt-4 flex items-center gap-3 rounded-full border border-border bg-muted/40 px-4 py-2 hover:bg-muted/70 transition-colors"
+              >
+                <Award className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  {rewardsMe.points} {t("profile.rewardsPoints")}
+                </span>
+                {rewardsMe.current_level && (
+                  <LevelBadge
+                    name={rewardsMe.current_level.name}
+                    icon={rewardsMe.current_level.icon}
+                    color={rewardsMe.current_level.color}
+                  />
+                )}
+                <span className="text-xs text-primary hover:underline">{t("profile.viewRewards")}</span>
+              </Link>
+            )}
           </div>
 
           <div className="space-y-6">
