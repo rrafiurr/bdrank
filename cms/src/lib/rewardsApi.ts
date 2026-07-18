@@ -12,7 +12,7 @@ export interface RewardItem {
   fulfillment_type: "coupon" | "manual"; stock: number | null; is_active: boolean; effective_stock?: number | null;
 }
 export interface RewardRedemption {
-  id: number; user_id: number; user_email?: string; item_name: string; points_spent: number;
+  id: number; user_id: number; item_id: number | null; user_email?: string; item_name: string; points_spent: number;
   status: "pending" | "approved" | "rejected" | "fulfilled"; coupon_code: string; admin_note: string;
   created_at: string; resolved_at: string | null;
 }
