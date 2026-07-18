@@ -9,6 +9,7 @@ import (
 	"final-review/be/internal/handlers"
 	mw "final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 	"final-review/be/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -63,31 +64,34 @@ func buildCORSMiddleware(allowedOrigins string) func(http.Handler) http.Handler 
 
 func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	// repositories
-	userRepo    := repository.NewUserRepo(db, cfg.BaseURL)
+	userRepo := repository.NewUserRepo(db, cfg.BaseURL)
 	productRepo := repository.NewProductRepo(db, cfg.BaseURL)
-	reviewRepo  := repository.NewReviewRepo(db, cfg.BaseURL)
+	reviewRepo := repository.NewReviewRepo(db, cfg.BaseURL)
 	commentRepo := repository.NewCommentRepo(db, cfg.BaseURL)
-	pageRepo    := repository.NewPageRepo(db)
-	embedRepo   := repository.NewEmbedRepo(db, cfg.SiteURL)
+	pageRepo := repository.NewPageRepo(db)
+	embedRepo := repository.NewEmbedRepo(db, cfg.SiteURL)
 
 	// storage — swap NewLocal for a CDN implementation to change hosting
 	store := storage.NewLocal(cfg.UploadDir, cfg.BaseURL)
 
+	// rewards service
+	rewardsSvc := rewards.NewService(db)
+
 	// handlers
-	authH     := handlers.NewAuthHandler(userRepo, rdb, cfg)
-	profileH  := handlers.NewProfileHandler(userRepo, db)
-	uploadH   := handlers.NewUploadHandler(store)
-	productH  := handlers.NewProductHandler(productRepo, reviewRepo)
-	reviewH   := handlers.NewReviewHandler(reviewRepo, productRepo, store)
+	authH := handlers.NewAuthHandler(userRepo, rdb, cfg)
+	profileH := handlers.NewProfileHandler(userRepo, db)
+	uploadH := handlers.NewUploadHandler(store)
+	productH := handlers.NewProductHandler(productRepo, reviewRepo)
+	reviewH := handlers.NewReviewHandler(reviewRepo, productRepo, store)
 	timelineH := handlers.NewTimelineHandler(reviewRepo, store)
-	commentH  := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo)
-	searchH   := handlers.NewSearchHandler(db)
-	pageH     := handlers.NewPageHandler(pageRepo)
-	adminH    := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo)
-	sitemapH  := handlers.NewSitemapHandler(db, cfg.SiteURL)
+	commentH := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo)
+	searchH := handlers.NewSearchHandler(db)
+	pageH := handlers.NewPageHandler(pageRepo)
+	adminH := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo)
+	sitemapH := handlers.NewSitemapHandler(db, cfg.SiteURL)
 	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass)
-	ownerH    := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo, embedRepo)
-	widgetH   := handlers.NewWidgetHandler(embedRepo)
+	ownerH := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo, embedRepo)
+	widgetH := handlers.NewWidgetHandler(embedRepo)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -210,6 +214,11 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Get("/admin/embeds", adminH.ListEmbeds)
 			r.Patch("/admin/embeds/{id}", adminH.UpdateEmbed)
 		})
+
+		rewards.RegisterRoutes(r, rewardsSvc,
+			mw.Auth(cfg, rdb),
+			mw.Admin(cfg, rdb, userRepo),
+		)
 	})
 
 	return r
