@@ -98,17 +98,17 @@ type Badge struct {
 }
 
 type MeView struct {
-	Points          int    `json:"points"`
-	LifetimePoints  int    `json:"lifetime_points"`
-	CurrentLevel    *Level `json:"current_level"`
-	NextLevel       *Level `json:"next_level"`
-	PointsToNext    int    `json:"points_to_next"`
+	Points         int    `json:"points"`
+	LifetimePoints int    `json:"lifetime_points"`
+	CurrentLevel   *Level `json:"current_level"`
+	NextLevel      *Level `json:"next_level"`
+	PointsToNext   int    `json:"points_to_next"`
 }
 
 type CampaignView struct {
 	Campaign
-	MyPoints       int    `json:"my_points"`
-	RedeemedGoalID *int64 `json:"redeemed_goal_id"`
-	MyStatus       string `json:"my_status"` // active | redeemed | expired
+	MyPoints        int     `json:"my_points"`
+	RedeemedGoalID  *int64  `json:"redeemed_goal_id"`
+	MyStatus        string  `json:"my_status"` // active | redeemed | expired
 	AchievedGoalIDs []int64 `json:"achieved_goal_ids"`
 }
