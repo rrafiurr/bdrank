@@ -472,6 +472,9 @@ function CampaignCard({
   campaign: CampaignView;
   onRedeemClick: (goal: RewardGoal) => void;
 }) {
+  // Goal ids are globally unique (auto-increment PK across all campaigns' goals),
+  // so tracking by goal.id alone is safe even though this state is scoped per card.
+  const [continuedGoals, setContinuedGoals] = useState<Set<number>>(new Set());
   const achievedIds = new Set(campaign.achieved_goal_ids ?? []);
   const sortedGoals = [...campaign.goals].sort((a, b) => a.threshold_points - b.threshold_points);
   const nextGoal = sortedGoals.find((g) => !achievedIds.has(g.id));
@@ -557,16 +560,31 @@ function CampaignCard({
                     </Badge>
                   )}
                 </div>
-                {canRedeem && (
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button size="sm" variant="outline" onClick={() => {}}>
-                      Continue
-                    </Button>
-                    <Button size="sm" variant="hero" onClick={() => onRedeemClick(goal)}>
-                      Redeem
-                    </Button>
-                  </div>
-                )}
+                {canRedeem &&
+                  (continuedGoals.has(goal.id) ? (
+                    <p className="text-xs text-muted-foreground flex-shrink-0">
+                      Keep earning toward the next goal — you can still redeem this later.
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setContinuedGoals((prev) => {
+                            const next = new Set(prev);
+                            next.add(goal.id);
+                            return next;
+                          })
+                        }
+                      >
+                        Continue
+                      </Button>
+                      <Button size="sm" variant="hero" onClick={() => onRedeemClick(goal)}>
+                        Redeem
+                      </Button>
+                    </div>
+                  ))}
               </li>
             );
           })}
