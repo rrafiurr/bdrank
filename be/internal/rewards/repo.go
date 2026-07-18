@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -692,6 +693,142 @@ func (r *Repo) CampaignParticipants(ctx context.Context, campaignID int64) ([]Pa
 			return nil, err
 		}
 		out = append(out, pt)
+	}
+	return out, rows.Err()
+}
+
+// ── admin CRUD ───────────────────────────────────────────────────────────
+
+func (r *Repo) AllRules(ctx context.Context) ([]Rule, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, event_type, points, daily_cap, lifetime_cap, is_active, updated_at
+		 FROM reward_rules ORDER BY id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Rule
+	for rows.Next() {
+		var ru Rule
+		if err := rows.Scan(&ru.ID, &ru.EventType, &ru.Points, &ru.DailyCap, &ru.LifetimeCap, &ru.IsActive, &ru.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, ru)
+	}
+	return out, rows.Err()
+}
+
+func (r *Repo) CreateRule(ctx context.Context, ru *Rule) (int64, error) {
+	res, err := r.db.ExecContext(ctx,
+		`INSERT INTO reward_rules (event_type, points, daily_cap, lifetime_cap, is_active) VALUES (?, ?, ?, ?, ?)`,
+		ru.EventType, ru.Points, ru.DailyCap, ru.LifetimeCap, ru.IsActive)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (r *Repo) UpdateRule(ctx context.Context, ru *Rule) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE reward_rules SET points=?, daily_cap=?, lifetime_cap=?, is_active=? WHERE id=?`,
+		ru.Points, ru.DailyCap, ru.LifetimeCap, ru.IsActive, ru.ID)
+	return err
+}
+
+func (r *Repo) CreateLevel(ctx context.Context, l *Level) (int64, error) {
+	res, err := r.db.ExecContext(ctx,
+		`INSERT INTO reward_levels (name, min_points, icon, color, is_active) VALUES (?, ?, ?, ?, ?)`,
+		l.Name, l.MinPoints, l.Icon, l.Color, l.IsActive)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (r *Repo) UpdateLevel(ctx context.Context, l *Level) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE reward_levels SET name=?, min_points=?, icon=?, color=?, is_active=? WHERE id=?`,
+		l.Name, l.MinPoints, l.Icon, l.Color, l.IsActive, l.ID)
+	return err
+}
+
+func (r *Repo) DeleteLevel(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM reward_levels WHERE id = ?`, id)
+	return err
+}
+
+func (r *Repo) CreateItem(ctx context.Context, it *Item) (int64, error) {
+	res, err := r.db.ExecContext(ctx,
+		`INSERT INTO reward_items (name, description, image_url, points_cost, fulfillment_type, stock, is_active)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		it.Name, it.Description, it.ImageURL, it.PointsCost, it.FulfillmentType, it.Stock, it.IsActive)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (r *Repo) UpdateItem(ctx context.Context, it *Item) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE reward_items SET name=?, description=?, image_url=?, points_cost=?, fulfillment_type=?, stock=?, is_active=? WHERE id=?`,
+		it.Name, it.Description, it.ImageURL, it.PointsCost, it.FulfillmentType, it.Stock, it.IsActive, it.ID)
+	return err
+}
+
+func (r *Repo) DeleteItem(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM reward_items WHERE id = ?`, id)
+	return err
+}
+
+func (r *Repo) AddCouponCodes(ctx context.Context, itemID int64, codes []string) (int, error) {
+	n := 0
+	for _, code := range codes {
+		if code == "" {
+			continue
+		}
+		if _, err := r.db.ExecContext(ctx,
+			`INSERT INTO reward_coupon_codes (item_id, code) VALUES (?, ?)`, itemID, code); err != nil {
+			return n, err
+		}
+		n++
+	}
+	return n, nil
+}
+
+// LevelsForUsers returns each user's current level (from lifetime_points).
+// Users with no balance row or below the lowest level are absent from the map.
+func (r *Repo) LevelsForUsers(ctx context.Context, userIDs []int64) (map[int64]Level, error) {
+	out := map[int64]Level{}
+	if len(userIDs) == 0 {
+		return out, nil
+	}
+	levels, err := r.ListActiveLevels(ctx)
+	if err != nil || len(levels) == 0 {
+		return out, err
+	}
+	// build IN clause
+	placeholders := make([]string, len(userIDs))
+	args := make([]any, len(userIDs))
+	for i, id := range userIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	q := `SELECT user_id, lifetime_points FROM reward_balances WHERE user_id IN (` +
+		strings.Join(placeholders, ",") + `)`
+	rows, err := r.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var uid int64
+		var lifetime int
+		if err := rows.Scan(&uid, &lifetime); err != nil {
+			return nil, err
+		}
+		if l := LevelFor(levels, lifetime); l != nil {
+			out[uid] = *l
+		}
 	}
 	return out, rows.Err()
 }
