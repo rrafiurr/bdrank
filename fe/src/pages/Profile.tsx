@@ -82,7 +82,7 @@ export default function Profile() {
     enabled: !!token,
   });
 
-  const { data: rewardsMe } = useQuery<RewardMe>({
+  const { data: rewardsMe, isError: rewardsMeError } = useQuery<RewardMe>({
     queryKey: ["rewards-me"],
     queryFn: () => rewardsApi.me(token),
     enabled: !!token,
@@ -164,7 +164,7 @@ export default function Profile() {
             </div>
             <p className="text-sm text-muted-foreground mt-3">{user?.email}</p>
 
-            {rewardsMe && (
+            {rewardsMe && !rewardsMeError && (
               <Link
                 to="/rewards"
                 className="mt-4 flex items-center gap-3 rounded-full border border-border bg-muted/40 px-4 py-2 hover:bg-muted/70 transition-colors"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"sort"
 	"strings"
 	"time"
 )
@@ -509,7 +510,18 @@ func (r *Repo) AllCampaigns(ctx context.Context) ([]Campaign, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.scanCampaigns(rows)
+	camps, err := r.scanCampaigns(rows)
+	if err != nil {
+		return nil, err
+	}
+	for i := range camps {
+		g, err := r.goalsFor(ctx, camps[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		camps[i].Goals = g
+	}
+	return camps, nil
 }
 
 func (r *Repo) CampaignByID(ctx context.Context, id int64) (*Campaign, error) {
@@ -710,6 +722,143 @@ func (r *Repo) UpdateGoal(ctx context.Context, g *CampaignGoal) error {
 		`UPDATE reward_campaign_goals SET name=?, threshold_points=?, sort_order=?, reward_points=?, reward_item_id=? WHERE id=?`,
 		g.Name, g.ThresholdPoints, g.SortOrder, g.RewardPoints, g.RewardItemID, g.ID)
 	return err
+}
+
+// goalsForTx loads a campaign's goals within an existing transaction,
+// mirroring goalsFor's query and ordering (sort_order, then threshold_points).
+func goalsForTx(ctx context.Context, tx *sql.Tx, campaignID int64) ([]CampaignGoal, error) {
+	rows, err := tx.QueryContext(ctx,
+		`SELECT id, campaign_id, name, threshold_points, sort_order, reward_points, reward_item_id
+		 FROM reward_campaign_goals WHERE campaign_id = ? ORDER BY sort_order ASC, threshold_points ASC`,
+		campaignID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []CampaignGoal
+	for rows.Next() {
+		var g CampaignGoal
+		if err := rows.Scan(&g.ID, &g.CampaignID, &g.Name, &g.ThresholdPoints, &g.SortOrder,
+			&g.RewardPoints, &g.RewardItemID); err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
+// validateGoalOrder checks that goals, ordered by sort_order (ties broken by
+// threshold_points, matching goalsFor's ORDER BY), have strictly ascending
+// threshold_points. It sorts goals in place and returns ErrGoalOrder if the
+// ordering is violated.
+func validateGoalOrder(goals []CampaignGoal) error {
+	sort.SliceStable(goals, func(i, j int) bool {
+		if goals[i].SortOrder != goals[j].SortOrder {
+			return goals[i].SortOrder < goals[j].SortOrder
+		}
+		return goals[i].ThresholdPoints < goals[j].ThresholdPoints
+	})
+	for i := 1; i < len(goals); i++ {
+		if goals[i].ThresholdPoints <= goals[i-1].ThresholdPoints {
+			return ErrGoalOrder
+		}
+	}
+	return nil
+}
+
+// CreateGoalOrdered inserts a new campaign goal. It locks the campaign row
+// for the duration of the read-validate-write so that two concurrent admin
+// edits on the same campaign can't both pass the strictly-ascending
+// threshold_points check and persist an out-of-order goal set (TOCTOU).
+func (r *Repo) CreateGoalOrdered(ctx context.Context, g *CampaignGoal) (int64, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	var campID int64
+	err = tx.QueryRowContext(ctx,
+		`SELECT id FROM reward_campaigns WHERE id = ? FOR UPDATE`, g.CampaignID).Scan(&campID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, ErrNotFound
+	}
+	if err != nil {
+		return 0, err
+	}
+
+	existing, err := goalsForTx(ctx, tx, g.CampaignID)
+	if err != nil {
+		return 0, err
+	}
+	resulting := append(existing, *g)
+	if err := validateGoalOrder(resulting); err != nil {
+		return 0, err
+	}
+
+	res, err := tx.ExecContext(ctx,
+		`INSERT INTO reward_campaign_goals (campaign_id, name, threshold_points, sort_order, reward_points, reward_item_id)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		g.CampaignID, g.Name, g.ThresholdPoints, g.SortOrder, g.RewardPoints, g.RewardItemID)
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+// UpdateGoalOrdered updates an existing campaign goal under the same
+// per-campaign lock and resulting-set ordering check as CreateGoalOrdered.
+func (r *Repo) UpdateGoalOrdered(ctx context.Context, g *CampaignGoal) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var campID int64
+	err = tx.QueryRowContext(ctx,
+		`SELECT id FROM reward_campaigns WHERE id = ? FOR UPDATE`, g.CampaignID).Scan(&campID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	existing, err := goalsForTx(ctx, tx, g.CampaignID)
+	if err != nil {
+		return err
+	}
+	resulting := make([]CampaignGoal, 0, len(existing)+1)
+	replaced := false
+	for _, eg := range existing {
+		if eg.ID == g.ID {
+			resulting = append(resulting, *g)
+			replaced = true
+		} else {
+			resulting = append(resulting, eg)
+		}
+	}
+	if !replaced {
+		resulting = append(resulting, *g)
+	}
+	if err := validateGoalOrder(resulting); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE reward_campaign_goals SET name=?, threshold_points=?, sort_order=?, reward_points=?, reward_item_id=? WHERE id=?`,
+		g.Name, g.ThresholdPoints, g.SortOrder, g.RewardPoints, g.RewardItemID, g.ID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (r *Repo) DeleteGoal(ctx context.Context, id int64) error {

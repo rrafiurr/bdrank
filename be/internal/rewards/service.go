@@ -229,6 +229,12 @@ func (s *Service) AdminCreateGoal(ctx context.Context, g *CampaignGoal) (int64, 
 func (s *Service) AdminUpdateGoal(ctx context.Context, g *CampaignGoal) error {
 	return s.repo.UpdateGoal(ctx, g)
 }
+func (s *Service) AdminCreateGoalOrdered(ctx context.Context, g *CampaignGoal) (int64, error) {
+	return s.repo.CreateGoalOrdered(ctx, g)
+}
+func (s *Service) AdminUpdateGoalOrdered(ctx context.Context, g *CampaignGoal) error {
+	return s.repo.UpdateGoalOrdered(ctx, g)
+}
 func (s *Service) AdminDeleteGoal(ctx context.Context, id int64) error {
 	return s.repo.DeleteGoal(ctx, id)
 }
