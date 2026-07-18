@@ -5,16 +5,18 @@ import (
 	"strconv"
 
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 	"github.com/go-chi/chi/v5"
 )
 
 type ProductHandler struct {
 	products *repository.ProductRepo
 	reviews  *repository.ReviewRepo
+	rewards  *rewards.Service
 }
 
-func NewProductHandler(products *repository.ProductRepo, reviews *repository.ReviewRepo) *ProductHandler {
-	return &ProductHandler{products: products, reviews: reviews}
+func NewProductHandler(products *repository.ProductRepo, reviews *repository.ReviewRepo, rw *rewards.Service) *ProductHandler {
+	return &ProductHandler{products: products, reviews: reviews, rewards: rw}
 }
 
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -86,5 +88,6 @@ func (h *ProductHandler) ListReviews(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
+	decorateReviewBadges(r, h.rewards, reviews)
 	writeJSON(w, http.StatusOK, map[string]any{"data": reviews, "total": total})
 }
