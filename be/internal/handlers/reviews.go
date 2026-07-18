@@ -7,6 +7,7 @@ import (
 
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 	"final-review/be/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -15,10 +16,11 @@ type ReviewHandler struct {
 	reviews  *repository.ReviewRepo
 	products *repository.ProductRepo
 	storage  storage.Storage
+	rewards  *rewards.Service
 }
 
-func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage) *ReviewHandler {
-	return &ReviewHandler{reviews: reviews, products: products, storage: s}
+func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage, rw *rewards.Service) *ReviewHandler {
+	return &ReviewHandler{reviews: reviews, products: products, storage: s, rewards: rw}
 }
 
 func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -148,6 +150,15 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		log.Printf("INFO reviewID=%d no multipart file data (MultipartForm=%v)", reviewID, r.MultipartForm != nil)
 	}
 	log.Printf("INFO reviewID=%d images saved=%d", reviewID, imageCount)
+
+	if err := h.rewards.Award(r.Context(), userID, "review_created", "review", reviewID); err != nil {
+		log.Printf("WARN reward review_created userID=%d reviewID=%d: %v", userID, reviewID, err)
+	}
+	if imageCount > 0 {
+		if err := h.rewards.Award(r.Context(), userID, "review_with_image", "review", reviewID); err != nil {
+			log.Printf("WARN reward review_with_image userID=%d reviewID=%d: %v", userID, reviewID, err)
+		}
+	}
 
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"id":      reviewID,

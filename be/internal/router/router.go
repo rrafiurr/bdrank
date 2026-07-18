@@ -78,13 +78,13 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	rewardsSvc := rewards.NewService(db)
 
 	// handlers
-	authH := handlers.NewAuthHandler(userRepo, rdb, cfg)
-	profileH := handlers.NewProfileHandler(userRepo, db)
+	authH := handlers.NewAuthHandler(userRepo, rdb, cfg, rewardsSvc)
+	profileH := handlers.NewProfileHandler(userRepo, db, rewardsSvc)
 	uploadH := handlers.NewUploadHandler(store)
 	productH := handlers.NewProductHandler(productRepo, reviewRepo)
-	reviewH := handlers.NewReviewHandler(reviewRepo, productRepo, store)
+	reviewH := handlers.NewReviewHandler(reviewRepo, productRepo, store, rewardsSvc)
 	timelineH := handlers.NewTimelineHandler(reviewRepo, store)
-	commentH := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo)
+	commentH := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo, rewardsSvc)
 	searchH := handlers.NewSearchHandler(db)
 	pageH := handlers.NewPageHandler(pageRepo)
 	adminH := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo)

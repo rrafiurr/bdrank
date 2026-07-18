@@ -10,6 +10,7 @@ import (
 	"final-review/be/internal/config"
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 	"github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
@@ -24,13 +25,14 @@ func isDuplicateEmail(err error) bool {
 }
 
 type AuthHandler struct {
-	users *repository.UserRepo
-	redis *redis.Client
-	cfg   *config.Config
+	users   *repository.UserRepo
+	redis   *redis.Client
+	cfg     *config.Config
+	rewards *rewards.Service
 }
 
-func NewAuthHandler(users *repository.UserRepo, rdb *redis.Client, cfg *config.Config) *AuthHandler {
-	return &AuthHandler{users: users, redis: rdb, cfg: cfg}
+func NewAuthHandler(users *repository.UserRepo, rdb *redis.Client, cfg *config.Config, rw *rewards.Service) *AuthHandler {
+	return &AuthHandler{users: users, redis: rdb, cfg: cfg, rewards: rw}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +95,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
+
+	if err := h.rewards.Award(r.Context(), user.ID, "daily_login", "user", user.ID); err != nil {
+		log.Printf("WARN reward daily_login userID=%d: %v", user.ID, err)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{"token": token, "user": user})
 }
 
@@ -197,6 +204,11 @@ func (h *AuthHandler) completeSocialLogin(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
+
+	if err := h.rewards.Award(r.Context(), user.ID, "daily_login", "user", user.ID); err != nil {
+		log.Printf("WARN reward daily_login userID=%d: %v", user.ID, err)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{"token": token, "user": user})
 }
 
