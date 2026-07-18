@@ -6,7 +6,9 @@ import (
 	"strconv"
 
 	"final-review/be/internal/middleware"
+	"final-review/be/internal/models"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 	"final-review/be/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -15,10 +17,11 @@ type ReviewHandler struct {
 	reviews  *repository.ReviewRepo
 	products *repository.ProductRepo
 	storage  storage.Storage
+	rewards  *rewards.Service
 }
 
-func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage) *ReviewHandler {
-	return &ReviewHandler{reviews: reviews, products: products, storage: s}
+func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage, rw *rewards.Service) *ReviewHandler {
+	return &ReviewHandler{reviews: reviews, products: products, storage: s, rewards: rw}
 }
 
 func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +41,54 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to fetch reviews")
 		return
 	}
+	decorateReviewBadges(r, h.rewards, reviews)
 	writeJSON(w, http.StatusOK, map[string]any{"data": reviews, "total": total})
+}
+
+// decorateReviewBadges is best-effort: a failure to fetch levels never fails
+// the request, it just leaves AuthorBadge unset.
+func decorateReviewBadges(r *http.Request, rw *rewards.Service, reviews []*models.Review) {
+	ids := make([]int64, 0, len(reviews))
+	for _, rv := range reviews {
+		if rv.Author != nil {
+			ids = append(ids, rv.Author.ID)
+		}
+	}
+	badges, err := rw.LevelsForUsers(r.Context(), ids)
+	if err != nil {
+		log.Printf("WARN LevelsForUsers (reviews): %v", err)
+		return
+	}
+	for _, rv := range reviews {
+		if rv.Author != nil {
+			if lvl, ok := badges[rv.Author.ID]; ok {
+				rv.AuthorBadge = &models.Badge{Name: lvl.Name, Icon: lvl.Icon, Color: lvl.Color}
+			}
+		}
+	}
+}
+
+// decorateCommentBadges is best-effort: a failure to fetch levels never fails
+// the request, it just leaves AuthorBadge unset.
+func decorateCommentBadges(r *http.Request, rw *rewards.Service, comments []models.Comment) {
+	ids := make([]int64, 0, len(comments))
+	for _, cm := range comments {
+		if cm.Author != nil {
+			ids = append(ids, cm.Author.ID)
+		}
+	}
+	badges, err := rw.LevelsForUsers(r.Context(), ids)
+	if err != nil {
+		log.Printf("WARN LevelsForUsers (comments): %v", err)
+		return
+	}
+	for i := range comments {
+		if comments[i].Author != nil {
+			if lvl, ok := badges[comments[i].Author.ID]; ok {
+				comments[i].AuthorBadge = &models.Badge{Name: lvl.Name, Icon: lvl.Icon, Color: lvl.Color}
+			}
+		}
+	}
 }
 
 func (h *ReviewHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +107,8 @@ func (h *ReviewHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to fetch review")
 		return
 	}
+	decorateReviewBadges(r, h.rewards, []*models.Review{review})
+	decorateCommentBadges(r, h.rewards, review.Comments)
 	writeJSON(w, http.StatusOK, review)
 }
 
@@ -148,6 +200,15 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		log.Printf("INFO reviewID=%d no multipart file data (MultipartForm=%v)", reviewID, r.MultipartForm != nil)
 	}
 	log.Printf("INFO reviewID=%d images saved=%d", reviewID, imageCount)
+
+	if err := h.rewards.Award(r.Context(), userID, "review_created", "review", reviewID); err != nil {
+		log.Printf("WARN reward review_created userID=%d reviewID=%d: %v", userID, reviewID, err)
+	}
+	if imageCount > 0 {
+		if err := h.rewards.Award(r.Context(), userID, "review_with_image", "review", reviewID); err != nil {
+			log.Printf("WARN reward review_with_image userID=%d reviewID=%d: %v", userID, reviewID, err)
+		}
+	}
 
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"id":      reviewID,

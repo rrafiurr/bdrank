@@ -176,6 +176,8 @@
     "loading": "Loading...",
     "username": "Username",
     "usernamePlaceholder": "Enter your username",
+    "rewardsPoints": "points",
+    "viewRewards": "View Rewards",
     "email": "Email",
     "emailHint": "Email cannot be changed",
     "avatarUrl": "Avatar URL",

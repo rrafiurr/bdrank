@@ -25,6 +25,12 @@ export interface ApiAuthor {
   avatar_url: string;
 }
 
+export interface ApiAuthorBadge {
+  name: string;
+  icon: string;
+  color: string;
+}
+
 export interface ApiReviewListItem {
   id: number;
   title: string;
@@ -33,6 +39,7 @@ export interface ApiReviewListItem {
   category: string;
   product: { id: number; name: string };
   author: ApiAuthor;
+  author_badge?: ApiAuthorBadge | null;
   images: string[];
   likes_count: number;
   comments_count: number;
@@ -55,6 +62,7 @@ export interface ApiComment {
   content: string;
   likes_count: number;
   author: ApiAuthor;
+  author_badge?: ApiAuthorBadge | null;
   is_owner_reply: boolean;
   company_name?: string;
   created_at: string;

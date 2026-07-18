@@ -1,8 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LevelBadge } from "@/components/LevelBadge";
 import { Star, MessageCircle, Clock, Heart, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { ApiAuthorBadge } from "@/lib/api";
 
 interface ReviewCardProps {
   id: string;
@@ -10,6 +12,7 @@ interface ReviewCardProps {
   excerpt: string;
   author: string;
   authorAvatar: string;
+  authorBadge?: ApiAuthorBadge | null;
   rating: number;
   category: string;
   productName: string;
@@ -27,6 +30,7 @@ export function ReviewCard({
   excerpt,
   author,
   authorAvatar,
+  authorBadge,
   rating,
   category,
   productName,
@@ -99,7 +103,10 @@ export function ReviewCard({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium text-card-foreground">{author}</p>
+                <p className="text-sm font-medium text-card-foreground flex items-center gap-1.5">
+                  {author}
+                  {authorBadge && <LevelBadge {...authorBadge} />}
+                </p>
                 <p className="text-xs text-muted-foreground">{createdAt}</p>
               </div>
             </div>

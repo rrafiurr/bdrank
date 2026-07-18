@@ -36,6 +36,7 @@ type Review struct {
 	IsApproved           bool            `json:"is_approved"`
 	Product              *ProductRef     `json:"product,omitempty"`
 	Author               *AuthorRef      `json:"author,omitempty"`
+	AuthorBadge          *Badge          `json:"author_badge,omitempty"`
 	Images               []string        `json:"images"`
 	LikesCount           int             `json:"likes_count"`
 	CommentsCount        int             `json:"comments_count"`
@@ -45,6 +46,15 @@ type Review struct {
 	Timeline             []TimelineEntry `json:"timeline,omitempty"`
 	Comments             []Comment       `json:"comments,omitempty"`
 	CreatedAt            time.Time       `json:"created_at"`
+}
+
+// Badge is a lightweight rewards-level summary attached to author-bearing
+// responses (reviews, comments) so clients can render a level indicator
+// without a separate lookup.
+type Badge struct {
+	Name  string `json:"name"`
+	Icon  string `json:"icon"`
+	Color string `json:"color"`
 }
 
 type ProductRef struct {
@@ -74,6 +84,7 @@ type Comment struct {
 	Content      string     `json:"content"`
 	LikesCount   int        `json:"likes_count"`
 	Author       *AuthorRef `json:"author"`
+	AuthorBadge  *Badge     `json:"author_badge,omitempty"`
 	IsOwnerReply bool       `json:"is_owner_reply"`
 	CompanyName  string     `json:"company_name,omitempty"`
 	CreatedAt    time.Time  `json:"created_at"`

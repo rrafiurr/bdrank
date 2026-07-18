@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { LevelBadge } from "@/components/LevelBadge";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewDetail, type ApiComment } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -226,7 +227,10 @@ const ReviewDetails = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold text-foreground">{review.author.username}</p>
+                    <p className="font-semibold text-foreground flex items-center gap-1.5">
+                      {review.author.username}
+                      {review.author_badge && <LevelBadge {...review.author_badge} />}
+                    </p>
                   </div>
                 </div>
 
@@ -426,6 +430,7 @@ const ReviewDetails = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-semibold text-foreground">{comment.author.username}</span>
+                              {comment.author_badge && <LevelBadge {...comment.author_badge} />}
                               <span className="text-sm text-muted-foreground">
                                 · {new Date(comment.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}
                               </span>
@@ -458,6 +463,7 @@ const ReviewDetails = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-semibold text-foreground">{comment.author.username}</span>
+                              {comment.author_badge && <LevelBadge {...comment.author_badge} />}
                               <span className="text-sm text-muted-foreground">
                                 · {new Date(comment.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}
                               </span>

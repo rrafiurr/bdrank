@@ -3,3 +3,6 @@ dist/
 .env
 .env.production
 .env.local
+
+# TypeScript incremental build info
+*.tsbuildinfo

@@ -3,20 +3,23 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 )
 
 type ProfileHandler struct {
-	users *repository.UserRepo
-	db    *sql.DB
+	users   *repository.UserRepo
+	db      *sql.DB
+	rewards *rewards.Service
 }
 
-func NewProfileHandler(users *repository.UserRepo, db *sql.DB) *ProfileHandler {
-	return &ProfileHandler{users: users, db: db}
+func NewProfileHandler(users *repository.UserRepo, db *sql.DB, rw *rewards.Service) *ProfileHandler {
+	return &ProfileHandler{users: users, db: db, rewards: rw}
 }
 
 func (h *ProfileHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -85,13 +88,13 @@ func (h *ProfileHandler) MyComments(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type row struct {
-		ID           int64     `json:"id"`
-		Content      string    `json:"content"`
-		IsApproved   bool      `json:"is_approved"`
-		ReviewID     int64     `json:"review_id"`
-		ReviewTitle  string    `json:"review_title"`
-		Product      string    `json:"product"`
-		CreatedAt    time.Time `json:"created_at"`
+		ID          int64     `json:"id"`
+		Content     string    `json:"content"`
+		IsApproved  bool      `json:"is_approved"`
+		ReviewID    int64     `json:"review_id"`
+		ReviewTitle string    `json:"review_title"`
+		Product     string    `json:"product"`
+		CreatedAt   time.Time `json:"created_at"`
 	}
 	var list []row
 	for rows.Next() {
@@ -153,5 +156,12 @@ func (h *ProfileHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to update profile")
 		return
 	}
+
+	if user != nil && user.Username != "" && user.Bio != "" && user.AvatarURL != "" {
+		if err := h.rewards.Award(r.Context(), userID, "profile_completed", "user", userID); err != nil {
+			log.Printf("WARN reward profile_completed userID=%d: %v", userID, err)
+		}
+	}
+
 	writeJSON(w, http.StatusOK, user)
 }

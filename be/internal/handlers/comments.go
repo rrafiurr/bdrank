@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
 	"final-review/be/internal/middleware"
 	"final-review/be/internal/repository"
+	"final-review/be/internal/rewards"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -14,10 +16,11 @@ type CommentHandler struct {
 	comments *repository.CommentRepo
 	reviews  *repository.ReviewRepo
 	users    *repository.UserRepo
+	rewards  *rewards.Service
 }
 
-func NewCommentHandler(comments *repository.CommentRepo, reviews *repository.ReviewRepo, users *repository.UserRepo) *CommentHandler {
-	return &CommentHandler{comments: comments, reviews: reviews, users: users}
+func NewCommentHandler(comments *repository.CommentRepo, reviews *repository.ReviewRepo, users *repository.UserRepo, rw *rewards.Service) *CommentHandler {
+	return &CommentHandler{comments: comments, reviews: reviews, users: users, rewards: rw}
 }
 
 func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +56,11 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to post comment")
 		return
 	}
+
+	if err := h.rewards.Award(r.Context(), userID, "comment_created", "comment", comment.ID); err != nil {
+		log.Printf("WARN reward comment_created userID=%d commentID=%d: %v", userID, comment.ID, err)
+	}
+
 	writeJSON(w, http.StatusCreated, comment)
 }
 

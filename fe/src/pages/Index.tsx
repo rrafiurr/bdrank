@@ -23,6 +23,7 @@ function toCardProps(r: ApiReviewListItem, locale: string) {
     excerpt: r.excerpt,
     author: r.author.username,
     authorAvatar: r.author.avatar_url,
+    authorBadge: r.author_badge,
     rating: r.rating,
     category: r.category,
     productName: r.product.name,
