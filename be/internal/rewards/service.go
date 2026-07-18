@@ -23,28 +23,11 @@ func (s *Service) Award(ctx context.Context, userID int64, eventType, refType st
 	if err != nil {
 		return err
 	}
-	if rule.DailyCap != nil {
-		today, err := s.repo.CountToday(ctx, userID, eventType)
-		if err != nil {
-			return err
-		}
-		if CapReached(Rule{DailyCap: rule.DailyCap}, today, 0) {
-			return nil
-		}
-	}
-	if rule.LifetimeCap != nil {
-		life, err := s.repo.CountLifetime(ctx, userID, eventType)
-		if err != nil {
-			return err
-		}
-		if CapReached(Rule{LifetimeCap: rule.LifetimeCap}, 0, life) {
-			return nil
-		}
-	}
 	if rule.Points == 0 {
 		return nil
 	}
-	return s.repo.ApplyAward(ctx, userID, eventType, refType, refID, rule.Points)
+	_, err = s.repo.AwardAtomic(ctx, userID, rule, refType, refID)
+	return err
 }
 
 func (s *Service) Me(ctx context.Context, userID int64) (*MeView, error) {
@@ -115,6 +98,32 @@ func (s *Service) Campaigns(ctx context.Context, userID int64) ([]CampaignView, 
 		}
 		v := CampaignView{Campaign: c, MyPoints: pts, MyStatus: "active",
 			AchievedGoalIDs: AchievedGoalIDs(c.Goals, pts)}
+		if prog != nil {
+			v.RedeemedGoalID = prog.RedeemedGoalID
+			v.MyStatus = prog.Status
+		}
+		out = append(out, v)
+	}
+
+	ended, err := s.repo.EndedCampaignsSince(ctx, now.Add(-30*24*time.Hour), now)
+	if err != nil {
+		return nil, err
+	}
+	for i := range ended {
+		c := ended[i]
+		pts, err := s.repo.WindowPoints(ctx, userID, c.StartsAt, c.EndsAt)
+		if err != nil {
+			return nil, err
+		}
+		achieved := AchievedGoalIDs(c.Goals, pts)
+		prog, err := s.repo.Progress(ctx, c.ID, userID)
+		if err != nil {
+			return nil, err
+		}
+		if len(achieved) == 0 && prog == nil {
+			continue
+		}
+		v := CampaignView{Campaign: c, MyPoints: pts, MyStatus: "expired", AchievedGoalIDs: achieved}
 		if prog != nil {
 			v.RedeemedGoalID = prog.RedeemedGoalID
 			v.MyStatus = prog.Status

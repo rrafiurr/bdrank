@@ -29,32 +29,55 @@ func (r *Repo) RuleByType(ctx context.Context, eventType string) (*Rule, error) 
 	return &ru, nil
 }
 
-func (r *Repo) CountToday(ctx context.Context, userID int64, eventType string) (int, error) {
-	var n int
-	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM reward_transactions
-		 WHERE user_id = ? AND event_type = ? AND created_at >= UTC_DATE()`,
-		userID, eventType,
-	).Scan(&n)
-	return n, err
-}
-
-func (r *Repo) CountLifetime(ctx context.Context, userID int64, eventType string) (int, error) {
-	var n int
-	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM reward_transactions WHERE user_id = ? AND event_type = ?`,
-		userID, eventType,
-	).Scan(&n)
-	return n, err
-}
-
-// ApplyAward inserts a positive ledger row and upserts the balance atomically.
-func (r *Repo) ApplyAward(ctx context.Context, userID int64, eventType, refType string, refID int64, points int) error {
+// AwardAtomic performs the cap check and ledger insert in a single
+// transaction, serialized per-user by locking the user's reward_balances
+// row. This prevents concurrent events from all reading the count as
+// under-cap and all committing, which would exceed the cap.
+func (r *Repo) AwardAtomic(ctx context.Context, userID int64, rule *Rule, refType string, refID int64) (bool, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer tx.Rollback()
+
+	// ensure the balance row exists so the lock below actually locks,
+	// even for brand-new users who have never been awarded points.
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO reward_balances (user_id, points, lifetime_points) VALUES (?, 0, 0)
+		 ON DUPLICATE KEY UPDATE user_id = user_id`,
+		userID); err != nil {
+		return false, err
+	}
+	// lock the balance row; serializes all awards for this user.
+	var points int
+	if err := tx.QueryRowContext(ctx,
+		`SELECT points FROM reward_balances WHERE user_id = ? FOR UPDATE`, userID).Scan(&points); err != nil {
+		return false, err
+	}
+
+	if rule.DailyCap != nil {
+		var today int
+		if err := tx.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM reward_transactions
+			 WHERE user_id = ? AND event_type = ? AND created_at >= UTC_DATE()`,
+			userID, rule.EventType).Scan(&today); err != nil {
+			return false, err
+		}
+		if CapReached(Rule{DailyCap: rule.DailyCap}, today, 0) {
+			return false, tx.Commit()
+		}
+	}
+	if rule.LifetimeCap != nil {
+		var life int
+		if err := tx.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM reward_transactions WHERE user_id = ? AND event_type = ?`,
+			userID, rule.EventType).Scan(&life); err != nil {
+			return false, err
+		}
+		if CapReached(Rule{LifetimeCap: rule.LifetimeCap}, 0, life) {
+			return false, tx.Commit()
+		}
+	}
 
 	var refIDArg any
 	if refID != 0 {
@@ -63,20 +86,20 @@ func (r *Repo) ApplyAward(ctx context.Context, userID int64, eventType, refType 
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO reward_transactions (user_id, event_type, points, ref_type, ref_id)
 		 VALUES (?, ?, ?, ?, ?)`,
-		userID, eventType, points, refType, refIDArg,
+		userID, rule.EventType, rule.Points, refType, refIDArg,
 	); err != nil {
-		return err
+		return false, err
 	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO reward_balances (user_id, points, lifetime_points)
-		 VALUES (?, ?, ?)
-		 ON DUPLICATE KEY UPDATE points = points + VALUES(points),
-		                         lifetime_points = lifetime_points + VALUES(lifetime_points)`,
-		userID, points, points,
+		`UPDATE reward_balances SET points = points + ?, lifetime_points = lifetime_points + ? WHERE user_id = ?`,
+		rule.Points, rule.Points, userID,
 	); err != nil {
-		return err
+		return false, err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *Repo) Balance(ctx context.Context, userID int64) (int, int, error) {
@@ -440,6 +463,28 @@ func (r *Repo) ActiveCampaigns(ctx context.Context, now time.Time) ([]Campaign, 
 		`SELECT id, name, description, image_url, starts_at, ends_at, is_active, created_at
 		 FROM reward_campaigns WHERE is_active = 1 AND starts_at <= ? AND ends_at >= ?
 		 ORDER BY ends_at ASC`, now, now)
+	if err != nil {
+		return nil, err
+	}
+	camps, err := r.scanCampaigns(rows)
+	if err != nil {
+		return nil, err
+	}
+	for i := range camps {
+		g, err := r.goalsFor(ctx, camps[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		camps[i].Goals = g
+	}
+	return camps, nil
+}
+
+func (r *Repo) EndedCampaignsSince(ctx context.Context, since, now time.Time) ([]Campaign, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, name, description, image_url, starts_at, ends_at, is_active, created_at
+		 FROM reward_campaigns WHERE is_active = 1 AND ends_at < ? AND ends_at >= ?
+		 ORDER BY ends_at DESC`, now, since)
 	if err != nil {
 		return nil, err
 	}

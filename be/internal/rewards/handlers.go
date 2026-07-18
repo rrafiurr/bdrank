@@ -1,9 +1,11 @@
 package rewards
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -538,6 +540,50 @@ func validateGoal(g *CampaignGoal) string {
 	return ""
 }
 
+// checkGoalOrdering verifies that the resulting goal set for a campaign
+// (after applying the create/update in question) is strictly ascending in
+// threshold_points when ordered by sort_order (ties broken by
+// threshold_points, matching goalsFor's ORDER BY). Returns a non-empty
+// error message if the ordering would be violated. If the campaign can't
+// be loaded, it returns "" so the create/update call can surface the
+// underlying error (e.g. ErrNotFound) itself.
+func (a *api) checkGoalOrdering(ctx context.Context, campaignID int64, goal CampaignGoal, isUpdate bool) string {
+	camp, err := a.svc.AdminCampaign(ctx, campaignID)
+	if err != nil {
+		return ""
+	}
+	resulting := make([]CampaignGoal, 0, len(camp.Goals)+1)
+	if isUpdate {
+		replaced := false
+		for _, g := range camp.Goals {
+			if g.ID == goal.ID {
+				resulting = append(resulting, goal)
+				replaced = true
+			} else {
+				resulting = append(resulting, g)
+			}
+		}
+		if !replaced {
+			resulting = append(resulting, goal)
+		}
+	} else {
+		resulting = append(resulting, camp.Goals...)
+		resulting = append(resulting, goal)
+	}
+	sort.SliceStable(resulting, func(i, j int) bool {
+		if resulting[i].SortOrder != resulting[j].SortOrder {
+			return resulting[i].SortOrder < resulting[j].SortOrder
+		}
+		return resulting[i].ThresholdPoints < resulting[j].ThresholdPoints
+	})
+	for i := 1; i < len(resulting); i++ {
+		if resulting[i].ThresholdPoints <= resulting[i-1].ThresholdPoints {
+			return "goal thresholds must strictly ascend with sort order"
+		}
+	}
+	return ""
+}
+
 func (a *api) adminCreateGoal(w http.ResponseWriter, r *http.Request) {
 	cid, err := idParam(r, "id")
 	if err != nil {
@@ -554,6 +600,10 @@ func (a *api) adminCreateGoal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g.CampaignID = cid
+	if msg := a.checkGoalOrdering(r.Context(), cid, g, false); msg != "" {
+		writeErr(w, 400, msg)
+		return
+	}
 	id, err := a.svc.AdminCreateGoal(r.Context(), &g)
 	if err != nil {
 		writeErr(w, 500, "failed to create goal")
@@ -585,6 +635,10 @@ func (a *api) adminUpdateGoal(w http.ResponseWriter, r *http.Request) {
 	}
 	g.ID = gid
 	g.CampaignID = cid
+	if msg := a.checkGoalOrdering(r.Context(), cid, g, true); msg != "" {
+		writeErr(w, 400, msg)
+		return
+	}
 	if err := a.svc.AdminUpdateGoal(r.Context(), &g); err != nil {
 		if errors.Is(err, ErrNotFound) {
 			writeErr(w, 404, "goal not found")
