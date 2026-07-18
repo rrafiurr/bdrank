@@ -291,9 +291,13 @@ func (r *Repo) RedeemItem(ctx context.Context, userID int64, item *Item) (*Redem
 			return nil, err
 		}
 	} else if item.Stock != nil {
-		if _, err := tx.ExecContext(ctx,
-			`UPDATE reward_items SET stock = stock - 1 WHERE id = ? AND stock > 0`, item.ID); err != nil {
+		res, err := tx.ExecContext(ctx,
+			`UPDATE reward_items SET stock = stock - 1 WHERE id = ? AND stock > 0`, item.ID)
+		if err != nil {
 			return nil, err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return nil, ErrOutOfStock
 		}
 	}
 
