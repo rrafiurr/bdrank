@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check } from "lucide-react";
 import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LevelBadge } from "@/components/LevelBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { rewardsApi, type Redemption, type RewardItem } from "@/lib/rewardsApi";
+import { rewardsApi, type CampaignView, type Redemption, type RewardGoal, type RewardItem } from "@/lib/rewardsApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -21,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
@@ -45,6 +47,14 @@ export default function Rewards() {
 
   const [confirmItem, setConfirmItem] = useState<RewardItem | null>(null);
   const [successRedemption, setSuccessRedemption] = useState<Redemption | null>(null);
+
+  const [confirmCampaignGoal, setConfirmCampaignGoal] = useState<{ campaign: CampaignView; goal: RewardGoal } | null>(
+    null,
+  );
+  const [campaignRedeemResult, setCampaignRedeemResult] = useState<{
+    goal: RewardGoal;
+    item_redemption: Redemption | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -74,6 +84,12 @@ export default function Rewards() {
     enabled: !!token,
   });
 
+  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+    queryKey: ["rewards-campaigns"],
+    queryFn: () => rewardsApi.campaigns(token),
+    enabled: !!token,
+  });
+
   const redeemMutation = useMutation({
     mutationFn: (itemId: number) => rewardsApi.redeem(token, itemId),
     onSuccess: (redemption) => {
@@ -85,6 +101,25 @@ export default function Rewards() {
       if (redemption.coupon_code) {
         setSuccessRedemption(redemption);
       }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Redemption failed",
+        description: error?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const redeemCampaignMutation = useMutation({
+    mutationFn: ({ campaign, goal }: { campaign: CampaignView; goal: RewardGoal }) =>
+      rewardsApi.redeemCampaign(token, campaign.id, goal.id),
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["rewards-campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["rewards-me"] });
+      setConfirmCampaignGoal(null);
+      toast({ title: "Redeemed!", description: `You redeemed the "${variables.goal.name}" reward.` });
+      setCampaignRedeemResult({ goal: variables.goal, item_redemption: result.item_redemption });
     },
     onError: (error: any) => {
       toast({
@@ -294,12 +329,23 @@ export default function Rewards() {
             )}
           </TabsContent>
 
-          {/* Campaigns — Task 23 fills this in */}
+          {/* Campaigns */}
           <TabsContent value="campaigns">
-            {/* Task 23 fills this in */}
-            <div className="text-muted-foreground text-sm py-8 text-center">
-              Campaigns are coming soon.
-            </div>
+            {campaignsLoading ? (
+              <p className="text-muted-foreground text-sm py-8 text-center">Loading campaigns…</p>
+            ) : campaigns.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-8 text-center">No active campaigns right now.</p>
+            ) : (
+              <div className="space-y-6">
+                {campaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onRedeemClick={(goal) => setConfirmCampaignGoal({ campaign, goal })}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>
@@ -349,6 +395,183 @@ export default function Rewards() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Campaign goal redeem confirmation dialog */}
+      <Dialog open={!!confirmCampaignGoal} onOpenChange={(open) => !open && setConfirmCampaignGoal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redeem "{confirmCampaignGoal?.goal.name}"?</DialogTitle>
+            <DialogDescription>
+              This ends your participation in this campaign and forfeits higher goals. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmCampaignGoal(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="hero"
+              disabled={redeemCampaignMutation.isPending}
+              onClick={() => confirmCampaignGoal && redeemCampaignMutation.mutate(confirmCampaignGoal)}
+            >
+              {redeemCampaignMutation.isPending ? "Redeeming…" : "Confirm redeem"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign redeem success dialog */}
+      <Dialog open={!!campaignRedeemResult} onOpenChange={(open) => !open && setCampaignRedeemResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redemption successful</DialogTitle>
+            <DialogDescription>
+              You redeemed "{campaignRedeemResult?.goal.name}"
+              {campaignRedeemResult?.goal.reward_points ? ` for ${campaignRedeemResult.goal.reward_points} points` : ""}
+              {campaignRedeemResult?.item_redemption ? ` and ${campaignRedeemResult.item_redemption.item_name}` : ""}.
+            </DialogDescription>
+          </DialogHeader>
+          {campaignRedeemResult?.item_redemption?.coupon_code && (
+            <div className="bg-muted rounded-lg px-4 py-3 text-center font-mono text-lg font-semibold tracking-wider">
+              {campaignRedeemResult.item_redemption.coupon_code}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="hero" onClick={() => setCampaignRedeemResult(null)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function campaignEndLabel(campaign: CampaignView): string {
+  const ends = new Date(campaign.ends_at);
+  const dateLabel = ends.toLocaleDateString();
+  if (campaign.my_status === "expired") return `Ended ${dateLabel}`;
+  const msLeft = ends.getTime() - Date.now();
+  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+  if (daysLeft <= 0) return `Ends ${dateLabel}`;
+  if (daysLeft === 1) return `Ends ${dateLabel} (1 day left)`;
+  return `Ends ${dateLabel} (${daysLeft} days left)`;
+}
+
+function goalRewardLabel(goal: RewardGoal): string {
+  const parts: string[] = [];
+  if (goal.reward_points) parts.push(`${goal.reward_points} pts`);
+  if (goal.reward_item_id) parts.push("an item");
+  return parts.length > 0 ? parts.join(" + ") : "—";
+}
+
+function CampaignCard({
+  campaign,
+  onRedeemClick,
+}: {
+  campaign: CampaignView;
+  onRedeemClick: (goal: RewardGoal) => void;
+}) {
+  const achievedIds = new Set(campaign.achieved_goal_ids ?? []);
+  const sortedGoals = [...campaign.goals].sort((a, b) => a.threshold_points - b.threshold_points);
+  const nextGoal = sortedGoals.find((g) => !achievedIds.has(g.id));
+  const progressPct = nextGoal
+    ? Math.min(100, Math.round((campaign.my_points / Math.max(1, nextGoal.threshold_points)) * 100))
+    : 100;
+  const redeemedGoal = sortedGoals.find((g) => g.id === campaign.redeemed_goal_id);
+
+  return (
+    <Card className="overflow-hidden">
+      {campaign.image_url && (
+        <img src={campaign.image_url} alt={campaign.name} className="w-full h-40 object-cover" />
+      )}
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <CardTitle className="text-base">{campaign.name}</CardTitle>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {campaign.my_status === "expired" && <Badge variant="destructive">Expired</Badge>}
+            {campaign.my_status === "redeemed" && <Badge>Redeemed</Badge>}
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{campaignEndLabel(campaign)}</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {campaign.description && <p className="text-sm text-muted-foreground">{campaign.description}</p>}
+
+        <p className="text-sm">
+          Your points in this campaign: <span className="font-semibold text-foreground">{campaign.my_points}</span>
+        </p>
+
+        {campaign.my_status === "redeemed" && (
+          <p className="text-sm text-muted-foreground">
+            You redeemed <span className="font-medium text-foreground">{redeemedGoal?.name ?? "a reward"}</span> in
+            this campaign. Your participation has ended.
+          </p>
+        )}
+
+        {campaign.my_status === "expired" && (
+          <p className="text-sm text-muted-foreground">This campaign has ended.</p>
+        )}
+
+        {nextGoal && (
+          <div className="space-y-1.5">
+            <Progress value={progressPct} />
+            <p className="text-xs text-muted-foreground">
+              {Math.max(0, nextGoal.threshold_points - campaign.my_points)} points to "{nextGoal.name}"
+            </p>
+          </div>
+        )}
+
+        {/* Goal ladder */}
+        <ul className="space-y-2">
+          {sortedGoals.map((goal) => {
+            const achieved = achievedIds.has(goal.id);
+            const isRedeemedGoal = goal.id === campaign.redeemed_goal_id;
+            const canRedeem = achieved && !isRedeemedGoal && campaign.my_status === "active";
+            return (
+              <li
+                key={goal.id}
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 flex-wrap",
+                  achieved ? "border-primary/40 bg-primary/5" : "border-border",
+                )}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={cn(
+                      "flex-shrink-0 flex items-center justify-center h-5 w-5 rounded-full border",
+                      achieved ? "bg-primary border-primary text-primary-foreground" : "border-border text-transparent",
+                    )}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{goal.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {goal.threshold_points} pts threshold · Reward: {goalRewardLabel(goal)}
+                    </p>
+                  </div>
+                  {isRedeemedGoal && (
+                    <Badge variant="secondary" className="flex-shrink-0">
+                      Redeemed
+                    </Badge>
+                  )}
+                </div>
+                {canRedeem && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => {}}>
+                      Continue
+                    </Button>
+                    <Button size="sm" variant="hero" onClick={() => onRedeemClick(goal)}>
+                      Redeem
+                    </Button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
