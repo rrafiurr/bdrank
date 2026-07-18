@@ -113,7 +113,7 @@ export function RulesTab() {
                   <TableCell>
                     <Switch
                       checked={r.is_active}
-                      onCheckedChange={(v) => updateMut.mutate({ id: r.id, body: { is_active: v } })}
+                      onCheckedChange={(v) => updateMut.mutate({ id: r.id, body: { ...r, is_active: v } })}
                     />
                   </TableCell>
                   <TableCell className="text-right">

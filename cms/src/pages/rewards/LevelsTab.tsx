@@ -133,7 +133,7 @@ export function LevelsTab() {
                   <TableCell>
                     <Switch
                       checked={l.is_active}
-                      onCheckedChange={(v) => updateMut.mutate({ id: l.id, body: { is_active: v } })}
+                      onCheckedChange={(v) => updateMut.mutate({ id: l.id, body: { ...l, is_active: v } })}
                     />
                   </TableCell>
                   <TableCell>
