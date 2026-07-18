@@ -60,31 +60,56 @@ export default function Rewards() {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
-  const { data: me, isLoading: meLoading } = useQuery({
+  const {
+    data: me,
+    isLoading: meLoading,
+    isError: meError,
+    refetch: refetchMe,
+  } = useQuery({
     queryKey: ["rewards-me"],
     queryFn: () => rewardsApi.me(token),
     enabled: !!token,
   });
 
-  const { data: history = [], isLoading: historyLoading } = useQuery({
+  const {
+    data: history = [],
+    isLoading: historyLoading,
+    isError: historyError,
+    refetch: refetchHistory,
+  } = useQuery({
     queryKey: ["rewards-history"],
     queryFn: () => rewardsApi.history(token),
     enabled: !!token,
   });
 
-  const { data: items = [], isLoading: itemsLoading } = useQuery({
+  const {
+    data: items = [],
+    isLoading: itemsLoading,
+    isError: itemsError,
+    refetch: refetchItems,
+  } = useQuery({
     queryKey: ["rewards-items"],
     queryFn: () => rewardsApi.items(token),
     enabled: !!token,
   });
 
-  const { data: redemptions = [], isLoading: redemptionsLoading } = useQuery({
+  const {
+    data: redemptions = [],
+    isLoading: redemptionsLoading,
+    isError: redemptionsError,
+    refetch: refetchRedemptions,
+  } = useQuery({
     queryKey: ["rewards-redemptions"],
     queryFn: () => rewardsApi.myRedemptions(token),
     enabled: !!token,
   });
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+  const {
+    data: campaigns = [],
+    isLoading: campaignsLoading,
+    isError: campaignsError,
+    refetch: refetchCampaigns,
+  } = useQuery({
     queryKey: ["rewards-campaigns"],
     queryFn: () => rewardsApi.campaigns(token),
     enabled: !!token,
@@ -169,6 +194,8 @@ export default function Rewards() {
             <CardTitle className="flex items-center gap-3 flex-wrap">
               {meLoading ? (
                 <span className="text-muted-foreground text-base font-normal">Loading balance…</span>
+              ) : meError ? (
+                <span className="text-muted-foreground text-base font-normal">Couldn't load your rewards balance.</span>
               ) : (
                 <>
                   <span>{me?.points ?? 0} points</span>
@@ -184,22 +211,29 @@ export default function Rewards() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {!meLoading && me && (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Lifetime points: <span className="font-medium text-foreground">{me.lifetime_points}</span>
-                </p>
-                {me.next_level && progressPct !== null ? (
-                  <div className="space-y-1.5">
-                    <Progress value={progressPct} />
-                    <p className="text-xs text-muted-foreground">
-                      {Math.max(0, me.next_level.min_points - me.lifetime_points)} points to {me.next_level.name}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">You've reached the highest level.</p>
-                )}
-              </div>
+            {meError ? (
+              <Button variant="outline" size="sm" onClick={() => refetchMe()}>
+                Retry
+              </Button>
+            ) : (
+              !meLoading &&
+              me && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Lifetime points: <span className="font-medium text-foreground">{me.lifetime_points}</span>
+                  </p>
+                  {me.next_level && progressPct !== null ? (
+                    <div className="space-y-1.5">
+                      <Progress value={progressPct} />
+                      <p className="text-xs text-muted-foreground">
+                        {Math.max(0, me.next_level.min_points - me.lifetime_points)} points to {me.next_level.name}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">You've reached the highest level.</p>
+                  )}
+                </div>
+              )
             )}
           </CardContent>
         </Card>
@@ -217,6 +251,13 @@ export default function Rewards() {
           <TabsContent value="history">
             {historyLoading ? (
               <p className="text-muted-foreground text-sm py-8 text-center">Loading history…</p>
+            ) : historyError ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-muted-foreground text-sm">Couldn't load your point history.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchHistory()}>
+                  Retry
+                </Button>
+              </div>
             ) : history.length === 0 ? (
               <p className="text-muted-foreground text-sm py-8 text-center">No point activity yet.</p>
             ) : (
@@ -252,6 +293,13 @@ export default function Rewards() {
           <TabsContent value="catalog">
             {itemsLoading ? (
               <p className="text-muted-foreground text-sm py-8 text-center">Loading catalog…</p>
+            ) : itemsError ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-muted-foreground text-sm">Couldn't load the reward catalog.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchItems()}>
+                  Retry
+                </Button>
+              </div>
             ) : items.length === 0 ? (
               <p className="text-muted-foreground text-sm py-8 text-center">No reward items available right now.</p>
             ) : (
@@ -303,6 +351,13 @@ export default function Rewards() {
           <TabsContent value="redemptions">
             {redemptionsLoading ? (
               <p className="text-muted-foreground text-sm py-8 text-center">Loading redemptions…</p>
+            ) : redemptionsError ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-muted-foreground text-sm">Couldn't load your redemptions.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchRedemptions()}>
+                  Retry
+                </Button>
+              </div>
             ) : redemptions.length === 0 ? (
               <p className="text-muted-foreground text-sm py-8 text-center">You haven't redeemed anything yet.</p>
             ) : (
@@ -333,6 +388,13 @@ export default function Rewards() {
           <TabsContent value="campaigns">
             {campaignsLoading ? (
               <p className="text-muted-foreground text-sm py-8 text-center">Loading campaigns…</p>
+            ) : campaignsError ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-muted-foreground text-sm">Couldn't load campaigns.</p>
+                <Button variant="outline" size="sm" onClick={() => refetchCampaigns()}>
+                  Retry
+                </Button>
+              </div>
             ) : campaigns.length === 0 ? (
               <p className="text-muted-foreground text-sm py-8 text-center">No active campaigns right now.</p>
             ) : (
