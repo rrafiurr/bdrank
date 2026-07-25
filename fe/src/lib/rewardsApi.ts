@@ -28,7 +28,7 @@ export interface RewardItem {
 export interface RewardGoal { id: number; name: string; threshold_points: number; reward_points: number; reward_item_id: number | null; }
 export interface CampaignView {
   id: number; name: string; description: string; image_url: string; starts_at: string; ends_at: string;
-  goals: RewardGoal[]; my_points: number; achieved_goal_ids: number[] | null;
+  goals?: RewardGoal[]; my_points: number; achieved_goal_ids: number[] | null;
   redeemed_goal_id: number | null; my_status: "active" | "redeemed" | "expired";
 }
 export interface RewardTx { id: number; event_type: string; points: number; note: string; created_at: string; }
