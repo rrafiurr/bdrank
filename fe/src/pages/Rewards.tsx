@@ -544,7 +544,7 @@ function CampaignCard({
   // so tracking by goal.id alone is safe even though this state is scoped per card.
   const [continuedGoals, setContinuedGoals] = useState<Set<number>>(new Set());
   const achievedIds = new Set(campaign.achieved_goal_ids ?? []);
-  const sortedGoals = [...campaign.goals].sort((a, b) => a.threshold_points - b.threshold_points);
+  const sortedGoals = [...(campaign.goals ?? [])].sort((a, b) => a.threshold_points - b.threshold_points);
   const nextGoal = sortedGoals.find((g) => !achievedIds.has(g.id));
   const progressPct = nextGoal
     ? Math.min(100, Math.round((campaign.my_points / Math.max(1, nextGoal.threshold_points)) * 100))

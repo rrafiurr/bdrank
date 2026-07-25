@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import type { CampaignView, RewardGoal } from "@/lib/rewardsApi";
 
 /** Lowest-threshold goal the user has not yet achieved, or null if all done. */
-function nextGoal(campaign: CampaignView): RewardGoal | null {
-  const achieved = new Set(campaign.achieved_goal_ids ?? []);
-  const remaining = campaign.goals
+function nextGoal(goals: RewardGoal[], achievedIds: number[] | null): RewardGoal | null {
+  const achieved = new Set(achievedIds ?? []);
+  const remaining = goals
     .filter((g) => !achieved.has(g.id))
     .sort((a, b) => a.threshold_points - b.threshold_points);
   return remaining[0] ?? null;
@@ -16,8 +16,11 @@ function nextGoal(campaign: CampaignView): RewardGoal | null {
 
 export function CampaignBanner({ campaign }: { campaign: CampaignView }) {
   const { t } = useTranslation();
-  const goal = nextGoal(campaign);
-  const hasGoals = campaign.goals.length > 0;
+  // `goals` is omitted from the API response when a campaign has none, so it
+  // can be undefined — never assume it is an array.
+  const goals = campaign.goals ?? [];
+  const goal = nextGoal(goals, campaign.achieved_goal_ids);
+  const hasGoals = goals.length > 0;
   const pct = goal ? Math.min(100, Math.round((campaign.my_points / goal.threshold_points) * 100)) : 100;
 
   return (
