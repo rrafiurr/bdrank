@@ -112,3 +112,34 @@ type CampaignView struct {
 	MyStatus        string  `json:"my_status"` // active | redeemed | expired
 	AchievedGoalIDs []int64 `json:"achieved_goal_ids"`
 }
+
+// ── Leaderboard ─────────────────────────────────────────────────────────
+type LeaderboardRow struct {
+	UserID    int64
+	Username  string
+	AvatarURL string
+	Points    int
+}
+
+type LeaderboardEntry struct {
+	Rank      int    `json:"rank"`
+	UserID    int64  `json:"user_id"`
+	Username  string `json:"username"`
+	AvatarURL string `json:"avatar_url"`
+	Level     *Badge `json:"level"`
+	Points    int    `json:"points"`
+	IsMe      bool   `json:"is_me"`
+}
+
+type LeaderboardMe struct {
+	Rank     int  `json:"rank"`
+	Points   int  `json:"points"`
+	Unranked bool `json:"unranked"`
+}
+
+type LeaderboardView struct {
+	Timeframe string             `json:"timeframe"`
+	Total     int                `json:"total"`
+	Entries   []LeaderboardEntry `json:"entries"`
+	Me        LeaderboardMe      `json:"me"`
+}

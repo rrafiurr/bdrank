@@ -12,4 +12,5 @@ var (
 	ErrNotFound           = errors.New("not found")
 	ErrValidation         = errors.New("validation error")
 	ErrGoalOrder          = errors.New("goal thresholds must strictly ascend with sort order")
+	ErrBadTimeframe       = errors.New("invalid timeframe")
 )
