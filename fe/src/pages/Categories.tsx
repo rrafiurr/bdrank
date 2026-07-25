@@ -22,7 +22,7 @@ function toCardProps(r: ApiReviewListItem, locale: string) {
     rating: r.rating,
     category: r.category,
     productName: r.product.name,
-    imageUrl: r.images?.[0] ?? "",
+    images: r.images ?? [],
     commentsCount: r.comments_count,
     likesCount: r.likes_count,
     isTimeline: r.is_timeline,
