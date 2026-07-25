@@ -42,6 +42,35 @@ func (a *api) me(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, v)
 }
 
+func (a *api) leaderboard(w http.ResponseWriter, r *http.Request) {
+	uid := middleware.UserIDFromCtx(r.Context())
+	tf := r.URL.Query().Get("timeframe")
+	if tf == "" {
+		tf = "all"
+	}
+	limit := qInt(r, "limit", 50)
+	if limit < 1 {
+		limit = 1
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	offset := qInt(r, "offset", 0)
+	if offset < 0 {
+		offset = 0
+	}
+	v, err := a.svc.Leaderboard(r.Context(), tf, uid, limit, offset)
+	if errors.Is(err, ErrBadTimeframe) {
+		writeErr(w, http.StatusBadRequest, "invalid timeframe")
+		return
+	}
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, "failed to load leaderboard")
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
 func (a *api) history(w http.ResponseWriter, r *http.Request) {
 	uid := middleware.UserIDFromCtx(r.Context())
 	tx, total, err := a.svc.History(r.Context(), uid, qInt(r, "limit", 20), qInt(r, "offset", 0))

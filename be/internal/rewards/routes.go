@@ -18,6 +18,7 @@ func RegisterRoutes(r chi.Router, svc *Service, auth, admin func(http.Handler) h
 	r.Group(func(r chi.Router) {
 		r.Use(auth)
 		r.Get("/rewards/me", a.me)
+		r.Get("/rewards/leaderboard", a.leaderboard)
 		r.Get("/rewards/me/transactions", a.history)
 		r.Get("/rewards/items", a.items)
 		r.Post("/rewards/redeem", a.redeem)

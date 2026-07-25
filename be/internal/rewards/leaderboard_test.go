@@ -31,3 +31,39 @@ func TestWindowStart(t *testing.T) {
 		t.Fatalf("garbage should be invalid")
 	}
 }
+
+func TestBuildLeaderboardView(t *testing.T) {
+	rows := []LeaderboardRow{
+		{UserID: 7, Username: "alice", AvatarURL: "a.jpg", Points: 100},
+		{UserID: 9, Username: "bob", Points: 80},
+	}
+	levels := map[int64]Level{7: {Name: "Gold", Icon: "g", Color: "#f00"}}
+
+	// offset 50 -> ranks continue at 51; meID=9 flags bob; alice has a level, bob nil.
+	v := buildLeaderboardView("week", rows, 50, 128, levels, 9, 27, 80)
+
+	if v.Timeframe != "week" || v.Total != 128 {
+		t.Fatalf("meta: %+v", v)
+	}
+	if v.Entries[0].Rank != 51 || v.Entries[1].Rank != 52 {
+		t.Fatalf("ranks: %d %d", v.Entries[0].Rank, v.Entries[1].Rank)
+	}
+	if v.Entries[0].Level == nil || v.Entries[0].Level.Name != "Gold" {
+		t.Fatalf("alice level: %+v", v.Entries[0].Level)
+	}
+	if v.Entries[1].Level != nil {
+		t.Fatalf("bob should have no level")
+	}
+	if v.Entries[0].IsMe || !v.Entries[1].IsMe {
+		t.Fatalf("is_me flags wrong")
+	}
+	if v.Me.Rank != 27 || v.Me.Points != 80 || v.Me.Unranked {
+		t.Fatalf("me: %+v", v.Me)
+	}
+
+	// Zero points -> unranked.
+	u := buildLeaderboardView("today", nil, 0, 0, nil, 9, 0, 0)
+	if !u.Me.Unranked || u.Me.Rank != 0 || len(u.Entries) != 0 {
+		t.Fatalf("unranked me: %+v entries=%d", u.Me, len(u.Entries))
+	}
+}

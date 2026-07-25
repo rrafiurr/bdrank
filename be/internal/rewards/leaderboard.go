@@ -25,3 +25,31 @@ func WindowStart(timeframe string, now time.Time) (start time.Time, windowed, va
 		return time.Time{}, false, false
 	}
 }
+
+// buildLeaderboardView turns ranked rows + a levels map into the API view.
+// Rank is offset-relative (offset + position). meRank/mePoints come from
+// Repo.UserRank; mePoints <= 0 means the caller is unranked.
+func buildLeaderboardView(timeframe string, rows []LeaderboardRow, offset, total int, levels map[int64]Level, meID int64, meRank, mePoints int) LeaderboardView {
+	entries := make([]LeaderboardEntry, 0, len(rows))
+	for i, row := range rows {
+		var level *Badge
+		if l, ok := levels[row.UserID]; ok {
+			level = BadgeOf(&l)
+		}
+		entries = append(entries, LeaderboardEntry{
+			Rank:      offset + i + 1,
+			UserID:    row.UserID,
+			Username:  row.Username,
+			AvatarURL: row.AvatarURL,
+			Level:     level,
+			Points:    row.Points,
+			IsMe:      row.UserID == meID,
+		})
+	}
+	return LeaderboardView{
+		Timeframe: timeframe,
+		Total:     total,
+		Entries:   entries,
+		Me:        LeaderboardMe{Rank: meRank, Points: mePoints, Unranked: mePoints <= 0},
+	}
+}
