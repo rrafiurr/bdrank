@@ -1,4 +1,9 @@
 {
+  "campaignBanner": {
+    "view": "ক্যাম্পেইন দেখুন",
+    "progress": "{{points}} / {{threshold}} পয়েন্ট",
+    "allGoalsReached": "সব লক্ষ্য অর্জিত 🎉"
+  },
   "language": {
     "english": "English",
     "bangla": "বাংলা",
