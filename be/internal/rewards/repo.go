@@ -1036,14 +1036,14 @@ func (r *Repo) LeaderboardPage(ctx context.Context, start *time.Time, limit, off
 	)
 	if start == nil {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT b.user_id, u.username, u.avatar_url, b.lifetime_points
+			`SELECT b.user_id, COALESCE(u.username,'') AS username, COALESCE(u.avatar_url,'') AS avatar_url, b.lifetime_points
 			 FROM reward_balances b JOIN users u ON u.id = b.user_id
 			 WHERE b.lifetime_points > 0
 			 ORDER BY b.lifetime_points DESC, b.user_id ASC
 			 LIMIT ? OFFSET ?`, limit, offset)
 	} else {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT t.user_id, u.username, u.avatar_url, SUM(t.points) AS points
+			`SELECT t.user_id, COALESCE(u.username,'') AS username, COALESCE(u.avatar_url,'') AS avatar_url, SUM(t.points) AS points
 			 FROM reward_transactions t JOIN users u ON u.id = t.user_id
 			 WHERE t.points > 0 AND t.created_at >= ?
 			 GROUP BY t.user_id, u.username, u.avatar_url
