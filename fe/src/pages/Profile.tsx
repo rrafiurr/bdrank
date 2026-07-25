@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
+import { ProfileCampaignBanners } from "@/components/ProfileCampaignBanners";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -178,6 +179,8 @@ export default function Profile() {
       <Header />
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
+        <ProfileCampaignBanners />
+
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 gap-2">
           <ArrowLeft className="h-4 w-4" />
           {t("profile.back")}
