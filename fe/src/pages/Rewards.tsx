@@ -6,6 +6,7 @@ import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LevelBadge } from "@/components/LevelBadge";
+import { LeaderboardTab } from "@/pages/rewards/LeaderboardTab";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { rewardsApi, type CampaignView, type Redemption, type RewardGoal, type RewardItem } from "@/lib/rewardsApi";
@@ -241,6 +242,7 @@ export default function Rewards() {
         {/* ── Tabs ── */}
         <Tabs defaultValue="catalog">
           <TabsList className="mb-4 flex-wrap h-auto">
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="catalog">Catalog</TabsTrigger>
             <TabsTrigger value="redemptions">My Redemptions</TabsTrigger>
@@ -408,6 +410,10 @@ export default function Rewards() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <LeaderboardTab />
           </TabsContent>
         </Tabs>
       </main>
