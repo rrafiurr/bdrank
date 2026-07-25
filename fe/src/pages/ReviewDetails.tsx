@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, MessageCircle, ThumbsUp, Share2, Clock, BadgeCheck
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHead } from "@/components/PageHead";
@@ -220,12 +220,7 @@ const ReviewDetails = () => {
 
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={review.author.avatar_url} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {review.author.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar name={review.author.username} src={review.author.avatar_url} size="md" />
                   <div>
                     <p className="font-semibold text-foreground flex items-center gap-1.5">
                       {review.author.username}
@@ -378,12 +373,7 @@ const ReviewDetails = () => {
               <Card className="mb-8">
                 <CardContent className="pt-6">
                   <div className="flex gap-4">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={user?.avatar_url} />
-                      <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-                        {user ? user.username?.charAt(0).toUpperCase() ?? "U" : "?"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar name={user?.username || user?.email || ""} src={user?.avatar_url} size="sm" />
                     <div className="flex-1 space-y-3">
                       <Textarea
                         placeholder={user ? t("review.commentPlaceholder") : t("review.signInToComment")}
@@ -421,12 +411,7 @@ const ReviewDetails = () => {
                       {/* Body */}
                       <div className="bg-primary/[0.04] px-5 py-4">
                         <div className="flex gap-4">
-                          <Avatar className="w-10 h-10 ring-2 ring-primary/30">
-                            <AvatarImage src={comment.author.avatar_url} />
-                            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
-                              {comment.author.username.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                          <UserAvatar name={comment.author.username} src={comment.author.avatar_url} size="sm" className="ring-2 ring-primary/30" />
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-semibold text-foreground">{comment.author.username}</span>
@@ -454,12 +439,7 @@ const ReviewDetails = () => {
                     <Card key={comment.id}>
                       <CardContent className="pt-6">
                         <div className="flex gap-4">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={comment.author.avatar_url} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                              {comment.author.username.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                          <UserAvatar name={comment.author.username} src={comment.author.avatar_url} size="sm" />
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="font-semibold text-foreground">{comment.author.username}</span>

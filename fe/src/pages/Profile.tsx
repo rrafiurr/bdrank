@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
+import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -49,6 +50,51 @@ export default function Profile() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Display name used for the letter-avatar fallback: username, else email.
+  const avatarName = username || user?.email || "";
+
+  const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
+  const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: t("profile.errorTitle"), description: t("profile.avatarNotImage"), variant: "destructive" });
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast({ title: t("profile.errorTitle"), description: t("profile.avatarTooLarge"), variant: "destructive" });
+      return;
+    }
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  const closeCrop = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  };
+
+  const onCropped = async (blob: Blob) => {
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", blob, "avatar.jpg");
+      const { url } = await apiFetch<{ url: string }>("/upload/image", { method: "POST", body: fd }, token);
+      setAvatarUrl(url);
+      closeCrop();
+      toast({ title: t("profile.avatarUpdated"), description: t("profile.avatarUpdatedDesc") });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("profile.avatarUploadFailed");
+      toast({ title: t("profile.errorTitle"), description: message, variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -106,12 +152,6 @@ export default function Profile() {
     }
   };
 
-  const getInitials = () => {
-    if (username) return username.slice(0, 2).toUpperCase();
-    if (user?.email) return user.email.slice(0, 2).toUpperCase();
-    return "U";
-  };
-
   const StarRow = ({ rating }: { rating: number }) => (
     <span className="flex items-center gap-0.5">
       {[1,2,3,4,5].map(s => (
@@ -151,17 +191,30 @@ export default function Profile() {
         {/* ── Profile edit card ── */}
         <div className="bg-card border border-border rounded-xl p-6 shadow-soft animate-fade-in">
           <div className="flex flex-col items-center mb-8">
-            <div className="relative group">
-              <Avatar className="h-24 w-24 border-4 border-primary/20">
-                <AvatarImage src={avatarUrl} alt={username || t("profile.title")} />
-                <AvatarFallback className="bg-gradient-warm text-primary-foreground text-2xl font-serif">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute inset-0 flex items-center justify-center bg-foreground/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative group rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={t("profile.changePhoto")}
+            >
+              <UserAvatar name={avatarName} src={avatarUrl} size="xl" className="border-4 border-primary/20" />
+              <div className="absolute inset-0 flex items-center justify-center bg-foreground/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="h-6 w-6 text-background" />
               </div>
-            </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onFileSelected}
+            />
+            <AvatarCropDialog
+              imageSrc={cropSrc}
+              onCancel={closeCrop}
+              onCropped={onCropped}
+              saving={uploadingAvatar}
+            />
             <p className="text-sm text-muted-foreground mt-3">{user?.email}</p>
 
             {rewardsMe && !rewardsMeError && (
@@ -199,13 +252,6 @@ export default function Profile() {
               </Label>
               <Input id="email" type="email" value={user?.email || ""} disabled className="bg-muted cursor-not-allowed" />
               <p className="text-xs text-muted-foreground">{t("profile.emailHint")}</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="avatarUrl" className="flex items-center gap-2">
-                <Camera className="h-4 w-4 text-muted-foreground" />{t("profile.avatarUrl")}
-              </Label>
-              <Input id="avatarUrl" type="url" placeholder={t("profile.avatarPlaceholder")} value={avatarUrl} onChange={e => setAvatarUrl(e.target.value)} className="bg-background" />
             </div>
 
             <div className="space-y-2">

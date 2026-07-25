@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { LevelBadge } from "@/components/LevelBadge";
 import { Star, MessageCircle, Clock, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -117,12 +117,7 @@ export function ReviewCard({
 
           <div className="flex items-center justify-between pt-4 border-t border-border">
             <div className="flex items-center gap-2">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={authorAvatar} alt={author} />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                  {author.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar name={author} src={authorAvatar} size="xs" />
               <div>
                 <p className="text-sm font-medium text-card-foreground flex items-center gap-1.5">
                   {author}

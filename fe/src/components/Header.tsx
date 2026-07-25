@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -53,10 +53,6 @@ export function Header({ autoHide = false }: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
-
-  const userInitials = user?.full_name
-    ? user.full_name.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase()
-    : user?.email?.[0].toUpperCase() || "U";
 
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
@@ -259,12 +255,7 @@ export function Header({ autoHide = false }: HeaderProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full h-9 w-9 p-0">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar_url} />
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar name={user.username || user.email} src={user.avatar_url} size="xs" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-elevated">
