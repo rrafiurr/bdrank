@@ -162,6 +162,43 @@ func (s *Service) LevelsForUsers(ctx context.Context, userIDs []int64) (map[int6
 	return s.repo.LevelsForUsers(ctx, userIDs)
 }
 
+// Leaderboard returns one ranked page for a timeframe plus the caller's rank.
+func (s *Service) Leaderboard(ctx context.Context, timeframe string, userID int64, limit, offset int) (*LeaderboardView, error) {
+	start, windowed, valid := WindowStart(timeframe, time.Now())
+	if !valid {
+		return nil, ErrBadTimeframe
+	}
+	var startPtr *time.Time
+	if windowed {
+		startPtr = &start
+	}
+
+	rows, err := s.repo.LeaderboardPage(ctx, startPtr, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	total, err := s.repo.LeaderboardTotal(ctx, startPtr)
+	if err != nil {
+		return nil, err
+	}
+	meRank, mePoints, err := s.repo.UserRank(ctx, startPtr, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int64, len(rows))
+	for i, row := range rows {
+		ids[i] = row.UserID
+	}
+	levels, err := s.repo.LevelsForUsers(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	v := buildLeaderboardView(timeframe, rows, offset, total, levels, userID, meRank, mePoints)
+	return &v, nil
+}
+
 func BadgeOf(l *Level) *Badge {
 	if l == nil {
 		return nil

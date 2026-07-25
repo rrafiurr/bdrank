@@ -1026,3 +1026,110 @@ func (r *Repo) LevelsForUsers(ctx context.Context, userIDs []int64) (map[int64]L
 	}
 	return out, rows.Err()
 }
+
+// LeaderboardPage returns one ranked page. start == nil ranks by all-time
+// lifetime_points; otherwise it sums positive transactions since start.
+func (r *Repo) LeaderboardPage(ctx context.Context, start *time.Time, limit, offset int) ([]LeaderboardRow, error) {
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if start == nil {
+		rows, err = r.db.QueryContext(ctx,
+			`SELECT b.user_id, COALESCE(u.username,'') AS username, COALESCE(u.avatar_url,'') AS avatar_url, b.lifetime_points
+			 FROM reward_balances b JOIN users u ON u.id = b.user_id
+			 WHERE b.lifetime_points > 0
+			 ORDER BY b.lifetime_points DESC, b.user_id ASC
+			 LIMIT ? OFFSET ?`, limit, offset)
+	} else {
+		rows, err = r.db.QueryContext(ctx,
+			`SELECT t.user_id, COALESCE(u.username,'') AS username, COALESCE(u.avatar_url,'') AS avatar_url, SUM(t.points) AS points
+			 FROM reward_transactions t JOIN users u ON u.id = t.user_id
+			 WHERE t.points > 0 AND t.created_at >= ?
+			 GROUP BY t.user_id, u.username, u.avatar_url
+			 HAVING points > 0
+			 ORDER BY points DESC, t.user_id ASC
+			 LIMIT ? OFFSET ?`, *start, limit, offset)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []LeaderboardRow{}
+	for rows.Next() {
+		var lr LeaderboardRow
+		if err := rows.Scan(&lr.UserID, &lr.Username, &lr.AvatarURL, &lr.Points); err != nil {
+			return nil, err
+		}
+		out = append(out, lr)
+	}
+	return out, rows.Err()
+}
+
+// LeaderboardTotal counts ranked users (nonzero metric) for a timeframe.
+func (r *Repo) LeaderboardTotal(ctx context.Context, start *time.Time) (int, error) {
+	var n int
+	if start == nil {
+		err := r.db.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM reward_balances WHERE lifetime_points > 0`).Scan(&n)
+		return n, err
+	}
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM (
+			SELECT t.user_id FROM reward_transactions t
+			WHERE t.points > 0 AND t.created_at >= ?
+			GROUP BY t.user_id HAVING SUM(t.points) > 0
+		 ) x`, *start).Scan(&n)
+	return n, err
+}
+
+// UserRank returns the user's 1-based rank and points for a timeframe. rank is
+// 0 when the user has 0 points in the window (unranked). Tie-break matches
+// LeaderboardPage: points DESC, then user_id ASC.
+func (r *Repo) UserRank(ctx context.Context, start *time.Time, userID int64) (int, int, error) {
+	var points int
+	if start == nil {
+		err := r.db.QueryRowContext(ctx,
+			`SELECT COALESCE(lifetime_points, 0) FROM reward_balances WHERE user_id = ?`,
+			userID).Scan(&points)
+		if err != nil && err != sql.ErrNoRows {
+			return 0, 0, err
+		}
+	} else {
+		err := r.db.QueryRowContext(ctx,
+			`SELECT COALESCE(SUM(points), 0) FROM reward_transactions
+			 WHERE user_id = ? AND points > 0 AND created_at >= ?`,
+			userID, *start).Scan(&points)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	if points <= 0 {
+		return 0, 0, nil
+	}
+
+	var ahead int
+	if start == nil {
+		err := r.db.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM reward_balances
+			 WHERE lifetime_points > ? OR (lifetime_points = ? AND user_id < ?)`,
+			points, points, userID).Scan(&ahead)
+		if err != nil {
+			return 0, 0, err
+		}
+	} else {
+		err := r.db.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM (
+				SELECT t.user_id, SUM(t.points) p FROM reward_transactions t
+				WHERE t.points > 0 AND t.created_at >= ?
+				GROUP BY t.user_id HAVING p > 0
+			 ) x
+			 WHERE x.p > ? OR (x.p = ? AND x.user_id < ?)`,
+			*start, points, points, userID).Scan(&ahead)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	return ahead + 1, points, nil
+}
