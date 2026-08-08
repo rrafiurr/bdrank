@@ -27,19 +27,29 @@ func (r *CommentRepo) Create(ctx context.Context, reviewID, userID int64, conten
 	id, _ := res.LastInsertId()
 
 	var cm models.Comment
-	var aID int64
+	var aID, reviewAuthorID int64
 	var username, avatarURL string
+	var reviewIsAnon int
 	err = r.db.QueryRowContext(ctx, `
-		SELECT c.id, c.content, 0, u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''), c.created_at
+		SELECT c.id, c.content, 0, u.id, COALESCE(u.username,''), COALESCE(u.avatar_url,''), c.created_at,
+		       rv.user_id, rv.is_anonymous
 		FROM comments c
 		INNER JOIN users u ON c.user_id = u.id
+		INNER JOIN reviews rv ON rv.id = c.review_id
 		WHERE c.id = ?`, id,
-	).Scan(&cm.ID, &cm.Content, &cm.LikesCount, &aID, &username, &avatarURL, &cm.CreatedAt)
+	).Scan(&cm.ID, &cm.Content, &cm.LikesCount, &aID, &username, &avatarURL, &cm.CreatedAt,
+		&reviewAuthorID, &reviewIsAnon)
 	if err != nil {
 		return nil, err
 	}
+	cm.AuthorUserID = aID
 	cm.Author = &models.AuthorRef{ID: aID, Username: username, AvatarURL: absURL(r.baseURL, avatarURL)}
-	return &cm, nil
+
+	// A one-element slice so the same masking rule applies here as in the
+	// thread listing — one implementation, not two.
+	out := []models.Comment{cm}
+	maskCommentAuthors(out, reviewAuthorID, reviewIsAnon == 1)
+	return &out[0], nil
 }
 
 func (r *CommentRepo) ToggleLike(ctx context.Context, commentID, userID int64) (bool, int, error) {

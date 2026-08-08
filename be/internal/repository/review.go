@@ -262,6 +262,11 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 		rv.Comments = []models.Comment{}
 	}
 
+	// Order matters only in that both run before returning: the comment mask
+	// needs rv.AuthorUserID, which maskReviewAuthor leaves intact.
+	maskCommentAuthors(rv.Comments, rv.AuthorUserID, rv.IsAnonymous)
+	maskReviewAuthor(&rv)
+
 	return &rv, nil
 }
 
