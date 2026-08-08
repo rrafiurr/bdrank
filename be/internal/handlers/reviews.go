@@ -135,6 +135,10 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Absent or "false"/"0" means a normal, attributed review — anonymity is
+	// always an explicit opt-in.
+	isAnonymous := r.FormValue("is_anonymous") == "true" || r.FormValue("is_anonymous") == "1"
+
 	var productID int64
 	if pidStr := r.FormValue("product_id"); pidStr != "" {
 		pid, err := strconv.ParseInt(pidStr, 10, 64)
@@ -163,7 +167,7 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		productID = product.ID
 	}
 
-	reviewID, err := h.reviews.Create(r.Context(), userID, productID, title, content, rating)
+	reviewID, err := h.reviews.Create(r.Context(), userID, productID, title, content, rating, isAnonymous)
 	if err != nil {
 		log.Printf("ERROR Create review userID=%d productID=%d: %v", userID, productID, err)
 		writeError(w, http.StatusInternalServerError, "failed to create review")

@@ -270,10 +270,14 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	return &rv, nil
 }
 
-func (r *ReviewRepo) Create(ctx context.Context, userID, productID int64, title, content string, rating int) (int64, error) {
+func (r *ReviewRepo) Create(ctx context.Context, userID, productID int64, title, content string, rating int, isAnonymous bool) (int64, error) {
+	anon := 0
+	if isAnonymous {
+		anon = 1
+	}
 	res, err := r.db.ExecContext(ctx,
-		`INSERT INTO reviews (user_id, product_id, title, content, rating) VALUES (?, ?, ?, ?, ?)`,
-		userID, productID, title, content, rating,
+		`INSERT INTO reviews (user_id, product_id, title, content, rating, is_anonymous) VALUES (?, ?, ?, ?, ?, ?)`,
+		userID, productID, title, content, rating, anon,
 	)
 	if err != nil {
 		return 0, err
