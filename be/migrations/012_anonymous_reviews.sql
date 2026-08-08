@@ -2,8 +2,10 @@
 -- property, so rewards, the author's own profile listing, and moderation all
 -- keep working. Only the public-facing author identity is suppressed.
 
--- MySQL has no ADD COLUMN IF NOT EXISTS, so guard via information_schema to
--- keep this file re-runnable (same pattern as 011_categories.sql).
+-- MySQL has no ADD COLUMN IF NOT EXISTS, so guard via information_schema:
+-- check whether the column already exists and only run the ALTER TABLE when
+-- it doesn't, so this file stays safe to re-run against a database that has
+-- already had it applied.
 SET @db := DATABASE();
 
 SET @needs := (SELECT COUNT(*) = 0 FROM information_schema.COLUMNS

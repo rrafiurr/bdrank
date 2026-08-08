@@ -27,21 +27,21 @@ type Product struct {
 }
 
 type Review struct {
-	ID                   int64           `json:"id"`
-	Title                string          `json:"title"`
-	Content              string          `json:"content,omitempty"`
-	Excerpt              string          `json:"excerpt,omitempty"`
-	Rating               int             `json:"rating"`
-	Category             string          `json:"category"`
-	IsApproved           bool            `json:"is_approved"`
-	Product              *ProductRef     `json:"product,omitempty"`
-	Author               *AuthorRef      `json:"author"`
+	ID         int64       `json:"id"`
+	Title      string      `json:"title"`
+	Content    string      `json:"content,omitempty"`
+	Excerpt    string      `json:"excerpt,omitempty"`
+	Rating     int         `json:"rating"`
+	Category   string      `json:"category"`
+	IsApproved bool        `json:"is_approved"`
+	Product    *ProductRef `json:"product,omitempty"`
+	Author     *AuthorRef  `json:"author"`
 	// AuthorUserID is the real author, always populated even when Author has
 	// been masked. Never serialized — badge decoration and ownership checks
 	// need it, clients must not see it.
-	AuthorUserID         int64           `json:"-"`
+	AuthorUserID int64 `json:"-"`
 	// IsAnonymous means the author chose to hide their identity on this review.
-	IsAnonymous          bool            `json:"is_anonymous"`
+	IsAnonymous bool `json:"is_anonymous"`
 	// IsMine is set per-viewer by the handler, never by the repository.
 	IsMine               bool            `json:"is_mine"`
 	AuthorBadge          *Badge          `json:"author_badge,omitempty"`
@@ -88,19 +88,19 @@ type TimelineEntry struct {
 }
 
 type Comment struct {
-	ID           int64      `json:"id"`
-	Content      string     `json:"content"`
-	LikesCount   int        `json:"likes_count"`
-	Author       *AuthorRef `json:"author"`
+	ID         int64      `json:"id"`
+	Content    string     `json:"content"`
+	LikesCount int        `json:"likes_count"`
+	Author     *AuthorRef `json:"author"`
 	// AuthorUserID mirrors Review.AuthorUserID: real author, never serialized.
-	AuthorUserID int64      `json:"-"`
+	AuthorUserID int64 `json:"-"`
 	// IsAnonymous is true only for the review author's own comments on a
 	// review they posted anonymously.
-	IsAnonymous  bool       `json:"is_anonymous"`
-	AuthorBadge  *Badge     `json:"author_badge,omitempty"`
-	IsOwnerReply bool       `json:"is_owner_reply"`
-	CompanyName  string     `json:"company_name,omitempty"`
-	CreatedAt    time.Time  `json:"created_at"`
+	IsAnonymous  bool      `json:"is_anonymous"`
+	AuthorBadge  *Badge    `json:"author_badge,omitempty"`
+	IsOwnerReply bool      `json:"is_owner_reply"`
+	CompanyName  string    `json:"company_name,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type Category struct {

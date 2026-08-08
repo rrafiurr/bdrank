@@ -23,6 +23,14 @@ func maskReviewAuthor(rv *models.Review) {
 // their own thread defeats the anonymity of the review above it. Comments by
 // anyone else — including verified product-owner replies, who are never the
 // review's author — are left untouched.
+//
+// A masked comment is, by construction, the review author's own comment: any
+// other identifying field on models.Comment (CompanyName, IsOwnerReply, or
+// anything added later) names or describes that same anonymous author and
+// must be cleared here too. Author is the only field the fail-closed read
+// path protects automatically (it is nil'd), so a new identifying column
+// added to the struct is unprotected by default — whoever adds one must also
+// add it to this function.
 func maskCommentAuthors(comments []models.Comment, reviewAuthorID int64, reviewIsAnonymous bool) {
 	if !reviewIsAnonymous {
 		return
@@ -30,6 +38,8 @@ func maskCommentAuthors(comments []models.Comment, reviewAuthorID int64, reviewI
 	for i := range comments {
 		if comments[i].AuthorUserID == reviewAuthorID {
 			comments[i].Author = nil
+			comments[i].CompanyName = ""
+			comments[i].IsOwnerReply = false
 			comments[i].IsAnonymous = true
 		}
 	}
