@@ -108,6 +108,12 @@ func (h *ReviewHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to fetch review")
 		return
 	}
+	// Populated by middleware.OptionalAuth; 0 for a logged-out visitor. This
+	// tells a viewer only about themselves, so it leaks nothing about an
+	// anonymous author to anyone else.
+	if viewerID := middleware.UserIDFromCtx(r.Context()); viewerID != 0 {
+		review.IsMine = viewerID == review.AuthorUserID
+	}
 	decorateReviewBadges(r, h.rewards, []*models.Review{review})
 	decorateCommentBadges(r, h.rewards, review.Comments)
 	writeJSON(w, http.StatusOK, review)

@@ -128,7 +128,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 		r.Get("/categories/stats", productH.CategoryStats)
 
 		r.Get("/reviews", reviewH.List)
-		r.Get("/reviews/{id}", reviewH.GetByID)
+		r.With(mw.OptionalAuth(cfg, rdb)).Get("/reviews/{id}", reviewH.GetByID)
 		r.Post("/reviews/{id}/view", reviewH.View)
 
 		r.Get("/pages", pageH.List)

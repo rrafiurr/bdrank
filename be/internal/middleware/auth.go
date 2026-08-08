@@ -46,6 +46,33 @@ func Auth(cfg *config.Config, rdb *redis.Client) func(http.Handler) http.Handler
 	}
 }
 
+// OptionalAuth validates a Bearer token when one is present and otherwise lets
+// the request through unauthenticated. Public endpoints use it when part of
+// the response depends on who is asking — for example whether a review belongs
+// to the viewer — but the endpoint must stay readable to logged-out visitors.
+//
+// A bad or expired token is treated as no token rather than a 401: these
+// endpoints are public, and the frontend logs the user out on any 401.
+func OptionalAuth(cfg *config.Config, rdb *redis.Client) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			bearer := r.Header.Get("Authorization")
+			if !strings.HasPrefix(bearer, "Bearer ") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			claims, err := auth.ParseToken(strings.TrimPrefix(bearer, "Bearer "), cfg.JWTSecret)
+			if err != nil || !auth.ValidateSession(r.Context(), claims.JTI, rdb) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			ctx := context.WithValue(r.Context(), ctxUserID, claims.UserID)
+			ctx = context.WithValue(ctx, ctxJTI, claims.JTI)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 func UserIDFromCtx(ctx context.Context) int64 {
 	if v, ok := ctx.Value(ctxUserID).(int64); ok {
 		return v
