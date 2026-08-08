@@ -13,6 +13,7 @@ interface ReviewCardProps {
   author: string;
   authorAvatar: string;
   authorBadge?: ApiAuthorBadge | null;
+  isAnonymous?: boolean;
   rating: number;
   category: string;
   productName: string;
@@ -40,6 +41,7 @@ export function ReviewCard({
   author,
   authorAvatar,
   authorBadge,
+  isAnonymous,
   rating,
   category,
   productName,
@@ -117,10 +119,15 @@ export function ReviewCard({
 
           <div className="flex items-center justify-between pt-4 border-t border-border">
             <div className="flex items-center gap-2">
-              <UserAvatar name={author} src={authorAvatar} size="xs" />
+              <UserAvatar
+                name={isAnonymous ? "" : author}
+                src={isAnonymous ? undefined : authorAvatar}
+                size="xs"
+                anonymous={isAnonymous}
+              />
               <div>
                 <p className="text-sm font-medium text-card-foreground flex items-center gap-1.5">
-                  {author}
+                  {isAnonymous ? t("review.anonymous") : author}
                   {authorBadge && <LevelBadge {...authorBadge} />}
                 </p>
                 <p className="text-xs text-muted-foreground">{createdAt}</p>

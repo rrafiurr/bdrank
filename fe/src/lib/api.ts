@@ -38,7 +38,9 @@ export interface ApiReviewListItem {
   rating: number;
   category: string;
   product: { id: number; name: string };
-  author: ApiAuthor;
+  /** null when the review is anonymous — the badge still comes through. */
+  author: ApiAuthor | null;
+  is_anonymous: boolean;
   author_badge?: ApiAuthorBadge | null;
   images: string[];
   likes_count: number;
@@ -61,7 +63,9 @@ export interface ApiComment {
   id: number;
   content: string;
   likes_count: number;
-  author: ApiAuthor;
+  /** null when this is the review author's own comment on their anonymous review. */
+  author: ApiAuthor | null;
+  is_anonymous: boolean;
   author_badge?: ApiAuthorBadge | null;
   is_owner_reply: boolean;
   company_name?: string;
@@ -72,6 +76,8 @@ export interface ApiReviewDetail extends Omit<ApiReviewListItem, "product"> {
   content: string;
   product: { id: number; name: string; image_url: string };
   views_count: number;
+  /** Server-computed: is the viewer the author? Works even when author is masked. */
+  is_mine: boolean;
   timeline?: ApiTimelineEntry[];
   comments?: ApiComment[];
 }

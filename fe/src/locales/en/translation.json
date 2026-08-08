@@ -172,7 +172,8 @@
     "error": "Error",
     "failedToPostComment": "Failed to post comment.",
     "timelineUpdates_one": "{{count}} update",
-    "timelineUpdates_other": "{{count}} updates"
+    "timelineUpdates_other": "{{count}} updates",
+    "anonymous": "Anonymous"
   },
   "profile": {
     "title": "My Profile",
@@ -214,7 +215,14 @@
     "successTitle": "Success",
     "successDesc": "Profile updated successfully",
     "errorTitle": "Error",
-    "failedToUpdate": "Failed to update profile"
+    "failedToUpdate": "Failed to update profile",
+    "anonymous": "Anonymous",
+    "revealTitle": "Show your name on this review?",
+    "revealBody": "Your name and photo will be visible to everyone. Anyone who sees the review, and any search engine that indexes it, keeps that — turning anonymity back on later will not undo it.",
+    "revealConfirm": "Show my name",
+    "cancel": "Cancel",
+    "anonymityUpdated": "Review visibility updated",
+    "anonymityFailed": "Could not update the review"
   },
   "owner": {
     "dashboard": "Dashboard",
@@ -389,7 +397,9 @@
     "failedToSubmit": "Failed to submit review.",
     "review_one": "{{count}} review",
     "review_other": "{{count}} reviews",
-    "select": "Select"
+    "select": "Select",
+    "anonymousLabel": "Post this review anonymously",
+    "anonymousHint": "Your name and photo stay hidden. Your level badge still shows."
   },
   "timelinePreview": {
     "badge": "Timeline Review",

@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -51,10 +52,25 @@ interface UserAvatarProps {
   src?: string | null;
   size?: AvatarSize;
   className?: string;
+  /** Render a neutral icon instead of a letter-avatar, for anonymous authors. */
+  anonymous?: boolean;
 }
 
-export function UserAvatar({ name, src, size = "sm", className }: UserAvatarProps) {
+export function UserAvatar({ name, src, size = "sm", className, anonymous }: UserAvatarProps) {
   const { box, text } = SIZES[size];
+
+  // Anonymous authors get one identical neutral avatar. No per-user color and
+  // no initial, so two anonymous reviews cannot be linked by their avatar.
+  if (anonymous) {
+    return (
+      <Avatar className={cn(box, className)}>
+        <AvatarFallback className="bg-muted text-muted-foreground">
+          <UserRound className="h-1/2 w-1/2" />
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+
   const { bg, fg } = colorFor(name);
 
   return (

@@ -11,6 +11,7 @@ import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LevelBadge } from "@/components/LevelBadge";
+import { CommentAuthor } from "@/components/CommentAuthor";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewDetail, type ApiComment } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -154,7 +155,12 @@ const ReviewDetails = () => {
     );
   }
 
-  const isAuthor = user && user.id === review.author.id;
+  // is_mine comes from the server, so this still works when the author is
+  // masked — review.author is null on an anonymous review.
+  const isAuthor = review.is_mine;
+  const authorName = review.is_anonymous
+    ? t("review.anonymous")
+    : review.author?.username ?? "";
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const reviewJsonLd = [
@@ -168,7 +174,7 @@ const ReviewDetails = () => {
         bestRating: "5",
         worstRating: "1",
       },
-      author: { "@type": "Person", name: review.author.username },
+      author: { "@type": "Person", name: authorName },
       itemReviewed: { "@type": "Product", name: review.product.name },
       datePublished: review.created_at,
       description: review.excerpt,
@@ -188,7 +194,7 @@ const ReviewDetails = () => {
     <div className="min-h-screen bg-background">
       <PageHead
         title={review.title}
-        description={review.excerpt ?? `${review.author.username} reviewed ${review.product.name} — rated ${review.rating}/5.`}
+        description={review.excerpt ?? `${authorName} reviewed ${review.product.name} — rated ${review.rating}/5.`}
         ogType="article"
         ogImage={review.images?.[0]}
         jsonLd={reviewJsonLd}
@@ -220,10 +226,15 @@ const ReviewDetails = () => {
 
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
-                  <UserAvatar name={review.author.username} src={review.author.avatar_url} size="md" />
+                  <UserAvatar
+                    name={review.is_anonymous ? "" : authorName}
+                    src={review.is_anonymous ? undefined : review.author?.avatar_url}
+                    size="md"
+                    anonymous={review.is_anonymous}
+                  />
                   <div>
                     <p className="font-semibold text-foreground flex items-center gap-1.5">
-                      {review.author.username}
+                      {authorName}
                       {review.author_badge && <LevelBadge {...review.author_badge} />}
                     </p>
                   </div>
@@ -411,15 +422,15 @@ const ReviewDetails = () => {
                       {/* Body */}
                       <div className="bg-primary/[0.04] px-5 py-4">
                         <div className="flex gap-4">
-                          <UserAvatar name={comment.author.username} src={comment.author.avatar_url} size="sm" className="ring-2 ring-primary/30" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-semibold text-foreground">{comment.author.username}</span>
-                              {comment.author_badge && <LevelBadge {...comment.author_badge} />}
+                          <CommentAuthor
+                            comment={comment}
+                            avatarClassName="ring-2 ring-primary/30"
+                            timestamp={
                               <span className="text-sm text-muted-foreground">
                                 · {new Date(comment.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}
                               </span>
-                            </div>
+                            }
+                          >
                             <p className="text-foreground/85 mb-3 leading-relaxed">{comment.content}</p>
                             <Button
                               variant="ghost"
@@ -430,7 +441,7 @@ const ReviewDetails = () => {
                               <ThumbsUp className="w-4 h-4" />
                               <span>{commentLikes[comment.id] ?? comment.likes_count}</span>
                             </Button>
-                          </div>
+                          </CommentAuthor>
                         </div>
                       </div>
                     </div>
@@ -439,15 +450,14 @@ const ReviewDetails = () => {
                     <Card key={comment.id}>
                       <CardContent className="pt-6">
                         <div className="flex gap-4">
-                          <UserAvatar name={comment.author.username} src={comment.author.avatar_url} size="sm" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-semibold text-foreground">{comment.author.username}</span>
-                              {comment.author_badge && <LevelBadge {...comment.author_badge} />}
+                          <CommentAuthor
+                            comment={comment}
+                            timestamp={
                               <span className="text-sm text-muted-foreground">
                                 · {new Date(comment.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}
                               </span>
-                            </div>
+                            }
+                          >
                             <p className="text-foreground/80 mb-3">{comment.content}</p>
                             <Button
                               variant="ghost"
@@ -458,7 +468,7 @@ const ReviewDetails = () => {
                               <ThumbsUp className="w-4 h-4" />
                               <span>{commentLikes[comment.id] ?? comment.likes_count}</span>
                             </Button>
-                          </div>
+                          </CommentAuthor>
                         </div>
                       </CardContent>
                     </Card>

@@ -209,19 +209,16 @@ export default function ProductReviews() {
                 >
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
-                      {review.author.avatar_url ? (
-                        <img
-                          src={review.author.avatar_url}
-                          alt={`${review.author.username}'s profile photo`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
-                          {review.author.username.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar
+                        name={review.is_anonymous ? "" : review.author?.username ?? ""}
+                        src={review.is_anonymous ? undefined : review.author?.avatar_url}
+                        size="sm"
+                        anonymous={review.is_anonymous}
+                      />
                       <div>
-                        <p className="font-medium text-card-foreground">{review.author.username}</p>
+                        <p className="font-medium text-card-foreground">
+                          {review.is_anonymous ? t("review.anonymous") : review.author?.username ?? ""}
+                        </p>
                         <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
                       </div>
                     </div>

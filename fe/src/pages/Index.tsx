@@ -21,9 +21,10 @@ function toCardProps(r: ApiReviewListItem, locale: string) {
     id: String(r.id),
     title: r.title,
     excerpt: r.excerpt,
-    author: r.author.username,
-    authorAvatar: r.author.avatar_url,
+    author: r.author?.username ?? "",
+    authorAvatar: r.author?.avatar_url ?? "",
     authorBadge: r.author_badge,
+    isAnonymous: r.is_anonymous,
     rating: r.rating,
     category: r.category,
     productName: r.product.name,
@@ -76,7 +77,7 @@ const Index = () => {
     ? {
         productName: featured.title,
         productImage: featured.product.image_url || featured.images?.[0] || "",
-        author: featured.author.username,
+        author: featured.is_anonymous ? t("review.anonymous") : featured.author?.username ?? "",
         entries: featured.timeline.map((tl) => ({
           date: new Date(tl.created_at).toLocaleDateString(locale, {
             year: "numeric",
