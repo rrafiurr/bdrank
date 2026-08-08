@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Star, Upload, X, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +47,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX_IMAGES = 3;
@@ -189,6 +191,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       fd.append("title", formData.title);
       fd.append("content", formData.content);
       fd.append("rating", String(formData.rating));
+      fd.append("is_anonymous", isAnonymous ? "true" : "false");
       images.forEach((f) => fd.append("images[]", f));
 
       await apiFetch("/reviews", { method: "POST", body: fd });
@@ -442,6 +445,24 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
           onChange={handleImageSelect}
         />
         <p className="text-xs text-muted-foreground">{t("reviewForm.photoHint")}</p>
+      </div>
+
+      {/* Anonymous posting */}
+      <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-4">
+        <Checkbox
+          id="is-anonymous"
+          checked={isAnonymous}
+          onCheckedChange={(v) => setIsAnonymous(v === true)}
+          className="mt-0.5"
+        />
+        <div className="space-y-1">
+          <Label htmlFor="is-anonymous" className="cursor-pointer font-medium">
+            {t("reviewForm.anonymousLabel")}
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {t("reviewForm.anonymousHint")}
+          </p>
+        </div>
       </div>
 
       {/* Submit */}
