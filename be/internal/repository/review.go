@@ -346,6 +346,17 @@ func (r *ReviewRepo) IsAuthor(ctx context.Context, reviewID, userID int64) bool 
 	return count > 0
 }
 
+// SetAnonymous flips the anonymity flag on a single review. Authorization is
+// the caller's job — see ReviewHandler.SetAnonymity.
+func (r *ReviewRepo) SetAnonymous(ctx context.Context, reviewID int64, anonymous bool) error {
+	anon := 0
+	if anonymous {
+		anon = 1
+	}
+	_, err := r.db.ExecContext(ctx, `UPDATE reviews SET is_anonymous = ? WHERE id = ?`, anon, reviewID)
+	return err
+}
+
 func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, limit, offset int) ([]*models.Review, int, error) {
 	if limit == 0 {
 		limit = 20

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -249,4 +250,43 @@ func (h *ReviewHandler) View(w http.ResponseWriter, r *http.Request) {
 	}
 	h.reviews.IncrementViews(r.Context(), id)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// SetAnonymity handles PATCH /reviews/{id}/anonymity — the author toggling
+// their own review between anonymous and attributed.
+//
+// Note that turning anonymity off is not truly reversible: anyone who has
+// already seen the name, and any search engine that indexed the page, keeps
+// it. The client warns about that before calling this with false.
+func (h *ReviewHandler) SetAnonymity(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	userID := middleware.UserIDFromCtx(r.Context())
+
+	if !h.reviews.Exists(r.Context(), id) {
+		writeError(w, http.StatusNotFound, "review not found")
+		return
+	}
+	if !h.reviews.IsAuthor(r.Context(), id, userID) {
+		writeError(w, http.StatusForbidden, "not your review")
+		return
+	}
+
+	var body struct {
+		IsAnonymous *bool `json:"is_anonymous"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.IsAnonymous == nil {
+		writeError(w, http.StatusBadRequest, "is_anonymous is required")
+		return
+	}
+
+	if err := h.reviews.SetAnonymous(r.Context(), id, *body.IsAnonymous); err != nil {
+		log.Printf("ERROR SetAnonymous reviewID=%d userID=%d: %v", id, userID, err)
+		writeError(w, http.StatusInternalServerError, "failed to update review")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"is_anonymous": *body.IsAnonymous})
 }

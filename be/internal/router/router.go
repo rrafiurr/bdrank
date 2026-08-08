@@ -170,6 +170,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 
 			r.Post("/reviews", reviewH.Create)
 			r.Post("/reviews/{id}/like", reviewH.Like)
+			r.Patch("/reviews/{id}/anonymity", reviewH.SetAnonymity)
 			r.Post("/reviews/{id}/timeline", timelineH.Create)
 			r.Post("/reviews/{id}/comments", commentH.Create)
 			r.Post("/reviews/{id}/comments/{comment_id}/like", commentH.LikeComment)

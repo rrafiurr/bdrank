@@ -36,7 +36,7 @@ func (h *ProfileHandler) MyReviews(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromCtx(r.Context())
 
 	rows, err := h.db.QueryContext(r.Context(), `
-		SELECT r.id, r.title, r.rating, r.is_approved, p.name AS product, r.created_at
+		SELECT r.id, r.title, r.rating, r.is_approved, p.name AS product, r.created_at, r.is_anonymous
 		FROM reviews r
 		INNER JOIN products p ON p.id = r.product_id
 		WHERE r.user_id = ?
@@ -48,19 +48,21 @@ func (h *ProfileHandler) MyReviews(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type row struct {
-		ID         int64     `json:"id"`
-		Title      string    `json:"title"`
-		Rating     int       `json:"rating"`
-		IsApproved bool      `json:"is_approved"`
-		Product    string    `json:"product"`
-		CreatedAt  time.Time `json:"created_at"`
+		ID          int64     `json:"id"`
+		Title       string    `json:"title"`
+		Rating      int       `json:"rating"`
+		IsApproved  bool      `json:"is_approved"`
+		IsAnonymous bool      `json:"is_anonymous"`
+		Product     string    `json:"product"`
+		CreatedAt   time.Time `json:"created_at"`
 	}
 	var list []row
 	for rows.Next() {
 		var rv row
-		var approved int
-		rows.Scan(&rv.ID, &rv.Title, &rv.Rating, &approved, &rv.Product, &rv.CreatedAt)
+		var approved, anon int
+		rows.Scan(&rv.ID, &rv.Title, &rv.Rating, &approved, &rv.Product, &rv.CreatedAt, &anon)
 		rv.IsApproved = approved == 1
+		rv.IsAnonymous = anon == 1
 		list = append(list, rv)
 	}
 	if list == nil {
