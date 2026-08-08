@@ -252,6 +252,7 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 			var isOwnerReply int
 			cRows.Scan(&cm.ID, &cm.Content, &cm.LikesCount, &aID, &aUsername, &aAvatarURL, &cm.CreatedAt,
 				&isOwnerReply, &cm.CompanyName)
+			cm.AuthorUserID = aID
 			cm.Author = &models.AuthorRef{ID: aID, Username: aUsername, AvatarURL: absURL(r.baseURL, aAvatarURL)}
 			cm.IsOwnerReply = isOwnerReply == 1
 			rv.Comments = append(rv.Comments, cm)
