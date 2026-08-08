@@ -47,11 +47,14 @@ func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // decorateReviewBadges is best-effort: a failure to fetch levels never fails
 // the request, it just leaves AuthorBadge unset.
+//
+// It keys off AuthorUserID rather than Author.ID so an anonymous review still
+// shows its author's level badge — hiding the identity, not the standing.
 func decorateReviewBadges(r *http.Request, rw *rewards.Service, reviews []*models.Review) {
 	ids := make([]int64, 0, len(reviews))
 	for _, rv := range reviews {
-		if rv.Author != nil {
-			ids = append(ids, rv.Author.ID)
+		if rv.AuthorUserID != 0 {
+			ids = append(ids, rv.AuthorUserID)
 		}
 	}
 	badges, err := rw.LevelsForUsers(r.Context(), ids)
@@ -60,21 +63,20 @@ func decorateReviewBadges(r *http.Request, rw *rewards.Service, reviews []*model
 		return
 	}
 	for _, rv := range reviews {
-		if rv.Author != nil {
-			if lvl, ok := badges[rv.Author.ID]; ok {
-				rv.AuthorBadge = &models.Badge{Name: lvl.Name, Icon: lvl.Icon, Color: lvl.Color}
-			}
+		if lvl, ok := badges[rv.AuthorUserID]; ok {
+			rv.AuthorBadge = &models.Badge{Name: lvl.Name, Icon: lvl.Icon, Color: lvl.Color}
 		}
 	}
 }
 
 // decorateCommentBadges is best-effort: a failure to fetch levels never fails
-// the request, it just leaves AuthorBadge unset.
+// the request, it just leaves AuthorBadge unset. Like decorateReviewBadges it
+// keys off AuthorUserID so masked comments keep their badge.
 func decorateCommentBadges(r *http.Request, rw *rewards.Service, comments []models.Comment) {
 	ids := make([]int64, 0, len(comments))
 	for _, cm := range comments {
-		if cm.Author != nil {
-			ids = append(ids, cm.Author.ID)
+		if cm.AuthorUserID != 0 {
+			ids = append(ids, cm.AuthorUserID)
 		}
 	}
 	badges, err := rw.LevelsForUsers(r.Context(), ids)
@@ -83,10 +85,8 @@ func decorateCommentBadges(r *http.Request, rw *rewards.Service, comments []mode
 		return
 	}
 	for i := range comments {
-		if comments[i].Author != nil {
-			if lvl, ok := badges[comments[i].Author.ID]; ok {
-				comments[i].AuthorBadge = &models.Badge{Name: lvl.Name, Icon: lvl.Icon, Color: lvl.Color}
-			}
+		if lvl, ok := badges[comments[i].AuthorUserID]; ok {
+			comments[i].AuthorBadge = &models.Badge{Name: lvl.Name, Icon: lvl.Icon, Color: lvl.Color}
 		}
 	}
 }
