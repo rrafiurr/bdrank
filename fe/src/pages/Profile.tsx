@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { PageHead } from "@/components/PageHead";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,11 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { ProfileCampaignBanners } from "@/components/ProfileCampaignBanners";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LevelBadge } from "@/components/LevelBadge";
@@ -26,6 +31,7 @@ interface MyReview {
   title: string;
   rating: number;
   is_approved: boolean;
+  is_anonymous: boolean;
   product: string;
   created_at: string;
 }
@@ -134,6 +140,35 @@ export default function Profile() {
     queryFn: () => rewardsApi.me(token),
     enabled: !!token,
   });
+
+  const queryClient = useQueryClient();
+  // Holds the review awaiting confirmation before its name is revealed.
+  const [revealing, setRevealing] = useState<MyReview | null>(null);
+
+  const anonymityMutation = useMutation({
+    mutationFn: ({ id, isAnonymous }: { id: number; isAnonymous: boolean }) =>
+      apiFetch(`/reviews/${id}/anonymity`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_anonymous: isAnonymous }),
+      }, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-reviews"] });
+      toast({ title: t("profile.anonymityUpdated") });
+    },
+    onError: () => {
+      toast({ title: t("profile.anonymityFailed"), variant: "destructive" });
+    },
+  });
+
+  // Turning anonymity ON is immediate. Turning it OFF asks first, because
+  // revealing a name cannot be undone for anyone who has already seen it.
+  const handleAnonymityChange = (rv: MyReview, next: boolean) => {
+    if (next) {
+      anonymityMutation.mutate({ id: rv.id, isAnonymous: true });
+    } else {
+      setRevealing(rv);
+    }
+  };
 
   const handleSave = async () => {
     if (!user || !token) return;
@@ -306,19 +341,29 @@ export default function Profile() {
             <ul className="divide-y divide-border">
               {myReviews.map(rv => (
                 <li key={rv.id}>
-                  <Link to={`/review/${rv.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-muted/30 transition-colors group">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-4 px-6 py-4 hover:bg-muted/30 transition-colors group">
+                    <Link to={`/review/${rv.id}`} className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{rv.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{rv.product} · {new Date(rv.created_at).toLocaleDateString(i18n.language === "bn" ? "bn-BD" : "en-US")}</p>
-                    </div>
+                    </Link>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <StarRow rating={rv.rating} />
                       {!rv.is_approved && (
                         <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 text-xs">{t("profile.pending")}</Badge>
                       )}
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <span className="text-xs text-muted-foreground">{t("profile.anonymous")}</span>
+                        <Switch
+                          checked={rv.is_anonymous}
+                          onCheckedChange={(next) => handleAnonymityChange(rv, next)}
+                          disabled={anonymityMutation.isPending}
+                        />
+                      </label>
+                      <Link to={`/review/${rv.id}`}>
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -368,6 +413,28 @@ export default function Profile() {
           )}
         </div>
       </main>
+
+      <AlertDialog open={revealing !== null} onOpenChange={(open) => !open && setRevealing(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("profile.revealTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("profile.revealBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("profile.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (revealing) {
+                  anonymityMutation.mutate({ id: revealing.id, isAnonymous: false });
+                }
+                setRevealing(null);
+              }}
+            >
+              {t("profile.revealConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Footer />
     </div>
