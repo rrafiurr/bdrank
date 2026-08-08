@@ -1129,16 +1129,23 @@ git commit -m "feat(reviews): optional auth so authors keep ownership of their a
 
 ---
 
-### Task 8: Frontend types, avatar support, and translations
+### Task 8: All frontend rendering of anonymous authors
+
+This task is deliberately large: it makes `ApiReviewListItem.author` nullable, which breaks every existing call site at once, so types, components, and all consumers must land in a single commit for the branch to compile at every point in its history.
 
 **Files:**
 - Modify: `fe/src/lib/api.ts:25-80`
 - Modify: `fe/src/components/UserAvatar.tsx`
+- Create: `fe/src/components/CommentAuthor.tsx`
 - Modify: `fe/src/locales/en/translation.json`, `fe/src/locales/bn/translation.json`
+- Modify: `fe/src/components/ReviewCard.tsx`
+- Modify: `fe/src/pages/Categories.tsx:16-22`, `fe/src/pages/BrowseReviews.tsx:19-25`, `fe/src/pages/Index.tsx:22-28` and `:79`
+- Modify: `fe/src/pages/ProductReviews.tsx:212-224`
+- Modify: `fe/src/pages/ReviewDetails.tsx` — ownership check (`:157`), JSON-LD (`:171`), meta description (`:191`), header (`:223-227`), owner-reply comment card (`:414-418`), regular comment card (`:442-446`)
 
 **Interfaces:**
-- Consumes: the API shape from Tasks 3–7.
-- Produces: `ApiReviewListItem.author: ApiAuthor | null`, `.is_anonymous: boolean`; `ApiReviewDetail.is_mine: boolean`; `ApiComment.author: ApiAuthor | null`, `.is_anonymous: boolean`; `<UserAvatar anonymous>`; translation keys `review.anonymous`, `reviewForm.anonymousLabel`, `reviewForm.anonymousHint`, `profile.anonymous`, `profile.revealTitle`, `profile.revealBody`, `profile.revealConfirm`, `profile.cancel`, `profile.anonymityUpdated`, `profile.anonymityFailed`.
+- Consumes: the API shape from Tasks 3-7.
+- Produces: `ApiReviewListItem.author: ApiAuthor | null` and `.is_anonymous: boolean`; `ApiReviewDetail.is_mine: boolean`; `ApiComment.author: ApiAuthor | null` and `.is_anonymous: boolean`; `<UserAvatar anonymous>`; `<CommentAuthor comment={...} />`; `ReviewCardProps.isAnonymous?: boolean`; translation keys `review.anonymous`, `reviewForm.anonymousLabel`, `reviewForm.anonymousHint`, `profile.anonymous`, `profile.revealTitle`, `profile.revealBody`, `profile.revealConfirm`, `profile.cancel`, `profile.anonymityUpdated`, `profile.anonymityFailed`.
 
 - [ ] **Step 1: Update the API types**
 
@@ -1190,7 +1197,7 @@ export interface ApiReviewDetail extends Omit<ApiReviewListItem, "product"> {
 
 - [ ] **Step 2: Add an anonymous mode to UserAvatar**
 
-The spec calls for a neutral icon, not a letter. In `fe/src/components/UserAvatar.tsx`, change the import line at the top:
+The spec calls for a neutral icon, not a letter. In `fe/src/components/UserAvatar.tsx`, change the imports at the top:
 
 ```tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -1251,7 +1258,7 @@ In `fe/src/locales/en/translation.json`, add `"anonymous": "Anonymous"` to the e
     "anonymousHint": "Your name and photo stay hidden. Your level badge still shows.",
 ```
 
-and add these to the existing `"profile"` object:
+and add these to the existing `"profile"` object (which has no `cancel` key today, so there is no collision):
 
 ```json
     "anonymous": "Anonymous",
@@ -1292,7 +1299,7 @@ In `fe/src/locales/bn/translation.json`, add to the matching objects:
     "anonymityFailed": "রিভিউ আপডেট করা যায়নি",
 ```
 
-- [ ] **Step 5: Verify both locale files are valid JSON**
+Verify both files are still valid JSON:
 
 ```bash
 cd fe && python3 -m json.tool src/locales/en/translation.json > /dev/null && \
@@ -1301,35 +1308,62 @@ python3 -m json.tool src/locales/bn/translation.json > /dev/null && echo "both v
 
 Expected: `both valid`.
 
-- [ ] **Step 6: Build**
+- [ ] **Step 5: Create the shared CommentAuthor component**
 
-```bash
-cd fe && npm run build
+The review detail page renders a comment author twice — once in the owner-reply card, once in the regular card — with different wrappers but the same avatar-plus-name logic. One component so the anonymity rule exists in exactly one place.
+
+Create `fe/src/components/CommentAuthor.tsx`:
+
+```tsx
+import { UserAvatar } from "@/components/UserAvatar";
+import { LevelBadge } from "@/components/LevelBadge";
+import { useTranslation } from "react-i18next";
+import type { ApiComment } from "@/lib/api";
+
+/**
+ * Avatar, name, and level badge for one comment. Used by both comment cards on
+ * the review detail page so the anonymity rule lives in exactly one place: a
+ * masked comment (the review author replying on their own anonymous review)
+ * arrives with `author: null` and `is_anonymous: true`, and must never fall
+ * back to a real name.
+ */
+interface CommentAuthorProps {
+  comment: ApiComment;
+  /** Extra classes for the avatar — the owner-reply card rings it. */
+  avatarClassName?: string;
+  children?: React.ReactNode;
+}
+
+export function CommentAuthor({ comment, avatarClassName, children }: CommentAuthorProps) {
+  const { t } = useTranslation();
+  const name = comment.is_anonymous
+    ? t("review.anonymous")
+    : comment.author?.username ?? "";
+
+  return (
+    <>
+      <UserAvatar
+        name={comment.is_anonymous ? "" : name}
+        src={comment.is_anonymous ? undefined : comment.author?.avatar_url}
+        size="sm"
+        anonymous={comment.is_anonymous}
+        className={avatarClassName}
+      />
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-semibold text-foreground">{name}</span>
+          {comment.author_badge && <LevelBadge {...comment.author_badge} />}
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
 ```
 
-Expected: build fails with TypeScript errors at the call sites that read `author.username` on a now-nullable author (`Categories.tsx`, `BrowseReviews.tsx`, `Index.tsx`, `ReviewDetails.tsx`, `ProductReviews.tsx`). **This is expected** — Tasks 9 and 10 fix them. Record the list of failing files.
+Note the structure: `CommentAuthor` renders the avatar plus the opening of the `flex-1` content column, so each card passes its own timestamp span as `children` and then continues with its body and like button. If that shape does not fit the existing JSX cleanly, restructure so the component owns only the avatar and the name-plus-badge row, and each card keeps its own layout wrapper — the requirement is that the `is_anonymous` decision appears once, not that the DOM shape is identical.
 
-- [ ] **Step 7: Commit**
-
-```bash
-git add fe/src/lib/api.ts fe/src/components/UserAvatar.tsx fe/src/locales/en/translation.json fe/src/locales/bn/translation.json
-git commit -m "feat(fe): nullable review author types, anonymous avatar, translations"
-```
-
----
-
-### Task 9: Anonymous rendering in review cards
-
-**Files:**
-- Modify: `fe/src/components/ReviewCard.tsx`
-- Modify: `fe/src/pages/Categories.tsx:16-22`, `fe/src/pages/BrowseReviews.tsx:19-25`, `fe/src/pages/Index.tsx:22-28` and `:79`
-- Modify: `fe/src/pages/ProductReviews.tsx:205-225`
-
-**Interfaces:**
-- Consumes: `ApiReviewListItem.author | null`, `.is_anonymous`, `<UserAvatar anonymous>` from Task 8.
-- Produces: `ReviewCardProps.isAnonymous?: boolean`.
-
-- [ ] **Step 1: Accept and render anonymity in ReviewCard**
+- [ ] **Step 6: Accept and render anonymity in ReviewCard**
 
 In `fe/src/components/ReviewCard.tsx`, add to `ReviewCardProps` after `authorBadge`:
 
@@ -1364,7 +1398,7 @@ to:
 
 The badge line directly below is unchanged — an anonymous author keeps their badge.
 
-- [ ] **Step 2: Fix the three list-page mappers**
+- [ ] **Step 7: Fix the three list-page mappers**
 
 In `fe/src/pages/Categories.tsx`, `fe/src/pages/BrowseReviews.tsx`, and `fe/src/pages/Index.tsx`, each has an identical three-line block. Change:
 
@@ -1383,7 +1417,7 @@ to:
     isAnonymous: r.is_anonymous,
 ```
 
-- [ ] **Step 3: Fix the featured review on Index**
+- [ ] **Step 8: Fix the featured review on Index**
 
 In `fe/src/pages/Index.tsx:79`, change:
 
@@ -1399,7 +1433,7 @@ to:
 
 If `t` is not already in scope in that function, take it from the existing `useTranslation()` call in the component.
 
-- [ ] **Step 4: Fix the ProductReviews author block**
+- [ ] **Step 9: Fix the ProductReviews author block**
 
 This page hand-rolls its own avatar instead of using the shared component. Replace lines 212-224 — the whole `review.author.avatar_url ? <img> : <div>` conditional plus the name below it:
 
@@ -1440,41 +1474,9 @@ Leave the `formatDate` line that follows untouched. Add the import at the top of
 import { UserAvatar } from "@/components/UserAvatar";
 ```
 
-`t` is already in scope from the `useTranslation()` call at line 25. After this edit, `grep -n "review.author\." fe/src/pages/ProductReviews.tsx` must return nothing.
+`t` is already in scope from the `useTranslation()` call at line 25. After this edit, `grep -n "review\.author\." fe/src/pages/ProductReviews.tsx` must return nothing.
 
-- [ ] **Step 5: Build and lint**
-
-```bash
-cd fe && npm run build && npm run lint
-```
-
-Expected: build succeeds. The only remaining TypeScript errors, if any, are in `ReviewDetails.tsx`, which Task 10 handles — if the build still fails there, that is expected; confirm no other file is failing.
-
-- [ ] **Step 6: Verify in the browser**
-
-Run `cd fe && npm run dev`, open `/browse`, and find the review you flagged anonymous in Task 3.
-
-Expected: it shows a neutral grey person icon and "Anonymous", with the level badge still beside the name. Other cards are unchanged.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add fe/src/components/ReviewCard.tsx fe/src/pages/Categories.tsx fe/src/pages/BrowseReviews.tsx fe/src/pages/Index.tsx fe/src/pages/ProductReviews.tsx
-git commit -m "feat(fe): render anonymous authors in review cards and product pages"
-```
-
----
-
-### Task 10: Anonymous rendering on the review detail page
-
-**Files:**
-- Modify: `fe/src/pages/ReviewDetails.tsx` — ownership check (`:157`), JSON-LD (`:171`), meta description (`:191`), header (`:223-227`), owner-reply comment card (`:414-418`), regular comment card (`:442-446`)
-
-**Interfaces:**
-- Consumes: `ApiReviewDetail.is_mine`, `.is_anonymous`, `ApiComment.is_anonymous` from Task 8; `<UserAvatar anonymous>`.
-- Produces: nothing consumed by later tasks.
-
-- [ ] **Step 1: Derive the display name once**
+- [ ] **Step 10: Derive the display name once on the detail page**
 
 In `fe/src/pages/ReviewDetails.tsx`, replace line 157:
 
@@ -1493,7 +1495,7 @@ with:
     : review.author?.username ?? "";
 ```
 
-- [ ] **Step 2: Keep the real name out of the page metadata**
+- [ ] **Step 11: Keep the real name out of the page metadata**
 
 Search engines index JSON-LD and meta descriptions, so these must use the masked name too. Change line 171:
 
@@ -1519,7 +1521,7 @@ to:
         description={review.excerpt ?? `${authorName} reviewed ${review.product.name} — rated ${review.rating}/5.`}
 ```
 
-- [ ] **Step 3: Update the review header**
+- [ ] **Step 12: Update the review header**
 
 Change lines 223-226:
 
@@ -1544,64 +1546,48 @@ to:
                       {authorName}
 ```
 
-- [ ] **Step 4: Update both comment cards**
+- [ ] **Step 13: Use CommentAuthor in both comment cards**
 
-The owner-reply card (lines 414-417) and the regular comment card (lines 442-445) share the same two-line shape. In **both**, change:
+Replace the avatar-plus-name markup in the owner-reply card (lines 414-418) and in the regular comment card (lines 442-446) with `<CommentAuthor>`, passing the existing timestamp span as its `children` and keeping each card's own body and like button. The owner-reply card passes `avatarClassName="ring-2 ring-primary/30"`; the regular card passes no `avatarClassName`.
 
-```tsx
-                          <UserAvatar name={comment.author.username} src={comment.author.avatar_url} size="sm" className="ring-2 ring-primary/30" />
-```
-
-to:
+Add the import:
 
 ```tsx
-                          <UserAvatar
-                            name={comment.is_anonymous ? "" : comment.author?.username ?? ""}
-                            src={comment.is_anonymous ? undefined : comment.author?.avatar_url}
-                            size="sm"
-                            anonymous={comment.is_anonymous}
-                            className="ring-2 ring-primary/30"
-                          />
+import { CommentAuthor } from "@/components/CommentAuthor";
 ```
 
-(the regular card has no `className` prop — drop that line there), and change:
+After this edit, `grep -n "comment\.author\." fe/src/pages/ReviewDetails.tsx` must return nothing — every read of a comment's author goes through `CommentAuthor`.
 
-```tsx
-                              <span className="font-semibold text-foreground">{comment.author.username}</span>
-```
-
-to:
-
-```tsx
-                              <span className="font-semibold text-foreground">
-                                {comment.is_anonymous ? t("review.anonymous") : comment.author?.username ?? ""}
-                              </span>
-```
-
-- [ ] **Step 5: Build and lint**
+- [ ] **Step 14: Build and lint**
 
 ```bash
 cd fe && npm run build && npm run lint
 ```
 
-Expected: build succeeds with no TypeScript errors anywhere. Lint reports no new warnings.
+Expected: build succeeds with no TypeScript errors in any file. Lint reports no new warnings. If `npm run build` reports errors in a file not listed above, that file also reads `author` unconditionally — fix it the same way.
 
-- [ ] **Step 6: Verify the whole thread in the browser**
+- [ ] **Step 15: Verify in the browser**
 
-Open the anonymous review's detail page as the author.
+Run `cd fe && npm run dev`, using the review flagged anonymous in Task 3.
 
-Expected: the header shows the neutral icon plus "Anonymous" with the badge; the "Add Timeline" button is still there (proving `is_mine` works); the author's own comment shows as "Anonymous" with their badge; another user's comment shows their real name. View the page source and confirm the real username appears nowhere in the JSON-LD or the meta description.
+1. `/browse` — the anonymous review shows a neutral grey person icon and "Anonymous", with its level badge still beside the name. Other cards are unchanged.
+2. Its detail page, logged in as the author — header shows the neutral icon plus "Anonymous" with the badge, and the "Add Timeline" button is still present (this proves `is_mine` from Task 7 works).
+3. The comment thread — the author's own comment shows "Anonymous" with their badge; another user's comment shows their real name.
+4. View source — the real username appears nowhere in the JSON-LD block or the `<meta name="description">` tag.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 16: Commit**
 
 ```bash
-git add fe/src/pages/ReviewDetails.tsx
-git commit -m "feat(fe): anonymous author and comment rendering on review detail"
+git add fe/src/lib/api.ts fe/src/components/UserAvatar.tsx fe/src/components/CommentAuthor.tsx \
+        fe/src/components/ReviewCard.tsx fe/src/pages/Categories.tsx fe/src/pages/BrowseReviews.tsx \
+        fe/src/pages/Index.tsx fe/src/pages/ProductReviews.tsx fe/src/pages/ReviewDetails.tsx \
+        fe/src/locales/en/translation.json fe/src/locales/bn/translation.json
+git commit -m "feat(fe): render anonymous authors across cards, product pages, and review detail"
 ```
 
 ---
 
-### Task 11: The "post anonymously" checkbox
+### Task 9: The "post anonymously" checkbox
 
 **Files:**
 - Modify: `fe/src/components/ReviewForm.tsx`
@@ -1682,7 +1668,7 @@ git commit -m "feat(fe): post-anonymously checkbox on the review form"
 
 ---
 
-### Task 12: The profile anonymity toggle
+### Task 10: The profile anonymity toggle
 
 **Files:**
 - Modify: `fe/src/pages/Profile.tsx:24-31` (`MyReview` type), `:307-323` (the review row)
