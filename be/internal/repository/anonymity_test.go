@@ -22,6 +22,45 @@ func TestMaskReviewAuthorHidesAnonymous(t *testing.T) {
 	}
 }
 
+func TestMaskReviewAuthorHidesImportedAuthor(t *testing.T) {
+	// An imported review carries its author's name in SourceAuthor rather than
+	// Author, and SourceURL links to the original under that name. Nil'ing
+	// Author alone would leave both in the response.
+	rv := &models.Review{
+		IsAnonymous:  true,
+		AuthorUserID: 11,
+		Author:       &models.AuthorRef{ID: 11, Username: "import-bot"},
+		Source:       "google",
+		SourceAuthor: "Tanvir Ahmed",
+		SourceURL:    "https://maps.google.com/?cid=12345",
+	}
+	maskReviewAuthor(rv)
+
+	if rv.SourceAuthor != "" {
+		t.Errorf("SourceAuthor = %q, want empty", rv.SourceAuthor)
+	}
+	if rv.SourceURL != "" {
+		t.Errorf("SourceURL = %q, want empty", rv.SourceURL)
+	}
+	if rv.Source != "google" {
+		t.Errorf("Source = %q, want %q — the platform name identifies nobody", rv.Source, "google")
+	}
+}
+
+func TestMaskReviewAuthorLeavesImportAttributionOnPublicReview(t *testing.T) {
+	rv := &models.Review{
+		IsAnonymous:  false,
+		Source:       "google",
+		SourceAuthor: "Tanvir Ahmed",
+		SourceURL:    "https://maps.google.com/?cid=12345",
+	}
+	maskReviewAuthor(rv)
+
+	if rv.SourceAuthor != "Tanvir Ahmed" || rv.SourceURL == "" {
+		t.Fatalf("attribution stripped from a public review: %+v", rv)
+	}
+}
+
 func TestMaskReviewAuthorLeavesPublicReview(t *testing.T) {
 	rv := &models.Review{
 		IsAnonymous:  false,

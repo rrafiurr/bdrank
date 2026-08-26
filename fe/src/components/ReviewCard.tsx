@@ -5,6 +5,7 @@ import { Star, MessageCircle, Clock, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ApiAuthorBadge } from "@/lib/api";
+import { sourceLabel } from "@/lib/reviewSource";
 
 interface ReviewCardProps {
   id: string;
@@ -14,6 +15,10 @@ interface ReviewCardProps {
   authorAvatar: string;
   authorBadge?: ApiAuthorBadge | null;
   isAnonymous?: boolean;
+  /** Platform an imported review came from ("google"); empty for native ones. */
+  source?: string;
+  /** Name the review carried on that platform — the real author to credit. */
+  sourceAuthor?: string;
   rating: number;
   category: string;
   productName: string;
@@ -34,6 +39,7 @@ function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
   e.currentTarget.style.display = "none";
 }
 
+
 export function ReviewCard({
   id,
   title,
@@ -42,6 +48,8 @@ export function ReviewCard({
   authorAvatar,
   authorBadge,
   isAnonymous,
+  source,
+  sourceAuthor,
   rating,
   category,
   productName,
@@ -53,6 +61,11 @@ export function ReviewCard({
   createdAt,
 }: ReviewCardProps) {
   const { t } = useTranslation();
+
+  // An imported review is owned by the import-bot account, so the real credit
+  // lives in sourceAuthor. Fall back to the account name if it is missing.
+  const isImported = Boolean(source);
+  const displayName = isImported ? sourceAuthor || author : author;
   const categoryLabel =
     category.charAt(0).toUpperCase() + category.slice(1);
 
@@ -120,17 +133,24 @@ export function ReviewCard({
           <div className="flex items-center justify-between pt-4 border-t border-border">
             <div className="flex items-center gap-2">
               <UserAvatar
-                name={isAnonymous ? "" : author}
-                src={isAnonymous ? undefined : authorAvatar}
+                name={isAnonymous ? "" : displayName}
+                src={isAnonymous || isImported ? undefined : authorAvatar}
                 size="xs"
                 anonymous={isAnonymous}
               />
               <div>
                 <p className="text-sm font-medium text-card-foreground flex items-center gap-1.5">
-                  {isAnonymous ? t("review.anonymous") : author}
-                  {authorBadge && <LevelBadge {...authorBadge} />}
+                  {isAnonymous ? t("review.anonymous") : displayName}
+                  {/* Imported reviews are owned by the import-bot account, so
+                      its rewards level would say nothing about the real author. */}
+                  {authorBadge && !isImported && <LevelBadge {...authorBadge} />}
                 </p>
-                <p className="text-xs text-muted-foreground">{createdAt}</p>
+                <p className="text-xs text-muted-foreground">
+                  {createdAt}
+                  {isImported && (
+                    <> · {t("review.viaSource", { source: sourceLabel(source) })}</>
+                  )}
+                </p>
               </div>
             </div>
 

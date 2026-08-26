@@ -11,11 +11,19 @@ import "final-review/be/internal/models"
 //
 // AuthorUserID survives masking: it is never serialized (json:"-") and badge
 // decoration and ownership checks both need it.
+//
+// Every other identifying field on models.Review must be cleared here too.
+// SourceAuthor names the person who wrote an imported review and SourceURL
+// links to it under that name, so either one left in place would undo the
+// masking on its own. A new identifying column is unprotected by default —
+// whoever adds one must add it here.
 func maskReviewAuthor(rv *models.Review) {
 	if rv == nil || !rv.IsAnonymous {
 		return
 	}
 	rv.Author = nil
+	rv.SourceAuthor = ""
+	rv.SourceURL = ""
 }
 
 // maskCommentAuthors hides the review author's own comments on a review they

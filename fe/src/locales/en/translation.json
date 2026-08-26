@@ -173,7 +173,8 @@
     "failedToPostComment": "Failed to post comment.",
     "timelineUpdates_one": "{{count}} update",
     "timelineUpdates_other": "{{count}} updates",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "viaSource": "via {{source}}"
   },
   "profile": {
     "title": "My Profile",

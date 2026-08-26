@@ -16,6 +16,7 @@ import {
 import { Star, MessageCircle, Heart, PenSquare, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiProduct, type ApiReviewListItem } from "@/lib/api";
+import { reviewAuthorName, sourceLabel } from "@/lib/reviewSource";
 import { useTranslation } from "react-i18next";
 
 type SortOrder = "newest" | "oldest" | "highest" | "lowest" | "most_liked";
@@ -211,16 +212,25 @@ export default function ProductReviews() {
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <UserAvatar
-                        name={review.is_anonymous ? "" : review.author?.username ?? ""}
-                        src={review.is_anonymous ? undefined : review.author?.avatar_url}
+                        name={review.is_anonymous ? "" : reviewAuthorName(review, t)}
+                        src={
+                          review.is_anonymous || review.source
+                            ? undefined
+                            : review.author?.avatar_url
+                        }
                         size="sm"
                         anonymous={review.is_anonymous}
                       />
                       <div>
                         <p className="font-medium text-card-foreground">
-                          {review.is_anonymous ? t("review.anonymous") : review.author?.username ?? ""}
+                          {reviewAuthorName(review, t)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(review.created_at)}
+                          {review.source && (
+                            <> · {t("review.viaSource", { source: sourceLabel(review.source) })}</>
+                          )}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">

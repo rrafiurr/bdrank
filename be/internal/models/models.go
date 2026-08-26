@@ -54,6 +54,14 @@ type Review struct {
 	Timeline             []TimelineEntry `json:"timeline,omitempty"`
 	Comments             []Comment       `json:"comments,omitempty"`
 	CreatedAt            time.Time       `json:"created_at"`
+	// Source names the platform an imported review came from ("google"), and
+	// SourceAuthor the name it carried there. Imported reviews are owned by the
+	// import-bot user, so these carry the only real attribution available for
+	// them — clients must credit SourceAuthor, not Author, when Source is set.
+	// Empty on reviews written on this platform.
+	Source       string `json:"source,omitempty"`
+	SourceAuthor string `json:"source_author,omitempty"`
+	SourceURL    string `json:"source_url,omitempty"`
 }
 
 // Badge is a lightweight rewards-level summary attached to author-bearing
