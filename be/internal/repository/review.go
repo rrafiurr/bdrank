@@ -89,7 +89,8 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
-			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous
+			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous,
+			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,'')
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -100,7 +101,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		%s
 		GROUP BY r.id, r.title, r.content, r.rating, p.category, p.id, p.name,
 		         u.id, u.username, u.avatar_url, r.created_at, r.is_approved,
-		         r.is_anonymous
+		         r.is_anonymous, r.source, r.source_author, r.source_url
 		%s
 		ORDER BY %s
 		LIMIT ? OFFSET ?`, whereClause, having, orderBy)
@@ -128,6 +129,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			&rv.LikesCount, &rv.CommentsCount,
 			&isTimeline, &rv.TimelineUpdatesCount,
 			&imagesStr, &rv.CreatedAt, &isApproved, &isAnon,
+			&rv.Source, &rv.SourceAuthor, &rv.SourceURL,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -180,7 +182,8 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 			COUNT(DISTINCT c.id)       AS comments_count,
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
-			r.is_approved, r.is_anonymous
+			r.is_approved, r.is_anonymous, COALESCE(r.created_at, NOW()),
+			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,'')
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -191,12 +194,14 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 		WHERE r.id = ? AND r.is_approved = 1
 		GROUP BY r.id, r.title, r.content, r.rating, p.category, r.views_count,
 		         p.id, p.name, p.image_url, u.id, u.username, u.avatar_url,
-		         r.is_approved, r.is_anonymous`, id,
+		         r.is_approved, r.is_anonymous, r.created_at,
+		         r.source, r.source_author, r.source_url`, id,
 	).Scan(
 		&rv.ID, &rv.Title, &rv.Content, &rv.Rating, &rv.Category, &rv.ViewsCount,
 		&productID, &productName, &productImageURL,
 		&authorID, &username, &avatarURL,
 		&rv.LikesCount, &rv.CommentsCount, &isTimeline, &imagesStr, &isApproved, &isAnon,
+		&rv.CreatedAt, &rv.Source, &rv.SourceAuthor, &rv.SourceURL,
 	)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -380,7 +385,8 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
-			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous
+			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous,
+			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,'')
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -391,7 +397,7 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 		%s
 		GROUP BY r.id, r.title, r.content, r.rating, p.category,
 		         p.id, p.name, u.id, u.username, u.avatar_url, r.created_at,
-		         r.is_approved, r.is_anonymous
+		         r.is_approved, r.is_anonymous, r.source, r.source_author, r.source_url
 		ORDER BY r.created_at DESC
 		LIMIT ? OFFSET ?`, whereClause)
 
@@ -418,6 +424,7 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 			&rv.LikesCount, &rv.CommentsCount,
 			&isTimeline, &rv.TimelineUpdatesCount,
 			&imagesStr, &rv.CreatedAt, &isApproved, &isAnon,
+			&rv.Source, &rv.SourceAuthor, &rv.SourceURL,
 		); err != nil {
 			return nil, 0, err
 		}

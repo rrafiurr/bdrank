@@ -1,20 +1,85 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 	"time"
+
+	"final-review/be/internal/storage"
 )
 
 type ExternalHandler struct {
 	db       *sql.DB
 	username string
 	password string
+	storage  storage.Storage
 }
 
-func NewExternalHandler(db *sql.DB, username, password string) *ExternalHandler {
-	return &ExternalHandler{db: db, username: username, password: password}
+func NewExternalHandler(db *sql.DB, username, password string, s storage.Storage) *ExternalHandler {
+	return &ExternalHandler{db: db, username: username, password: password, storage: s}
+}
+
+// maxImportImageBytes caps each re-hosted review photo.
+const maxImportImageBytes = 8 << 20
+
+// importImageClient is kept separate from http.DefaultClient so a slow source
+// host cannot tie up an import request indefinitely.
+var importImageClient = &http.Client{Timeout: 20 * time.Second}
+
+// allowedImageHost reports whether we are willing to fetch a review photo from
+// this URL. Imported photos come from a small set of Google CDN domains;
+// restricting to them keeps this endpoint from doubling as an open URL fetcher
+// for anyone holding the external API password.
+func allowedImageHost(u *url.URL) bool {
+	if u.Scheme != "https" {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	for _, suffix := range []string{"googleusercontent.com", "ggpht.com", "google.com"} {
+		if host == suffix || strings.HasSuffix(host, "."+suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+// rehostImage downloads a source photo and saves it through the configured
+// Storage, returning the public URL of the stored copy. Storage.Store sniffs
+// the content type, so non-image responses are rejected there.
+func (h *ExternalHandler) rehostImage(ctx context.Context, rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid image URL: %w", err)
+	}
+	if !allowedImageHost(u) {
+		return "", fmt.Errorf("image host not allowed: %q", u.Host)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := importImageClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("source returned HTTP %d", resp.StatusCode)
+	}
+
+	stored, err := h.storage.Store(ctx, resp.Body, path.Base(u.Path), maxImportImageBytes)
+	if err != nil {
+		return "", err
+	}
+	return h.storage.URL(stored), nil
 }
 
 func (h *ExternalHandler) checkAuth(r *http.Request) bool {
@@ -43,6 +108,7 @@ type externalReviewRequest struct {
 	SourceURL    string `json:"source_url"`
 	ExternalID   string `json:"external_id"`
 	ReviewedAt   string `json:"reviewed_at"` // ISO-8601, optional
+	Images       []string `json:"images"`    // source photo URLs, re-hosted on import
 }
 
 type externalReviewResponse struct {
@@ -54,6 +120,7 @@ type externalReviewResponse struct {
 	AuthorName string    `json:"author_name"`
 	ExternalID string    `json:"external_id"`
 	CreatedAt  time.Time `json:"created_at"`
+	Images     []string  `json:"images"`
 }
 
 // CreateReview accepts an external review (e.g. from Google) and stores it
@@ -142,6 +209,28 @@ func (h *ExternalHandler) CreateReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, _ := result.LastInsertId()
+
+	// Re-host each source photo and attach it. A photo that cannot be fetched
+	// is skipped rather than failing the import — the review text is still
+	// worth keeping, and the importer reports the shortfall in its summary.
+	stored := []string{}
+	for _, src := range req.Images {
+		if src == "" {
+			continue
+		}
+		publicURL, err := h.rehostImage(r.Context(), src)
+		if err != nil {
+			log.Printf("external import: review %d: skipping image %q: %v", id, src, err)
+			continue
+		}
+		if _, err := h.db.ExecContext(r.Context(),
+			`INSERT INTO review_images (review_id, url) VALUES (?, ?)`, id, publicURL); err != nil {
+			log.Printf("external import: review %d: failed to attach image %q: %v", id, publicURL, err)
+			continue
+		}
+		stored = append(stored, publicURL)
+	}
+
 	writeJSON(w, http.StatusCreated, externalReviewResponse{
 		ID:         id,
 		ProductID:  req.ProductID,
@@ -151,6 +240,7 @@ func (h *ExternalHandler) CreateReview(w http.ResponseWriter, r *http.Request) {
 		AuthorName: req.AuthorName,
 		ExternalID: req.ExternalID,
 		CreatedAt:  createdAt,
+		Images:     stored,
 	})
 }
 

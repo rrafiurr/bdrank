@@ -11,32 +11,8 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem } from "@/lib/api";
+import { toCardProps } from "@/lib/reviewCardProps";
 import { useTranslation } from "react-i18next";
-
-function toCardProps(r: ApiReviewListItem, locale: string) {
-  return {
-    id: String(r.id),
-    title: r.title,
-    excerpt: r.excerpt,
-    author: r.author?.username ?? "",
-    authorAvatar: r.author?.avatar_url ?? "",
-    authorBadge: r.author_badge,
-    isAnonymous: r.is_anonymous,
-    rating: r.rating,
-    category: r.category,
-    productName: r.product.name,
-    images: r.images ?? [],
-    commentsCount: r.comments_count,
-    likesCount: r.likes_count,
-    isTimeline: r.is_timeline,
-    timelineUpdates: r.timeline_updates_count,
-    createdAt: new Date(r.created_at).toLocaleDateString(locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }),
-  };
-}
 
 const BrowseReviews = () => {
   const { t, i18n } = useTranslation();

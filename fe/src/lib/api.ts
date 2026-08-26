@@ -42,6 +42,15 @@ export interface ApiReviewListItem {
   author: ApiAuthor | null;
   is_anonymous: boolean;
   author_badge?: ApiAuthorBadge | null;
+  /**
+   * Set on reviews imported from another platform. `source` is the platform
+   * ("google"), `source_author` the name the review carried there. Imported
+   * reviews are owned by the import-bot account, so credit `source_author`
+   * rather than `author` whenever `source` is present.
+   */
+  source?: string;
+  source_author?: string;
+  source_url?: string;
   images: string[];
   likes_count: number;
   comments_count: number;

@@ -173,7 +173,8 @@
     "failedToPostComment": "মন্তব্য পোস্ট করতে ব্যর্থ।",
     "timelineUpdates_one": "{{count}} আপডেট",
     "timelineUpdates_other": "{{count}} আপডেট",
-    "anonymous": "বেনামী"
+    "anonymous": "বেনামী",
+    "viaSource": "{{source}} থেকে"
   },
   "profile": {
     "title": "আমার প্রোফাইল",

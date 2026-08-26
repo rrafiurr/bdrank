@@ -17,6 +17,7 @@ import { apiFetch, type ApiReviewDetail, type ApiComment } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { reviewAuthorName, sourceLabel } from "@/lib/reviewSource";
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
@@ -158,9 +159,10 @@ const ReviewDetails = () => {
   // is_mine comes from the server, so this still works when the author is
   // masked — review.author is null on an anonymous review.
   const isAuthor = review.is_mine;
-  const authorName = review.is_anonymous
-    ? t("review.anonymous")
-    : review.author?.username ?? "";
+  // This name also feeds the JSON-LD author below, so it must never credit the
+  // import-bot account for someone else's writing.
+  const isImported = Boolean(review.source);
+  const authorName = reviewAuthorName(review, t);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://bdranks.com";
   const reviewJsonLd = [
@@ -228,15 +230,31 @@ const ReviewDetails = () => {
                 <div className="flex items-center gap-4">
                   <UserAvatar
                     name={review.is_anonymous ? "" : authorName}
-                    src={review.is_anonymous ? undefined : review.author?.avatar_url}
+                    src={
+                      review.is_anonymous || isImported
+                        ? undefined
+                        : review.author?.avatar_url
+                    }
                     size="md"
                     anonymous={review.is_anonymous}
                   />
                   <div>
                     <p className="font-semibold text-foreground flex items-center gap-1.5">
                       {authorName}
-                      {review.author_badge && <LevelBadge {...review.author_badge} />}
+                      {review.author_badge && !isImported && (
+                        <LevelBadge {...review.author_badge} />
+                      )}
                     </p>
+                    {isImported && (
+                      <a
+                        href={review.source_url || undefined}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="text-xs text-muted-foreground hover:underline"
+                      >
+                        {t("review.viaSource", { source: sourceLabel(review.source!) })}
+                      </a>
+                    )}
                   </div>
                 </div>
 

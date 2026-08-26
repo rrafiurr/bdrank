@@ -89,7 +89,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	pageH := handlers.NewPageHandler(pageRepo)
 	adminH := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo)
 	sitemapH := handlers.NewSitemapHandler(db, cfg.SiteURL)
-	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass)
+	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass, store)
 	ownerH := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo, embedRepo)
 	widgetH := handlers.NewWidgetHandler(embedRepo)
 
