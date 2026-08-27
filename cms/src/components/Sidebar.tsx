@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, MessageSquare, Package,
   Tag, BookOpen, Users, LogOut, ChevronRight, Building2, Code2, X, Gift,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-tight.png";
@@ -17,6 +18,7 @@ const NAV = [
   { label: "Owners", icon: Building2, to: "/owners", badge: "owners" },
   { label: "Embeds", icon: Code2, to: "/embeds", badge: "embeds" },
   { label: "Rewards", icon: Gift, to: "/rewards" },
+  { label: "Images", icon: ImageIcon, to: "/images" },
   { label: "Users", icon: Users, to: "/users" },
 ];
 
