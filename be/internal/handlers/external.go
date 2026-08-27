@@ -99,16 +99,16 @@ func (h *ExternalHandler) botUserID(r *http.Request) (int64, error) {
 }
 
 type externalReviewRequest struct {
-	ProductID    int64  `json:"product_id"`
-	Title        string `json:"title"`
-	Content      string `json:"content"`
-	Rating       int    `json:"rating"`
-	AuthorName   string `json:"author_name"`
-	Source       string `json:"source"`
-	SourceURL    string `json:"source_url"`
-	ExternalID   string `json:"external_id"`
-	ReviewedAt   string `json:"reviewed_at"` // ISO-8601, optional
-	Images       []string `json:"images"`    // source photo URLs, re-hosted on import
+	ProductID  int64    `json:"product_id"`
+	Title      string   `json:"title"`
+	Content    string   `json:"content"`
+	Rating     int      `json:"rating"`
+	AuthorName string   `json:"author_name"`
+	Source     string   `json:"source"`
+	SourceURL  string   `json:"source_url"`
+	ExternalID string   `json:"external_id"`
+	ReviewedAt string   `json:"reviewed_at"` // ISO-8601, optional
+	Images     []string `json:"images"`      // source photo URLs, re-hosted on import
 }
 
 type externalReviewResponse struct {

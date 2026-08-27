@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"io"
+	"time"
 )
 
 // Storage is the single interface for persisting uploaded images.
@@ -21,4 +22,18 @@ type Storage interface {
 	// (return nil) for empty paths and external/absolute "http" URLs, which are
 	// not stored locally. A missing file must not be treated as an error.
 	Delete(ctx context.Context, path string) error
+
+	// List returns every stored file, newest first. Used by the CMS image
+	// manager to show what is on disk regardless of what references it.
+	List(ctx context.Context) ([]FileInfo, error)
+}
+
+// FileInfo describes one stored file. Path is the same relative form Store
+// returns ("uploads/abc.jpg"), so it can be passed straight back to Delete.
+type FileInfo struct {
+	Path     string    `json:"-"`
+	Filename string    `json:"filename"`
+	URL      string    `json:"url"`
+	Size     int64     `json:"size"`
+	Modified time.Time `json:"modified"`
 }

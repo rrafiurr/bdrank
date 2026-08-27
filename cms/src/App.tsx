@@ -12,6 +12,7 @@ import Categories from "@/pages/Categories";
 import Pages from "@/pages/Pages";
 import PageEditor from "@/pages/PageEditor";
 import Users from "@/pages/Users";
+import Images from "@/pages/Images";
 import Owners from "@/pages/Owners";
 import Embeds from "@/pages/Embeds";
 import Rewards from "@/pages/Rewards";
@@ -40,6 +41,7 @@ function AppRoutes() {
       <Route path="/pages/new" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />
       <Route path="/pages/:slug/edit" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+      <Route path="/images" element={<ProtectedRoute><Images /></ProtectedRoute>} />
       <Route path="/owners" element={<ProtectedRoute><Owners /></ProtectedRoute>} />
       <Route path="/embeds" element={<ProtectedRoute><Embeds /></ProtectedRoute>} />
       <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />

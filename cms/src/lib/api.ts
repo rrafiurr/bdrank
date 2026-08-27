@@ -92,6 +92,39 @@ function getToken(): string | null {
   }
 }
 
+export interface AdminImage {
+  filename: string;
+  url: string;
+  size: number;
+  modified: string;
+  /** null when no review_images row points at this file. */
+  review_id: number | null;
+  review_title?: string;
+}
+
+/** A row outside review_images that still points at a file, returned on a 409. */
+export interface ImageUse {
+  table: string;
+  label: string;
+}
+
+/**
+ * An HTTP error carrying the response body. Some endpoints answer a failure
+ * with structured detail — a 409 from the image manager lists the rows still
+ * using the file — and that detail is lost if only the message survives.
+ * Extends Error, so existing `e instanceof Error` handling is unaffected.
+ */
+export class ApiError extends Error {
+  status: number;
+  data: unknown;
+  constructor(message: string, status: number, data: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -112,7 +145,7 @@ export async function apiFetch<T>(
     throw new Error("Session expired");
   }
 
-  if (!res.ok) throw new Error(data.error ?? "Request failed");
+  if (!res.ok) throw new ApiError(data.error ?? "Request failed", res.status, data);
   return data as T;
 }
 

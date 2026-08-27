@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -110,4 +111,38 @@ func mimeExt(ct string) string {
 	default:
 		return ".jpg"
 	}
+}
+
+// List returns every file in the upload directory, newest first. Directories
+// and dotfiles (.gitkeep) are skipped — they are not uploads.
+func (s *LocalStorage) List(_ context.Context) ([]FileInfo, error) {
+	entries, err := os.ReadDir(s.uploadDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []FileInfo{}, nil
+		}
+		return nil, err
+	}
+
+	files := make([]FileInfo, 0, len(entries))
+	for _, e := range entries {
+		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue // vanished between ReadDir and Info; not worth failing the listing
+		}
+		path := "uploads/" + e.Name()
+		files = append(files, FileInfo{
+			Path:     path,
+			Filename: e.Name(),
+			URL:      s.URL(path),
+			Size:     info.Size(),
+			Modified: info.ModTime(),
+		})
+	}
+
+	sort.Slice(files, func(i, j int) bool { return files[i].Modified.After(files[j].Modified) })
+	return files, nil
 }
