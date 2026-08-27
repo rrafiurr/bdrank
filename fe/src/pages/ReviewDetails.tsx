@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, MessageCircle, ThumbsUp, Share2, Clock, BadgeCheck } from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, ThumbsUp, Share2, Clock, BadgeCheck, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -18,6 +18,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { reviewAuthorName, sourceLabel } from "@/lib/reviewSource";
+
+// Hide a thumbnail whose URL fails to load rather than showing the browser's
+// broken-image glyph. Module-level so it isn't recreated per render.
+function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.style.display = "none";
+}
 
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
@@ -177,7 +183,11 @@ const ReviewDetails = () => {
         worstRating: "1",
       },
       author: { "@type": "Person", name: authorName },
-      itemReviewed: { "@type": "Product", name: review.product.name },
+      itemReviewed: {
+        "@type": "Product",
+        name: review.product.name,
+        url: `${origin}/product/${review.product.id}`,
+      },
       datePublished: review.created_at,
       description: review.excerpt,
     },
@@ -221,6 +231,34 @@ const ReviewDetails = () => {
                   {formatDate(review.created_at)}
                 </span>
               </div>
+
+              {/* What is being reviewed. Sits above the headline so a reader
+                  arriving from search or a shared link knows the subject
+                  before the title, and can reach the product in one click. */}
+              <Link
+                to={`/product/${review.product.id}`}
+                className="group inline-flex items-center gap-3 mb-4 rounded-lg border border-border bg-card p-3 pr-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
+              >
+                {review.product.image_url && (
+                  <img
+                    src={review.product.image_url}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    onError={hideBrokenThumb}
+                    className="h-12 w-12 rounded-md object-cover flex-shrink-0"
+                  />
+                )}
+                <span className="min-w-0">
+                  <span className="block font-semibold text-foreground leading-tight group-hover:text-primary transition-colors">
+                    {review.product.name}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {t("review.viewProduct")}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 transition-transform group-hover:translate-x-0.5" />
+              </Link>
 
               <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-6">
                 {review.title}

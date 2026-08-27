@@ -174,7 +174,8 @@
     "timelineUpdates_one": "{{count}} update",
     "timelineUpdates_other": "{{count}} updates",
     "anonymous": "Anonymous",
-    "viaSource": "via {{source}}"
+    "viaSource": "via {{source}}",
+    "viewProduct": "All reviews of this product"
   },
   "profile": {
     "title": "My Profile",
