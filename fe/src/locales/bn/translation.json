@@ -174,7 +174,8 @@
     "timelineUpdates_one": "{{count}} আপডেট",
     "timelineUpdates_other": "{{count}} আপডেট",
     "anonymous": "বেনামী",
-    "viaSource": "{{source}} থেকে"
+    "viaSource": "{{source}} থেকে",
+    "viewProduct": "এই পণ্যের সব রিভিউ"
   },
   "profile": {
     "title": "আমার প্রোফাইল",
