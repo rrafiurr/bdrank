@@ -175,7 +175,12 @@
     "timelineUpdates_other": "{{count}} আপডেট",
     "anonymous": "বেনামী",
     "viaSource": "{{source}} থেকে",
-    "viewProduct": "এই পণ্যের সব রিভিউ"
+    "viewProduct": "এই পণ্যের সব রিভিউ",
+    "imageViewer": "ছবি ভিউয়ার",
+    "closeViewer": "ছবি ভিউয়ার বন্ধ করুন",
+    "previousPhoto": "আগের ছবি",
+    "nextPhoto": "পরের ছবি",
+    "photoOf": "{{total}} এর {{current}}"
   },
   "profile": {
     "title": "আমার প্রোফাইল",
