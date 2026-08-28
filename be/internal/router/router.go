@@ -84,7 +84,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	profileH := handlers.NewProfileHandler(userRepo, db, rewardsSvc)
 	uploadH := handlers.NewUploadHandler(store)
 	productH := handlers.NewProductHandler(productRepo, reviewRepo, rewardsSvc)
-	reviewH := handlers.NewReviewHandler(reviewRepo, productRepo, store, rewardsSvc)
+	reviewH := handlers.NewReviewHandler(reviewRepo, productRepo, store, rewardsSvc, reviewFieldCache, reviewFieldRepo)
 	reviewFieldH := handlers.NewReviewFieldHandler(reviewFieldCache)
 	timelineH := handlers.NewTimelineHandler(reviewRepo, store)
 	commentH := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo, rewardsSvc)

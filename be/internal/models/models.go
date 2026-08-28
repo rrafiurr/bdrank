@@ -62,6 +62,10 @@ type Review struct {
 	Source       string `json:"source,omitempty"`
 	SourceAuthor string `json:"source_author,omitempty"`
 	SourceURL    string `json:"source_url,omitempty"`
+	// CustomFields holds admin-defined field answers submitted with the
+	// review, if any. omitempty keeps every existing review's response
+	// byte-identical.
+	CustomFields []ReviewFieldValue `json:"custom_fields,omitempty"`
 }
 
 // Badge is a lightweight rewards-level summary attached to author-bearing

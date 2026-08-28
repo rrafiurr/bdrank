@@ -15,14 +15,16 @@ import (
 )
 
 type ReviewHandler struct {
-	reviews  *repository.ReviewRepo
-	products *repository.ProductRepo
-	storage  storage.Storage
-	rewards  *rewards.Service
+	reviews   *repository.ReviewRepo
+	products  *repository.ProductRepo
+	storage   storage.Storage
+	rewards   *rewards.Service
+	fields    *repository.ReviewFieldCache
+	fieldRepo *repository.ReviewFieldRepo
 }
 
-func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage, rw *rewards.Service) *ReviewHandler {
-	return &ReviewHandler{reviews: reviews, products: products, storage: s, rewards: rw}
+func NewReviewHandler(reviews *repository.ReviewRepo, products *repository.ProductRepo, s storage.Storage, rw *rewards.Service, fields *repository.ReviewFieldCache, fieldRepo *repository.ReviewFieldRepo) *ReviewHandler {
+	return &ReviewHandler{reviews: reviews, products: products, storage: s, rewards: rw, fields: fields, fieldRepo: fieldRepo}
 }
 
 func (h *ReviewHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -174,11 +176,35 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		productID = product.ID
 	}
 
+	// Resolve server-side; the client's field list may be stale or forged.
+	category := r.FormValue("category")
+	resolved, err := h.fields.Resolve(r.Context(), category, productID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not load form fields")
+		return
+	}
+	var submitted map[string]string
+	if raw := r.FormValue("fields"); raw != "" {
+		if err := json.Unmarshal([]byte(raw), &submitted); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid fields payload")
+			return
+		}
+	}
+	fieldValues, msg := ValidateFieldAnswers(resolved, submitted)
+	if msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
+
 	reviewID, err := h.reviews.Create(r.Context(), userID, productID, title, content, rating, isAnonymous)
 	if err != nil {
 		log.Printf("ERROR Create review userID=%d productID=%d: %v", userID, productID, err)
 		writeError(w, http.StatusInternalServerError, "failed to create review")
 		return
+	}
+
+	if err := h.fieldRepo.SaveValues(r.Context(), reviewID, fieldValues, resolved); err != nil {
+		log.Printf("WARN review %d: saving custom field answers: %v", reviewID, err)
 	}
 
 	// up to 3 image files
