@@ -175,7 +175,12 @@
     "timelineUpdates_other": "{{count}} updates",
     "anonymous": "Anonymous",
     "viaSource": "via {{source}}",
-    "viewProduct": "All reviews of this product"
+    "viewProduct": "All reviews of this product",
+    "imageViewer": "Image viewer",
+    "closeViewer": "Close image viewer",
+    "previousPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "photoOf": "{{current}} of {{total}}"
   },
   "profile": {
     "title": "My Profile",

@@ -12,6 +12,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LevelBadge } from "@/components/LevelBadge";
 import { CommentAuthor } from "@/components/CommentAuthor";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewDetail, type ApiComment } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,6 +68,8 @@ const ReviewDetails = () => {
   const [commentLikes, setCommentLikes] = useState<Record<number, number>>({});
   const [commentInput, setCommentInput] = useState("");
   const [postingComment, setPostingComment] = useState(false);
+  // Index into lightboxImages, or null when the viewer is closed.
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (review) {
@@ -165,6 +168,14 @@ const ReviewDetails = () => {
   // is_mine comes from the server, so this still works when the author is
   // masked — review.author is null on an anonymous review.
   const isAuthor = review.is_mine;
+  // Review photos first, then timeline photos, so the viewer's prev/next walks
+  // the page in the order a reader sees it. Timeline entries share the review's
+  // set rather than opening their own, so navigation never dead-ends.
+  const lightboxImages = [
+    ...(review.images ?? []),
+    ...(review.timeline ?? []).map(e => e.image_url).filter((u): u is string => !!u),
+  ];
+
   // This name also feeds the JSON-LD author below, so it must never credit the
   // import-bot account for someone else's writing.
   const isImported = Boolean(review.source);
@@ -304,13 +315,19 @@ const ReviewDetails = () => {
             {review.images && review.images.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 {review.images.map((image, index) => (
-                  <div key={index} className="relative aspect-video rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    key={index}
+                    onClick={() => setLightboxIndex(index)}
+                    aria-label={t("review.photoOf", { current: index + 1, total: lightboxImages.length })}
+                    className="group relative aspect-video rounded-xl overflow-hidden cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  >
                     <img
                       src={image}
                       alt={`${review.title} — photo ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
                     />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -398,13 +415,20 @@ const ReviewDetails = () => {
                           <CardContent>
                             <p className="text-foreground/80 mb-4">{entry.content}</p>
                             {entry.image_url && (
-                              <div className="relative aspect-video rounded-lg overflow-hidden max-w-sm">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const i = lightboxImages.indexOf(entry.image_url!);
+                                  if (i !== -1) setLightboxIndex(i);
+                                }}
+                                className="group relative aspect-video rounded-lg overflow-hidden max-w-sm cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                              >
                                 <img
                                   src={entry.image_url}
                                   alt={entry.title}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
                                 />
-                              </div>
+                              </button>
                             )}
                           </CardContent>
                         </Card>
@@ -535,6 +559,13 @@ const ReviewDetails = () => {
           </article>
         </div>
       </main>
+
+      <ImageLightbox
+        images={lightboxImages}
+        index={lightboxIndex}
+        onIndexChange={setLightboxIndex}
+        label={review.title}
+      />
 
       <Footer />
     </div>
