@@ -339,6 +339,30 @@ const ReviewDetails = () => {
               </p>
             </div>
 
+            {review.custom_fields && review.custom_fields.length > 0 && (
+              <dl className="mb-8 grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
+                {review.custom_fields.map((f, i) => (
+                  <div key={i}>
+                    <dt className="text-xs text-muted-foreground">{f.label}</dt>
+                    <dd className="text-sm font-medium text-foreground break-words">
+                      {f.type === "url" ? (
+                        <a
+                          href={f.value}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="text-primary hover:underline"
+                        >
+                          {f.value}
+                        </a>
+                      ) : (
+                        f.value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+
             {/* Stats Bar */}
             <div className="flex items-center gap-6 py-4 border-y border-border mb-12">
               <Button

@@ -89,6 +89,7 @@ export interface ApiReviewDetail extends Omit<ApiReviewListItem, "product"> {
   is_mine: boolean;
   timeline?: ApiTimelineEntry[];
   comments?: ApiComment[];
+  custom_fields?: { label: string; type: string; value: string }[];
 }
 
 export interface ApiCategoryStat {
