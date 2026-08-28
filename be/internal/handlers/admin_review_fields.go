@@ -2,14 +2,28 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-sql-driver/mysql"
 )
 
 var validFieldTypes = map[string]bool{"text": true, "url": true, "select": true, "number": true}
+
+// isDuplicateKeyErr reports whether err is a MySQL duplicate-entry error
+// (1062), e.g. from the uq_scope_key unique index on review_fields.
+func isDuplicateKeyErr(err error) bool {
+	var me *mysql.MySQLError
+	if errors.As(err, &me) {
+		return me.Number == 1062
+	}
+	return false
+}
 
 type reviewFieldBody struct {
 	Scope      string   `json:"scope"`
@@ -129,7 +143,12 @@ func (h *AdminHandler) CreateReviewField(w http.ResponseWriter, r *http.Request)
 		b.Scope, b.ScopeRef, b.FieldKey, b.Label, b.Type, b.IsRequired,
 		string(opts), b.MinValue, b.MaxValue, b.HelpText, b.SortOrder)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "could not create field: "+err.Error())
+		if isDuplicateKeyErr(err) {
+			writeError(w, http.StatusConflict, "a field with this key already exists for this scope")
+			return
+		}
+		log.Printf("ERROR CreateReviewField: %v", err)
+		writeError(w, http.StatusInternalServerError, "could not create field")
 		return
 	}
 	h.invalidateFor(r, b.Scope, b.ScopeRef)
@@ -146,6 +165,37 @@ func (h *AdminHandler) scopeOfField(r *http.Request, id int64) (string, string, 
 	return scope, ref, err == nil
 }
 
+// updateFieldBody mirrors reviewFieldBody but with pointer fields, so a PATCH
+// that omits a key leaves the corresponding column untouched (matches the
+// pattern in UpdateReview). min_value/max_value are read from the raw JSON
+// separately (see minMaxPresence) because a plain *float64 cannot tell
+// "absent" apart from "explicitly null" — both decode to a nil pointer, but
+// only the latter should clear the column.
+type updateFieldBody struct {
+	FieldKey   *string   `json:"field_key"`
+	Label      *string   `json:"label"`
+	Type       *string   `json:"type"`
+	IsRequired *bool     `json:"is_required"`
+	Options    *[]string `json:"options"`
+	MinValue   *float64  `json:"min_value"`
+	MaxValue   *float64  `json:"max_value"`
+	HelpText   *string   `json:"help_text"`
+	SortOrder  *int      `json:"sort_order"`
+}
+
+// minMaxPresence reports whether "min_value"/"max_value" keys were present
+// in the raw JSON body at all, regardless of whether their value was a
+// number or null.
+func minMaxPresence(raw []byte) (minPresent, maxPresent bool) {
+	var m map[string]json.RawMessage
+	if json.Unmarshal(raw, &m) != nil {
+		return false, false
+	}
+	_, minPresent = m["min_value"]
+	_, maxPresent = m["max_value"]
+	return
+}
+
 func (h *AdminHandler) UpdateReviewField(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -157,23 +207,81 @@ func (h *AdminHandler) UpdateReviewField(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusNotFound, "field not found")
 		return
 	}
-	var b reviewFieldBody
-	if json.NewDecoder(r.Body).Decode(&b) != nil {
+
+	raw, err := io.ReadAll(r.Body)
+	if err != nil || len(raw) == 0 {
 		writeError(w, http.StatusBadRequest, "invalid JSON body")
 		return
 	}
-	b.Scope, b.ScopeRef = scope, ref // scope is immutable once created
-	if msg := validateFieldBody(&b); msg != "" {
+	var patch updateFieldBody
+	if json.Unmarshal(raw, &patch) != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	minPresent, maxPresent := minMaxPresence(raw)
+
+	// Load the current row and overlay only what the request actually sent,
+	// so an omitted field survives the write instead of being reset to its
+	// zero value.
+	var current reviewFieldBody
+	var reqInt int
+	var optsStr string
+	if err := h.db.QueryRowContext(r.Context(), `
+		SELECT field_key, label, type, is_required, COALESCE(options,'[]'),
+		       min_value, max_value, help_text, sort_order
+		FROM review_fields WHERE id = ?`, id).Scan(
+		&current.FieldKey, &current.Label, &current.Type, &reqInt, &optsStr,
+		&current.MinValue, &current.MaxValue, &current.HelpText, &current.SortOrder); err != nil {
+		writeError(w, http.StatusInternalServerError, "could not load field")
+		return
+	}
+	current.IsRequired = reqInt == 1
+	if json.Unmarshal([]byte(optsStr), &current.Options) != nil || current.Options == nil {
+		current.Options = []string{}
+	}
+	current.Scope, current.ScopeRef = scope, ref // scope is immutable once created
+
+	// field_key is likewise immutable once created (the original write path
+	// never included it in the UPDATE either) — it is only read here so
+	// validateFieldBody's non-empty check has something to check.
+	if patch.Label != nil {
+		current.Label = *patch.Label
+	}
+	if patch.Type != nil {
+		current.Type = *patch.Type
+	}
+	if patch.IsRequired != nil {
+		current.IsRequired = *patch.IsRequired
+	}
+	if patch.Options != nil {
+		current.Options = *patch.Options
+	}
+	if minPresent {
+		current.MinValue = patch.MinValue // nil here means "explicitly cleared"
+	}
+	if maxPresent {
+		current.MaxValue = patch.MaxValue
+	}
+	if patch.HelpText != nil {
+		current.HelpText = *patch.HelpText
+	}
+	if patch.SortOrder != nil {
+		current.SortOrder = *patch.SortOrder
+	}
+
+	// Validate the merged result, not just the submitted fragment, so e.g.
+	// patching only max_value below the stored min_value is still caught.
+	if msg := validateFieldBody(&current); msg != "" {
 		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
-	opts, _ := json.Marshal(b.Options)
+	opts, _ := json.Marshal(current.Options)
 	if _, err := h.db.ExecContext(r.Context(), `
 		UPDATE review_fields SET label=?, type=?, is_required=?, options=?,
 		       min_value=?, max_value=?, help_text=?, sort_order=?
 		WHERE id = ?`,
-		b.Label, b.Type, b.IsRequired, string(opts),
-		b.MinValue, b.MaxValue, b.HelpText, b.SortOrder, id); err != nil {
+		current.Label, current.Type, current.IsRequired, string(opts),
+		current.MinValue, current.MaxValue, current.HelpText, current.SortOrder, id); err != nil {
 		writeError(w, http.StatusInternalServerError, "update failed")
 		return
 	}
@@ -218,6 +326,17 @@ func (h *AdminHandler) SetFieldHide(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "field_id is required")
 		return
 	}
+
+	// INSERT IGNORE below would otherwise swallow a nonexistent field_id as a
+	// silent no-op (the FK violation becomes a warning, not an error), so the
+	// caller would get a false "ok" for a field that was never hidden.
+	var exists bool
+	if err := h.db.QueryRowContext(r.Context(),
+		`SELECT EXISTS(SELECT 1 FROM review_fields WHERE id = ?)`, b.FieldID).Scan(&exists); err != nil || !exists {
+		writeError(w, http.StatusNotFound, "field not found")
+		return
+	}
+
 	if b.Hidden {
 		_, err = h.db.ExecContext(r.Context(),
 			`INSERT IGNORE INTO product_field_hides (product_id, field_id) VALUES (?, ?)`, productID, b.FieldID)
