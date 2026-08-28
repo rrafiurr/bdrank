@@ -67,6 +67,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	userRepo := repository.NewUserRepo(db, cfg.BaseURL)
 	productRepo := repository.NewProductRepo(db, cfg.BaseURL)
 	reviewRepo := repository.NewReviewRepo(db, cfg.BaseURL)
+	reviewFieldRepo := repository.NewReviewFieldRepo(db)
+	reviewFieldCache := repository.NewReviewFieldCache(reviewFieldRepo, rdb)
 	commentRepo := repository.NewCommentRepo(db, cfg.BaseURL)
 	pageRepo := repository.NewPageRepo(db)
 	embedRepo := repository.NewEmbedRepo(db, cfg.SiteURL)
@@ -83,6 +85,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	uploadH := handlers.NewUploadHandler(store)
 	productH := handlers.NewProductHandler(productRepo, reviewRepo, rewardsSvc)
 	reviewH := handlers.NewReviewHandler(reviewRepo, productRepo, store, rewardsSvc)
+	reviewFieldH := handlers.NewReviewFieldHandler(reviewFieldCache)
 	timelineH := handlers.NewTimelineHandler(reviewRepo, store)
 	commentH := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo, rewardsSvc)
 	searchH := handlers.NewSearchHandler(db)
@@ -130,6 +133,8 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 		r.Get("/reviews", reviewH.List)
 		r.With(mw.OptionalAuth(cfg, rdb)).Get("/reviews/{id}", reviewH.GetByID)
 		r.Post("/reviews/{id}/view", reviewH.View)
+
+		r.Get("/review-fields", reviewFieldH.List)
 
 		r.Get("/pages", pageH.List)
 		r.Get("/pages/{slug}", pageH.Get)
