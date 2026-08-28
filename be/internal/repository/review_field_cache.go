@@ -14,9 +14,9 @@ import (
 // The v1 in these keys is the cached response shape, not the feature version.
 // Changing the shape of models.ReviewField means bumping it, so old entries are
 // never read again and no flush is needed.
-func CategoryKey(slug string) string  { return "reviewform:v1:cat:" + slug }
-func ProductKey(id int64) string      { return "reviewform:v1:prod:" + strconv.FormatInt(id, 10) }
-func MembersKey(slug string) string   { return "reviewform:v1:cat:" + slug + ":members" }
+func CategoryKey(slug string) string { return "reviewform:v1:cat:" + slug }
+func ProductKey(id int64) string     { return "reviewform:v1:prod:" + strconv.FormatInt(id, 10) }
+func MembersKey(slug string) string  { return "reviewform:v1:cat:" + slug + ":members" }
 
 // ReviewFieldCache serves resolved field lists from Redis, falling back to the
 // repository. The form must load even when Redis is down, so every cache error
@@ -31,7 +31,17 @@ func NewReviewFieldCache(repo *ReviewFieldRepo, rdb *redis.Client) *ReviewFieldC
 }
 
 func (c *ReviewFieldCache) Resolve(ctx context.Context, categorySlug string, productID int64) ([]models.ReviewField, error) {
-	key := CategoryKey(categorySlug)
+	// Determine the slug once, before the repo call
+	slug := categorySlug
+	if productID != 0 && slug == "" {
+		if s, err := c.repo.CategoryOfProduct(ctx, productID); err != nil {
+			log.Printf("WARN review-field cache: CategoryOfProduct(%d): %v", productID, err)
+		} else {
+			slug = s
+		}
+	}
+
+	key := CategoryKey(slug)
 	if productID != 0 {
 		key = ProductKey(productID)
 	}
@@ -46,7 +56,7 @@ func (c *ReviewFieldCache) Resolve(ctx context.Context, categorySlug string, pro
 		}
 	}
 
-	fields, err := c.repo.Resolve(ctx, categorySlug, productID)
+	fields, err := c.repo.Resolve(ctx, slug, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,14 +71,12 @@ func (c *ReviewFieldCache) Resolve(ctx context.Context, categorySlug string, pro
 			// edit can clear their keys without scanning. KEYS is not usable
 			// on a production Redis.
 			if productID != 0 {
-				slug := categorySlug
-				if slug == "" {
-					if s, err := c.repo.CategoryOfProduct(ctx, productID); err == nil {
-						slug = s
-					}
-				}
 				if slug != "" {
-					c.rdb.SAdd(ctx, MembersKey(slug), productID)
+					if err := c.rdb.SAdd(ctx, MembersKey(slug), productID).Err(); err != nil {
+						log.Printf("WARN review-field cache sadd %s product %d: %v", MembersKey(slug), productID, err)
+					}
+				} else {
+					log.Printf("WARN review-field cache: product %d key cached without member registration (slug empty)", productID)
 				}
 			}
 		}
