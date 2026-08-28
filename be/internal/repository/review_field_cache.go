@@ -31,9 +31,12 @@ func NewReviewFieldCache(repo *ReviewFieldRepo, rdb *redis.Client) *ReviewFieldC
 }
 
 func (c *ReviewFieldCache) Resolve(ctx context.Context, categorySlug string, productID int64) ([]models.ReviewField, error) {
-	// Determine the slug once, before the repo call
+	// Determine the slug once, before the repo call. A product's real
+	// category always wins over a caller-supplied slug — see
+	// ReviewFieldRepo.resolveCategorySlug — so the members-set registration
+	// below never files a product under the wrong category.
 	slug := categorySlug
-	if productID != 0 && slug == "" {
+	if productID != 0 {
 		if s, err := c.repo.CategoryOfProduct(ctx, productID); err != nil {
 			log.Printf("WARN review-field cache: CategoryOfProduct(%d): %v", productID, err)
 		} else {

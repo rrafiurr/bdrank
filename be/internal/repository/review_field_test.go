@@ -86,6 +86,30 @@ func TestShouldHaveNumberValueNumberField(t *testing.T) {
 	}
 }
 
+func TestResolveCategorySlugProductWinsOverPassedCategory(t *testing.T) {
+	// GET /review-fields?product_id=5&category=physical where product 5's
+	// real category is "service" must resolve to "service", not "physical".
+	got := resolveCategorySlug("physical", 5, "service")
+	if got != "service" {
+		t.Fatalf("resolveCategorySlug(%q, %d, %q) = %q, want %q — product's real category must win",
+			"physical", 5, "service", got, "service")
+	}
+}
+
+func TestResolveCategorySlugProductWinsEvenOverEmptyPassedCategory(t *testing.T) {
+	got := resolveCategorySlug("", 5, "service")
+	if got != "service" {
+		t.Fatalf("got %q, want %q", got, "service")
+	}
+}
+
+func TestResolveCategorySlugUsesPassedWhenNoProduct(t *testing.T) {
+	got := resolveCategorySlug("physical", 0, "")
+	if got != "physical" {
+		t.Fatalf("got %q, want %q", got, "physical")
+	}
+}
+
 func TestShouldHaveNumberValueOtherTypes(t *testing.T) {
 	// Other field types should NOT populate value_number
 	types := []string{"select", "checkbox", "textarea", "date"}

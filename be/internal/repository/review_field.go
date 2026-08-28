@@ -96,16 +96,30 @@ func (r *ReviewFieldRepo) CategoryOfProduct(ctx context.Context, productID int64
 	return slug, err
 }
 
+// resolveCategorySlug decides which category slug governs a Resolve call. A
+// product's real category always wins over a caller-supplied slug: mixing an
+// explicit category with a different product's own fields and hides would
+// produce a result that is correct for neither input. The passed slug is
+// used only when there is no product to derive one from.
+func resolveCategorySlug(passedSlug string, productID int64, productCategory string) string {
+	if productID != 0 {
+		return productCategory
+	}
+	return passedSlug
+}
+
 // Resolve returns the fields a reviewer should see. productID may be 0, which
 // resolves to the category's fields alone — the case where the reviewer typed
-// a product name that does not exist yet.
+// a product name that does not exist yet. Whenever productID is non-zero, the
+// product's own category always wins over any categorySlug the caller also
+// passed — see resolveCategorySlug.
 func (r *ReviewFieldRepo) Resolve(ctx context.Context, categorySlug string, productID int64) ([]models.ReviewField, error) {
-	if productID != 0 && categorySlug == "" {
-		slug, err := r.CategoryOfProduct(ctx, productID)
+	if productID != 0 {
+		derived, err := r.CategoryOfProduct(ctx, productID)
 		if err != nil {
 			return nil, err
 		}
-		categorySlug = slug
+		categorySlug = resolveCategorySlug(categorySlug, productID, derived)
 	}
 
 	var categoryFields []models.ReviewField
