@@ -71,3 +71,27 @@ func TestMergeFieldsEmpty(t *testing.T) {
 		t.Fatalf("got %v, want empty", got)
 	}
 }
+
+func TestShouldHaveNumberValueTextField(t *testing.T) {
+	// Text field should NOT populate value_number, even if the value looks numeric
+	if shouldHaveNumberValue("text") {
+		t.Fatal("text field should not have number value")
+	}
+}
+
+func TestShouldHaveNumberValueNumberField(t *testing.T) {
+	// Number field SHOULD populate value_number
+	if !shouldHaveNumberValue("number") {
+		t.Fatal("number field should have number value")
+	}
+}
+
+func TestShouldHaveNumberValueOtherTypes(t *testing.T) {
+	// Other field types should NOT populate value_number
+	types := []string{"select", "checkbox", "textarea", "date"}
+	for _, typ := range types {
+		if shouldHaveNumberValue(typ) {
+			t.Fatalf("field type %q should not have number value", typ)
+		}
+	}
+}

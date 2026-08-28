@@ -134,29 +134,48 @@ func (r *ReviewFieldRepo) Resolve(ctx context.Context, categorySlug string, prod
 	hidden := map[int64]bool{}
 	for hideRows.Next() {
 		var id int64
-		if hideRows.Scan(&id) == nil {
-			hidden[id] = true
+		if err := hideRows.Scan(&id); err != nil {
+			return nil, err
 		}
+		hidden[id] = true
+	}
+	if err := hideRows.Err(); err != nil {
+		return nil, err
 	}
 
 	return MergeFields(categoryFields, productFields, hidden), nil
 }
 
+// shouldHaveNumberValue checks if a field should store a numeric value.
+func shouldHaveNumberValue(fieldType string) bool {
+	return fieldType == "number"
+}
+
 // SaveValues writes the answers for a review. Values are keyed by field id.
 // A number field also populates value_number so filtering can be added later
-// without migrating historical rows.
-func (r *ReviewFieldRepo) SaveValues(ctx context.Context, reviewID int64, values map[int64]string) error {
+// without migrating historical rows. Other field types leave value_number NULL.
+func (r *ReviewFieldRepo) SaveValues(ctx context.Context, reviewID int64, values map[int64]string, fields []models.ReviewField) error {
 	if len(values) == 0 {
 		return nil
 	}
+
+	// Build field id → type lookup
+	fieldTypes := make(map[int64]string)
+	for _, f := range fields {
+		fieldTypes[f.ID] = f.Type
+	}
+
 	for fieldID, raw := range values {
 		raw = strings.TrimSpace(raw)
 		if raw == "" {
 			continue
 		}
 		var num *float64
-		if f, err := strconv.ParseFloat(raw, 64); err == nil {
-			num = &f
+		fieldType := fieldTypes[fieldID]
+		if shouldHaveNumberValue(fieldType) {
+			if f, err := strconv.ParseFloat(raw, 64); err == nil {
+				num = &f
+			}
 		}
 		if _, err := r.db.ExecContext(ctx,
 			`INSERT INTO review_field_values (review_id, field_id, value_text, value_number)
