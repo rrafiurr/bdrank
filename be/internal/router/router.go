@@ -90,7 +90,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	commentH := handlers.NewCommentHandler(commentRepo, reviewRepo, userRepo, rewardsSvc)
 	searchH := handlers.NewSearchHandler(db)
 	pageH := handlers.NewPageHandler(pageRepo)
-	adminH := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo)
+	adminH := handlers.NewAdminHandler(db, userRepo, reviewRepo, productRepo, pageRepo, store, embedRepo, reviewFieldCache)
 	sitemapH := handlers.NewSitemapHandler(db, cfg.SiteURL)
 	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass, store)
 	ownerH := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo, embedRepo)
@@ -210,6 +210,12 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Get("/admin/pages/{slug}", adminH.GetPage)
 			r.Post("/admin/pages", adminH.CreatePage)
 			r.Post("/admin/upload/image", uploadH.Image)
+
+			r.Get("/admin/review-fields", adminH.ListReviewFields)
+			r.Post("/admin/review-fields", adminH.CreateReviewField)
+			r.Patch("/admin/review-fields/{id}", adminH.UpdateReviewField)
+			r.Delete("/admin/review-fields/{id}", adminH.DeleteReviewField)
+			r.Post("/admin/products/{id}/field-hides", adminH.SetFieldHide)
 
 			r.Get("/admin/images", adminH.ListImages)
 			r.Post("/admin/images/attach", adminH.AttachImage)

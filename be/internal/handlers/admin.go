@@ -18,13 +18,14 @@ import (
 )
 
 type AdminHandler struct {
-	db       *sql.DB
-	users    *repository.UserRepo
-	reviews  *repository.ReviewRepo
-	products *repository.ProductRepo
-	pages    *repository.PageRepo
-	storage  storage.Storage
-	embeds   *repository.EmbedRepo
+	db         *sql.DB
+	users      *repository.UserRepo
+	reviews    *repository.ReviewRepo
+	products   *repository.ProductRepo
+	pages      *repository.PageRepo
+	storage    storage.Storage
+	embeds     *repository.EmbedRepo
+	fieldCache *repository.ReviewFieldCache
 }
 
 func NewAdminHandler(
@@ -35,8 +36,9 @@ func NewAdminHandler(
 	pages *repository.PageRepo,
 	s storage.Storage,
 	embeds *repository.EmbedRepo,
+	fc *repository.ReviewFieldCache,
 ) *AdminHandler {
-	return &AdminHandler{db: db, users: users, reviews: reviews, products: products, pages: pages, storage: s, embeds: embeds}
+	return &AdminHandler{db: db, users: users, reviews: reviews, products: products, pages: pages, storage: s, embeds: embeds, fieldCache: fc}
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -418,13 +420,13 @@ func (h *AdminHandler) ListComments(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	type row struct {
-		ID           int64     `json:"id"`
-		Content      string    `json:"content"`
-		IsApproved   bool      `json:"is_approved"`
-		ReviewID     int64     `json:"review_id"`
-		ReviewTitle  string    `json:"review_title"`
-		Author       string    `json:"author"`
-		CreatedAt    time.Time `json:"created_at"`
+		ID          int64     `json:"id"`
+		Content     string    `json:"content"`
+		IsApproved  bool      `json:"is_approved"`
+		ReviewID    int64     `json:"review_id"`
+		ReviewTitle string    `json:"review_title"`
+		Author      string    `json:"author"`
+		CreatedAt   time.Time `json:"created_at"`
 	}
 	var list []row
 	for rows.Next() {
