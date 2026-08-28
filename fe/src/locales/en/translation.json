@@ -406,7 +406,9 @@
     "review_other": "{{count}} reviews",
     "select": "Select",
     "anonymousLabel": "Post this review anonymously",
-    "anonymousHint": "Your name and photo stay hidden. Your level badge still shows."
+    "anonymousHint": "Your name and photo stay hidden. Your level badge still shows.",
+    "customFieldRequired": "{{label}} is required",
+    "selectPlaceholder": "Choose one"
   },
   "timelinePreview": {
     "badge": "Timeline Review",

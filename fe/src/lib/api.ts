@@ -135,6 +135,18 @@ export interface ApiPage extends ApiPageListItem {
   updated_at: string;
 }
 
+export interface ApiReviewField {
+  id: number;
+  field_key: string;
+  label: string;
+  type: "text" | "url" | "select" | "number";
+  is_required: boolean;
+  options: string[];
+  min_value: number | null;
+  max_value: number | null;
+  help_text: string;
+}
+
 function getToken(): string | null {
   try {
     const raw = localStorage.getItem("auth_session");

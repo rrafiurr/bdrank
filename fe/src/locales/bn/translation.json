@@ -406,7 +406,9 @@
     "review_other": "{{count}} রিভিউ",
     "select": "নির্বাচন করুন",
     "anonymousLabel": "এই রিভিউটি বেনামে প্রকাশ করুন",
-    "anonymousHint": "আপনার নাম ও ছবি গোপন থাকবে। আপনার লেভেল ব্যাজ দেখা যাবে।"
+    "anonymousHint": "আপনার নাম ও ছবি গোপন থাকবে। আপনার লেভেল ব্যাজ দেখা যাবে।",
+    "customFieldRequired": "{{label}} আবশ্যক",
+    "selectPlaceholder": "একটি বেছে নিন"
   },
   "timelinePreview": {
     "badge": "টাইমলাইন রিভিউ",
