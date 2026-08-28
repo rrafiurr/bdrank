@@ -93,6 +93,16 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
           : `/review-fields?category=${encodeURIComponent(formData.category)}`
       ),
     enabled: Boolean(selectedProduct || formData.category),
+    // Keep showing the previous product/category's fields while the new
+    // query is in flight, instead of falling back to `data: undefined` (and
+    // thus EMPTY_CUSTOM_FIELDS) for a render. Without this, the pruning
+    // effect below would see an empty allowed-set on every product switch
+    // and wipe everything the reviewer had typed, even when the new
+    // selection offers the exact same fields. The trade-off is that the
+    // form briefly shows the previous selection's fields during the
+    // refetch rather than flickering to none — deliberate, since discarding
+    // typed answers is worse than a stale label for a moment.
+    placeholderData: (prev) => prev,
   });
 
   // Drop answers to fields that are no longer offered, keeping the rest —
