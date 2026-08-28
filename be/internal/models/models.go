@@ -135,3 +135,28 @@ type PageListItem struct {
 	Title           string `json:"title"`
 	MetaDescription string `json:"meta_description"`
 }
+
+// ReviewField is one admin-defined input on the review form. Scope is
+// "category" (scope_ref is a category slug) or "product" (scope_ref is a
+// product id in decimal text).
+type ReviewField struct {
+	ID         int64    `json:"id"`
+	FieldKey   string   `json:"field_key"`
+	Label      string   `json:"label"`
+	Type       string   `json:"type"`
+	IsRequired bool     `json:"is_required"`
+	Options    []string `json:"options"`
+	MinValue   *float64 `json:"min_value"`
+	MaxValue   *float64 `json:"max_value"`
+	HelpText   string   `json:"help_text"`
+	SortOrder  int      `json:"-"`
+}
+
+// ReviewFieldValue is one answer, joined to its definition for display. Label
+// and Type come from the definition so an answer to a since-deactivated field
+// still renders with the label it was collected under.
+type ReviewFieldValue struct {
+	Label string `json:"label"`
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
