@@ -26,6 +26,17 @@ function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
   e.currentTarget.style.display = "none";
 }
 
+// A custom field's declared type ("url") does not guarantee its stored answer
+// actually is one: an admin can retype a field from text -> url after answers
+// were already submitted, and stored review_field_values are never
+// re-validated against the new type. Treat the value as a link only when it
+// is genuinely an http(s) URL; anything else (including javascript:, data:,
+// or an empty string) renders as plain text instead of becoming a navigable
+// href.
+function isSafeHref(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
     {[1, 2, 3, 4, 5].map((star) => (
@@ -345,7 +356,8 @@ const ReviewDetails = () => {
                   <div key={i}>
                     <dt className="text-xs text-muted-foreground">{f.label}</dt>
                     <dd className="text-sm font-medium text-foreground break-words">
-                      {f.type === "url" ? (
+                      {/* f.type "url" alone doesn't mean f.value is safe — see isSafeHref. */}
+                      {f.type === "url" && isSafeHref(f.value) ? (
                         <a
                           href={f.value}
                           target="_blank"
