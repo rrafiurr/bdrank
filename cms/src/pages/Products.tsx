@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, type AdminProduct, type AdminCategory } from "@/lib/api";
 import { Layout } from "@/components/Layout";
+import { ProductFieldOverrides } from "@/components/ProductFieldOverrides";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Star, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 type ProductForm = { name: string; category: string; image_url: string };
@@ -18,6 +19,7 @@ export default function Products() {
   const qc = useQueryClient();
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; product?: AdminProduct } | null>(null);
   const [form, setForm] = useState<ProductForm>({ name: "", category: "", image_url: "" });
+  const [fieldsProduct, setFieldsProduct] = useState<AdminProduct | null>(null);
 
   const { data: products, isLoading } = useQuery<{ data: AdminProduct[]; total: number }>({
     queryKey: ["admin-products"],
@@ -94,6 +96,9 @@ export default function Products() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
+                          <button onClick={() => setFieldsProduct(p)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Review form fields">
+                            <ListChecks className="h-3.5 w-3.5" />
+                          </button>
                           <button onClick={() => openEdit(p)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
@@ -153,6 +158,8 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ProductFieldOverrides product={fieldsProduct} onOpenChange={v => !v && setFieldsProduct(null)} />
     </Layout>
   );
 }

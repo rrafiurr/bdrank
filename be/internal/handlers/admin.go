@@ -505,12 +505,16 @@ func (h *AdminHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.db.ExecContext(r.Context(), `UPDATE categories SET label = ? WHERE slug = ?`, body.Label, slug)
+	// Clears the category key and every product key in its members set.
+	h.fieldCache.InvalidateCategory(r.Context(), slug)
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 func (h *AdminHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	h.db.ExecContext(r.Context(), `DELETE FROM categories WHERE slug = ?`, slug)
+	// Clears the category key and every product key in its members set.
+	h.fieldCache.InvalidateCategory(r.Context(), slug)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -683,6 +687,10 @@ func (h *AdminHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		  category  = COALESCE(?, category),
 		  image_url = COALESCE(?, image_url)
 		WHERE id = ?`, body.Name, body.Category, body.ImageURL, id)
+	// A product's category is mutable here. Its cached field list was built
+	// from the OLD category and is registered in that category's members set,
+	// so no later category edit would ever clear it. There is no TTL.
+	h.fieldCache.InvalidateProduct(r.Context(), id)
 	p, _ := h.products.FindByID(r.Context(), id)
 	writeJSON(w, http.StatusOK, p)
 }
@@ -694,6 +702,8 @@ func (h *AdminHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.db.ExecContext(r.Context(), `DELETE FROM products WHERE id = ?`, id)
+	// A deleted product's cache key is otherwise an orphan that never expires.
+	h.fieldCache.InvalidateProduct(r.Context(), id)
 	w.WriteHeader(http.StatusNoContent)
 }
 

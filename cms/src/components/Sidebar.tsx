@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, MessageSquare, Package,
   Tag, BookOpen, Users, LogOut, ChevronRight, Building2, Code2, X, Gift,
-  Image as ImageIcon,
+  Image as ImageIcon, ListChecks,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-tight.png";
@@ -14,6 +14,7 @@ const NAV = [
   { label: "Comments", icon: MessageSquare, to: "/comments", badge: "pending" },
   { label: "Products", icon: Package, to: "/products" },
   { label: "Categories", icon: Tag, to: "/categories" },
+  { label: "Form Fields", icon: ListChecks, to: "/form-fields" },
   { label: "Pages", icon: BookOpen, to: "/pages" },
   { label: "Owners", icon: Building2, to: "/owners", badge: "owners" },
   { label: "Embeds", icon: Code2, to: "/embeds", badge: "embeds" },

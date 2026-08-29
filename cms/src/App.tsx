@@ -9,6 +9,7 @@ import Reviews from "@/pages/Reviews";
 import Comments from "@/pages/Comments";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
+import FormFields from "@/pages/FormFields";
 import Pages from "@/pages/Pages";
 import PageEditor from "@/pages/PageEditor";
 import Users from "@/pages/Users";
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/comments" element={<ProtectedRoute><Comments /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+      <Route path="/form-fields" element={<ProtectedRoute><FormFields /></ProtectedRoute>} />
       <Route path="/pages" element={<ProtectedRoute><Pages /></ProtectedRoute>} />
       <Route path="/pages/new" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />
       <Route path="/pages/:slug/edit" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />
