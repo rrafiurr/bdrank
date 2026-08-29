@@ -94,11 +94,20 @@ export function ProductFieldOverrides({ product, onOpenChange }: Props) {
   });
   const resolvedIds = new Set(resolved.map(f => f.id));
 
-  const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ["review-fields", "category", category] });
-    qc.invalidateQueries({ queryKey: ["review-fields", "product", String(productId)] });
-    qc.invalidateQueries({ queryKey: ["review-fields-resolved", productId] });
-  };
+  // Returns the aggregate promise (rather than firing invalidateQueries and
+  // moving on) so that returning it from onSuccess keeps a mutation pending
+  // until all three refetches have actually landed. TanStack Query awaits
+  // whatever onSuccess returns before settling the mutation; drop the
+  // return and `hideMut.isPending` flips false as soon as the POST
+  // resolves, re-enabling the Switch a beat before the resolved-list
+  // refetch above lands — a visible flicker back to the pre-toggle state.
+  // Do not "simplify" this back to a fire-and-forget void function.
+  const invalidateAll = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["review-fields", "category", category] }),
+      qc.invalidateQueries({ queryKey: ["review-fields", "product", String(productId)] }),
+      qc.invalidateQueries({ queryKey: ["review-fields-resolved", productId] }),
+    ]);
 
   const hideMut = useMutation({
     mutationFn: ({ fieldId, hidden }: { fieldId: number; hidden: boolean }) =>
@@ -112,20 +121,23 @@ export function ProductFieldOverrides({ product, onOpenChange }: Props) {
 
   const createMut = useMutation({
     mutationFn: (body: Record<string, unknown>) => apiFetch("/admin/review-fields", { method: "POST", body: JSON.stringify(body) }),
-    onSuccess: () => { invalidateAll(); toast.success("Field created"); setDialog(null); },
+    // toast/setDialog run synchronously so the dialog closes right away;
+    // returning invalidateAll()'s promise still keeps createMut.isPending
+    // true until the refetches land, same reasoning as invalidateAll above.
+    onSuccess: () => { toast.success("Field created"); setDialog(null); return invalidateAll(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
   const updateMut = useMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       apiFetch(`/admin/review-fields/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: () => { invalidateAll(); toast.success("Field updated"); setDialog(null); },
+    onSuccess: () => { toast.success("Field updated"); setDialog(null); return invalidateAll(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiFetch(`/admin/review-fields/${id}`, { method: "DELETE" }),
-    onSuccess: () => { invalidateAll(); toast.success("Field deactivated"); },
+    onSuccess: () => { toast.success("Field deactivated"); return invalidateAll(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
