@@ -121,8 +121,15 @@ export default function FormFields() {
 
     if (dialog?.field) {
       const orig = dialog.field;
+      // PATCH is a true partial update: an absent key preserves the existing
+      // column, an explicit null clears it. So we only ever include a key
+      // here when the admin's form value actually differs from what the
+      // field already had — sending unchanged keys back is harmless for
+      // scalars but would be actively wrong for min_value/max_value, since
+      // an unrelated edit could otherwise blow away a value that was never
+      // touched. field_key is immutable after create (see the read-only
+      // note in the dialog) and is never part of this diff.
       const body: Record<string, unknown> = {};
-      if (form.field_key !== orig.field_key) body.field_key = form.field_key;
       if (form.label !== orig.label) body.label = form.label;
       if (form.type !== orig.type) body.type = form.type;
       if (form.is_required !== orig.is_required) body.is_required = form.is_required;
@@ -136,6 +143,12 @@ export default function FormFields() {
       updateMut.mutate({ id: orig.id, body });
     }
   };
+
+  // Mirrors two constraints the server enforces, so the admin isn't sent
+  // round-trip to discover them: a select field needs at least one non-blank
+  // option, and min must not exceed max when both are set.
+  const hasEmptyOptions = form.type === "select" && form.options.map(o => o.trim()).filter(Boolean).length === 0;
+  const minExceedsMax = form.type === "number" && form.min_value !== null && form.max_value !== null && form.min_value > form.max_value;
 
   const setOption = (i: number, value: string) => setForm(f => ({ ...f, options: f.options.map((o, idx) => (idx === i ? value : o)) }));
   const addOption = () => setForm(f => ({ ...f, options: [...f.options, ""] }));
@@ -230,15 +243,22 @@ export default function FormFields() {
             <DialogTitle>{dialog?.mode === "create" ? "New Field" : "Edit Field"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Field key <span className="text-muted-foreground text-xs">(stable identifier)</span></Label>
-              <Input
-                className="font-mono"
-                value={form.field_key}
-                onChange={e => setForm(f => ({ ...f, field_key: e.target.value.toLowerCase().replace(/\s+/g, "_") }))}
-                placeholder="e.g. response_time"
-              />
-            </div>
+            {dialog?.mode === "create" ? (
+              <div className="space-y-1.5">
+                <Label>Field key <span className="text-muted-foreground text-xs">(stable identifier)</span></Label>
+                <Input
+                  className="font-mono"
+                  value={form.field_key}
+                  onChange={e => setForm(f => ({ ...f, field_key: e.target.value.toLowerCase().replace(/\s+/g, "_") }))}
+                  placeholder="e.g. response_time"
+                />
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label>Field key <span className="text-muted-foreground text-xs">(immutable)</span></Label>
+                <p className="text-sm font-mono text-muted-foreground">{form.field_key}</p>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Label <span className="text-muted-foreground text-xs">(display name)</span></Label>
               <Input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. Response Time" />
@@ -314,7 +334,7 @@ export default function FormFields() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialog(null)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!form.field_key || !form.label || createMut.isPending || updateMut.isPending}>Save</Button>
+            <Button onClick={handleSave} disabled={!form.field_key || !form.label || hasEmptyOptions || minExceedsMax || createMut.isPending || updateMut.isPending}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
