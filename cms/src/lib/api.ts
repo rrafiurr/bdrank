@@ -65,6 +65,20 @@ export interface AdminCategory {
   label: string;
 }
 
+export interface AdminReviewField {
+  id: number;
+  field_key: string;
+  label: string;
+  type: "text" | "url" | "select" | "number";
+  is_required: boolean;
+  options: string[];
+  min_value: number | null;
+  max_value: number | null;
+  help_text: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
 export interface AdminPage {
   slug: string;
   title: string;
