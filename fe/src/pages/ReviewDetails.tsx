@@ -26,6 +26,17 @@ function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
   e.currentTarget.style.display = "none";
 }
 
+// A custom field's declared type ("url") does not guarantee its stored answer
+// actually is one: an admin can retype a field from text -> url after answers
+// were already submitted, and stored review_field_values are never
+// re-validated against the new type. Treat the value as a link only when it
+// is genuinely an http(s) URL; anything else (including javascript:, data:,
+// or an empty string) renders as plain text instead of becoming a navigable
+// href.
+function isSafeHref(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
 const StarRating = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-1">
     {[1, 2, 3, 4, 5].map((star) => (
@@ -338,6 +349,31 @@ const ReviewDetails = () => {
                 {review.content}
               </p>
             </div>
+
+            {review.custom_fields && review.custom_fields.length > 0 && (
+              <dl className="mb-8 grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
+                {review.custom_fields.map((f, i) => (
+                  <div key={i}>
+                    <dt className="text-xs text-muted-foreground">{f.label}</dt>
+                    <dd className="text-sm font-medium text-foreground break-words">
+                      {/* f.type "url" alone doesn't mean f.value is safe — see isSafeHref. */}
+                      {f.type === "url" && isSafeHref(f.value) ? (
+                        <a
+                          href={f.value}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="text-primary hover:underline"
+                        >
+                          {f.value}
+                        </a>
+                      ) : (
+                        f.value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
 
             {/* Stats Bar */}
             <div className="flex items-center gap-6 py-4 border-y border-border mb-12">

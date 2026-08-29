@@ -10,13 +10,20 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch, type ApiCategory, type ApiProduct } from "@/lib/api";
+import { apiFetch, type ApiCategory, type ApiProduct, type ApiReviewField } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
+import { CustomFieldInputs } from "@/components/CustomFieldInputs";
 
 interface ReviewFormProps {
   onClose?: () => void;
 }
+
+// Stable reference so the `data: customFields = []` fallback below doesn't
+// create a new array on every render (which would re-trigger the effect
+// that prunes stale answers and loop indefinitely) while the review-fields
+// query is disabled.
+const EMPTY_CUSTOM_FIELDS: ApiReviewField[] = [];
 
 export function ReviewForm({ onClose }: ReviewFormProps) {
   const { t } = useTranslation();
@@ -51,6 +58,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX_IMAGES = 3;
+  const [customValues, setCustomValues] = useState<Record<number, string>>({});
 
   // Debounce product search
   useEffect(() => {
@@ -74,6 +82,43 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     setShowDropdown(!selectedProduct && suggestions.length > 0 && debouncedQuery.length >= 2);
     setFocusedIndex(-1);
   }, [suggestions, selectedProduct, debouncedQuery]);
+
+  // Admin-defined fields for the selected product or category
+  const { data: customFields = EMPTY_CUSTOM_FIELDS } = useQuery<ApiReviewField[]>({
+    queryKey: ["review-fields", selectedProduct?.id ?? null, formData.category],
+    queryFn: () =>
+      apiFetch(
+        selectedProduct
+          ? `/review-fields?product_id=${selectedProduct.id}`
+          : `/review-fields?category=${encodeURIComponent(formData.category)}`
+      ),
+    enabled: Boolean(selectedProduct || formData.category),
+    // Keep showing the previous product/category's fields while the new
+    // query is in flight, instead of falling back to `data: undefined` (and
+    // thus EMPTY_CUSTOM_FIELDS) for a render. Without this, the pruning
+    // effect below would see an empty allowed-set on every product switch
+    // and wipe everything the reviewer had typed, even when the new
+    // selection offers the exact same fields. The trade-off is that the
+    // form briefly shows the previous selection's fields during the
+    // refetch rather than flickering to none — deliberate, since discarding
+    // typed answers is worse than a stale label for a moment.
+    placeholderData: (prev) => prev,
+  });
+
+  // Drop answers to fields that are no longer offered, keeping the rest —
+  // re-selecting a product must not wipe what the reviewer typed.
+  useEffect(() => {
+    setCustomValues((prev) => {
+      const allowed = new Set(customFields.map((f) => f.id));
+      const keys = Object.keys(prev);
+      if (keys.every((k) => allowed.has(Number(k)))) return prev;
+      const next: Record<number, string> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        if (allowed.has(Number(k))) next[Number(k)] = v;
+      }
+      return next;
+    });
+  }, [customFields]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -177,6 +222,17 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       return;
     }
 
+    const missing = customFields.find(
+      (f) => f.is_required && !(customValues[f.id] ?? "").trim()
+    );
+    if (missing) {
+      toast({
+        title: t("reviewForm.customFieldRequired", { label: missing.label }),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -192,6 +248,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       fd.append("content", formData.content);
       fd.append("rating", String(formData.rating));
       fd.append("is_anonymous", isAnonymous ? "true" : "false");
+      fd.append("fields", JSON.stringify(customValues));
       images.forEach((f) => fd.append("images[]", f));
 
       await apiFetch("/reviews", { method: "POST", body: fd });
@@ -395,6 +452,12 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
           ))}
         </div>
       </div>
+
+      <CustomFieldInputs
+        fields={customFields}
+        values={customValues}
+        onChange={(id, v) => setCustomValues((p) => ({ ...p, [id]: v }))}
+      />
 
       {/* Content */}
       <div className="space-y-2">

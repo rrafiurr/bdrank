@@ -272,6 +272,10 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	maskCommentAuthors(rv.Comments, rv.AuthorUserID, rv.IsAnonymous)
 	maskReviewAuthor(&rv)
 
+	if vals, err := NewReviewFieldRepo(r.db).ValuesForReview(ctx, id); err == nil {
+		rv.CustomFields = vals
+	}
+
 	return &rv, nil
 }
 
