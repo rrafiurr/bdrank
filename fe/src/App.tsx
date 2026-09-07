@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { RouteAnalytics } from "@/components/RouteAnalytics";
 import Index from "./pages/Index";
 import ReviewDetails from "./pages/ReviewDetails";
 import Categories from "./pages/Categories";
@@ -34,6 +35,7 @@ const AppTree = (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RouteAnalytics />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/review/:id" element={<ReviewDetails />} />
