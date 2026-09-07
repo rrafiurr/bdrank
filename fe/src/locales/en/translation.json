@@ -306,7 +306,11 @@
     "successTitle": "Timeline entry added!",
     "successDesc": "Your timeline update has been saved successfully.",
     "errorTitle": "Error",
-    "errorDesc": "Failed to save timeline entry."
+    "errorDesc": "Failed to save timeline entry.",
+    "videoLabel": "Video link (optional)",
+    "videoPlaceholder": "Paste a YouTube, Facebook, TikTok, Instagram, Vimeo, or Dailymotion link",
+    "videoHint": "Paste a link to a video about this product — it will play right inside your review.",
+    "videoInvalid": "That link isn't a video we can embed. Use YouTube, Facebook, Instagram, TikTok, Vimeo, or Dailymotion."
   },
   "ownerRegister": {
     "pageTitle": "Product Owner Portal",
@@ -408,7 +412,11 @@
     "anonymousLabel": "Post this review anonymously",
     "anonymousHint": "Your name and photo stay hidden. Your level badge still shows.",
     "customFieldRequired": "{{label}} is required",
-    "selectPlaceholder": "Choose one"
+    "selectPlaceholder": "Choose one",
+    "videoLabel": "Video link (optional)",
+    "videoPlaceholder": "Paste a YouTube, Facebook, TikTok, Instagram, Vimeo, or Dailymotion link",
+    "videoHint": "Paste a link to a video about this product — it will play right inside your review.",
+    "videoInvalid": "That link isn't a video we can embed. Use YouTube, Facebook, Instagram, TikTok, Vimeo, or Dailymotion."
   },
   "timelinePreview": {
     "badge": "Timeline Review",
@@ -423,5 +431,9 @@
   "header": {
     "seeAllResults": "See all results for \"{{query}}\" →",
     "noResults": "No results for"
+  },
+  "video": {
+    "play": "Play {{platform}} video",
+    "playerTitle": "{{platform}} video player"
   }
 }

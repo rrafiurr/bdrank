@@ -31,6 +31,18 @@ export interface ApiAuthorBadge {
   color: string;
 }
 
+/**
+ * A video link attached to a review, already parsed by the server.
+ * `embed_url` is the only URL that has been through the host allowlist — it is
+ * what may be used as an iframe source; `url` is the original link.
+ */
+export interface ApiVideo {
+  url: string;
+  provider: string;
+  video_id: string;
+  embed_url: string;
+}
+
 export interface ApiReviewListItem {
   id: number;
   title: string;
@@ -52,6 +64,8 @@ export interface ApiReviewListItem {
   source_author?: string;
   source_url?: string;
   images: string[];
+  /** Absent when the author attached no video. */
+  video?: ApiVideo | null;
   likes_count: number;
   comments_count: number;
   is_timeline: boolean;
@@ -65,6 +79,7 @@ export interface ApiTimelineEntry {
   content: string;
   rating: number;
   image_url?: string;
+  video?: ApiVideo | null;
   created_at: string;
 }
 

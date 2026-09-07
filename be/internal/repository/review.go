@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"final-review/be/internal/models"
+	"final-review/be/internal/video"
 )
 
 type ReviewRepo struct {
@@ -90,7 +91,8 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
 			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous,
-			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,'')
+			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,''),
+			COALESCE(r.video_url,'')
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -101,7 +103,8 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		%s
 		GROUP BY r.id, r.title, r.content, r.rating, p.category, p.id, p.name,
 		         u.id, u.username, u.avatar_url, r.created_at, r.is_approved,
-		         r.is_anonymous, r.source, r.source_author, r.source_url
+		         r.is_anonymous, r.source, r.source_author, r.source_url,
+		         r.video_url
 		%s
 		ORDER BY %s
 		LIMIT ? OFFSET ?`, whereClause, having, orderBy)
@@ -121,6 +124,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		var username, avatarURL string
 		var isTimeline, isApproved, isAnon int
 		var imagesStr sql.NullString
+		var videoURL string
 
 		if err := rows.Scan(
 			&rv.ID, &rv.Title, &rv.Excerpt, &rv.Rating, &rv.Category,
@@ -129,7 +133,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			&rv.LikesCount, &rv.CommentsCount,
 			&isTimeline, &rv.TimelineUpdatesCount,
 			&imagesStr, &rv.CreatedAt, &isApproved, &isAnon,
-			&rv.Source, &rv.SourceAuthor, &rv.SourceURL,
+			&rv.Source, &rv.SourceAuthor, &rv.SourceURL, &videoURL,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -141,6 +145,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		rv.IsTimeline = isTimeline == 1
 		rv.IsApproved = isApproved == 1
 		rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
+		rv.Video = video.ParseOrNil(videoURL)
 		reviews = append(reviews, &rv)
 	}
 	if reviews == nil {
@@ -172,6 +177,7 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	var username, avatarURL string
 	var isTimeline, isApproved, isAnon int
 	var imagesStr sql.NullString
+	var videoURL string
 
 	err := r.db.QueryRowContext(ctx, `
 		SELECT
@@ -183,7 +189,8 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
 			r.is_approved, r.is_anonymous, COALESCE(r.created_at, NOW()),
-			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,'')
+			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,''),
+			COALESCE(r.video_url,'')
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -195,13 +202,13 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 		GROUP BY r.id, r.title, r.content, r.rating, p.category, r.views_count,
 		         p.id, p.name, p.image_url, u.id, u.username, u.avatar_url,
 		         r.is_approved, r.is_anonymous, r.created_at,
-		         r.source, r.source_author, r.source_url`, id,
+		         r.source, r.source_author, r.source_url, r.video_url`, id,
 	).Scan(
 		&rv.ID, &rv.Title, &rv.Content, &rv.Rating, &rv.Category, &rv.ViewsCount,
 		&productID, &productName, &productImageURL,
 		&authorID, &username, &avatarURL,
 		&rv.LikesCount, &rv.CommentsCount, &isTimeline, &imagesStr, &isApproved, &isAnon,
-		&rv.CreatedAt, &rv.Source, &rv.SourceAuthor, &rv.SourceURL,
+		&rv.CreatedAt, &rv.Source, &rv.SourceAuthor, &rv.SourceURL, &videoURL,
 	)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -217,16 +224,19 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	rv.IsApproved = isApproved == 1
 	rv.IsTimeline = isTimeline == 1
 	rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
+	rv.Video = video.ParseOrNil(videoURL)
 
 	teRows, err := r.db.QueryContext(ctx,
-		`SELECT id, title, content, rating, COALESCE(image_url,''), COALESCE(created_at, NOW())
+		`SELECT id, title, content, rating, COALESCE(image_url,''), COALESCE(video_url,''), COALESCE(created_at, NOW())
 		 FROM timeline_entries WHERE review_id = ? ORDER BY created_at ASC`, id)
 	if err == nil {
 		defer teRows.Close()
 		for teRows.Next() {
 			var te models.TimelineEntry
-			teRows.Scan(&te.ID, &te.Title, &te.Content, &te.Rating, &te.ImageURL, &te.CreatedAt)
+			var teVideoURL string
+			teRows.Scan(&te.ID, &te.Title, &te.Content, &te.Rating, &te.ImageURL, &teVideoURL, &te.CreatedAt)
 			te.ImageURL = absURL(r.baseURL, te.ImageURL)
+			te.Video = video.ParseOrNil(teVideoURL)
 			rv.Timeline = append(rv.Timeline, te)
 		}
 	}
@@ -279,14 +289,16 @@ func (r *ReviewRepo) FindByID(ctx context.Context, id int64) (*models.Review, er
 	return &rv, nil
 }
 
-func (r *ReviewRepo) Create(ctx context.Context, userID, productID int64, title, content string, rating int, isAnonymous bool) (int64, error) {
+// Create inserts a review. videoURL is the original link the author submitted
+// (already validated by the caller) or "" for none.
+func (r *ReviewRepo) Create(ctx context.Context, userID, productID int64, title, content string, rating int, isAnonymous bool, videoURL string) (int64, error) {
 	anon := 0
 	if isAnonymous {
 		anon = 1
 	}
 	res, err := r.db.ExecContext(ctx,
-		`INSERT INTO reviews (user_id, product_id, title, content, rating, is_anonymous) VALUES (?, ?, ?, ?, ?, ?)`,
-		userID, productID, title, content, rating, anon,
+		`INSERT INTO reviews (user_id, product_id, title, content, rating, is_anonymous, video_url) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		userID, productID, title, content, rating, anon, videoURL,
 	)
 	if err != nil {
 		return 0, err
@@ -322,24 +334,26 @@ func (r *ReviewRepo) IncrementViews(ctx context.Context, id int64) error {
 	return err
 }
 
-func (r *ReviewRepo) AddTimelineEntry(ctx context.Context, reviewID int64, title, content string, rating int, imageURL string) (*models.TimelineEntry, error) {
+func (r *ReviewRepo) AddTimelineEntry(ctx context.Context, reviewID int64, title, content string, rating int, imageURL, videoURL string) (*models.TimelineEntry, error) {
 	var imgArg any
 	if imageURL != "" {
 		imgArg = imageURL
 	}
 	res, err := r.db.ExecContext(ctx,
-		`INSERT INTO timeline_entries (review_id, title, content, rating, image_url) VALUES (?, ?, ?, ?, ?)`,
-		reviewID, title, content, rating, imgArg,
+		`INSERT INTO timeline_entries (review_id, title, content, rating, image_url, video_url) VALUES (?, ?, ?, ?, ?, ?)`,
+		reviewID, title, content, rating, imgArg, videoURL,
 	)
 	if err != nil {
 		return nil, err
 	}
 	id, _ := res.LastInsertId()
 	var te models.TimelineEntry
+	var teVideoURL string
 	r.db.QueryRowContext(ctx,
-		`SELECT id, title, content, rating, COALESCE(image_url,''), created_at FROM timeline_entries WHERE id = ?`, id,
-	).Scan(&te.ID, &te.Title, &te.Content, &te.Rating, &te.ImageURL, &te.CreatedAt)
+		`SELECT id, title, content, rating, COALESCE(image_url,''), COALESCE(video_url,''), created_at FROM timeline_entries WHERE id = ?`, id,
+	).Scan(&te.ID, &te.Title, &te.Content, &te.Rating, &te.ImageURL, &teVideoURL, &te.CreatedAt)
 	te.ImageURL = absURL(r.baseURL, te.ImageURL)
+	te.Video = video.ParseOrNil(teVideoURL)
 	return &te, nil
 }
 
@@ -390,7 +404,8 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
 			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous,
-			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,'')
+			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,''),
+			COALESCE(r.video_url,'')
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
@@ -401,7 +416,8 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 		%s
 		GROUP BY r.id, r.title, r.content, r.rating, p.category,
 		         p.id, p.name, u.id, u.username, u.avatar_url, r.created_at,
-		         r.is_approved, r.is_anonymous, r.source, r.source_author, r.source_url
+		         r.is_approved, r.is_anonymous, r.source, r.source_author, r.source_url,
+		         r.video_url
 		ORDER BY r.created_at DESC
 		LIMIT ? OFFSET ?`, whereClause)
 
@@ -420,6 +436,7 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 		var username, avatarURL string
 		var isTimeline, isApproved, isAnon int
 		var imagesStr sql.NullString
+		var videoURL string
 
 		if err := rows.Scan(
 			&rv.ID, &rv.Title, &rv.Excerpt, &rv.Rating, &rv.Category,
@@ -428,7 +445,7 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 			&rv.LikesCount, &rv.CommentsCount,
 			&isTimeline, &rv.TimelineUpdatesCount,
 			&imagesStr, &rv.CreatedAt, &isApproved, &isAnon,
-			&rv.Source, &rv.SourceAuthor, &rv.SourceURL,
+			&rv.Source, &rv.SourceAuthor, &rv.SourceURL, &videoURL,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -440,6 +457,7 @@ func (r *ReviewRepo) ListByOwner(ctx context.Context, ownerID, productID int64, 
 		rv.IsTimeline = isTimeline == 1
 		rv.IsApproved = isApproved == 1
 		rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
+		rv.Video = video.ParseOrNil(videoURL)
 		reviews = append(reviews, &rv)
 	}
 	if reviews == nil {

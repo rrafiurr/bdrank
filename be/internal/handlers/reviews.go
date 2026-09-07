@@ -148,6 +148,14 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// always an explicit opt-in.
 	isAnonymous := r.FormValue("is_anonymous") == "true" || r.FormValue("is_anonymous") == "1"
 
+	// Rejected before anything is written, so a bad link never costs the user
+	// a half-created review.
+	videoURL, videoOK := parseOptionalVideo(r.FormValue("video_url"))
+	if !videoOK {
+		writeError(w, http.StatusBadRequest, videoRejected)
+		return
+	}
+
 	var productID int64
 	if pidStr := r.FormValue("product_id"); pidStr != "" {
 		pid, err := strconv.ParseInt(pidStr, 10, 64)
@@ -196,7 +204,7 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reviewID, err := h.reviews.Create(r.Context(), userID, productID, title, content, rating, isAnonymous)
+	reviewID, err := h.reviews.Create(r.Context(), userID, productID, title, content, rating, isAnonymous, videoURL)
 	if err != nil {
 		log.Printf("ERROR Create review userID=%d productID=%d: %v", userID, productID, err)
 		writeError(w, http.StatusInternalServerError, "failed to create review")

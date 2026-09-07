@@ -14,6 +14,7 @@ import { apiFetch, type ApiCategory, type ApiProduct, type ApiReviewField } from
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
 import { CustomFieldInputs } from "@/components/CustomFieldInputs";
+import { looksLikeSupportedVideo } from "@/lib/videoLink";
 
 interface ReviewFormProps {
   onClose?: () => void;
@@ -56,6 +57,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
   const [images, setImages] = useState<File[]>([]);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [videoURL, setVideoURL] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const MAX_IMAGES = 3;
   const [customValues, setCustomValues] = useState<Record<number, string>>({});
@@ -233,6 +235,13 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       return;
     }
 
+    // Caught here only so the reviewer sees it before losing the form; the
+    // server rejects an unsupported link regardless.
+    if (videoURL.trim() && !looksLikeSupportedVideo(videoURL)) {
+      toast({ title: t("reviewForm.videoInvalid"), variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -249,6 +258,7 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       fd.append("rating", String(formData.rating));
       fd.append("is_anonymous", isAnonymous ? "true" : "false");
       fd.append("fields", JSON.stringify(customValues));
+      fd.append("video_url", videoURL.trim());
       images.forEach((f) => fd.append("images[]", f));
 
       await apiFetch("/reviews", { method: "POST", body: fd });
@@ -508,6 +518,25 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
           onChange={handleImageSelect}
         />
         <p className="text-xs text-muted-foreground">{t("reviewForm.photoHint")}</p>
+      </div>
+
+      {/* Video link */}
+      <div className="space-y-2">
+        <Label htmlFor="video-url">{t("reviewForm.videoLabel")}</Label>
+        <Input
+          id="video-url"
+          type="url"
+          inputMode="url"
+          placeholder={t("reviewForm.videoPlaceholder")}
+          value={videoURL}
+          onChange={(e) => setVideoURL(e.target.value)}
+          className="bg-background"
+        />
+        {videoURL.trim() && !looksLikeSupportedVideo(videoURL) ? (
+          <p className="text-xs text-destructive">{t("reviewForm.videoInvalid")}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">{t("reviewForm.videoHint")}</p>
+        )}
       </div>
 
       {/* Anonymous posting */}

@@ -13,6 +13,7 @@ import { Footer } from "@/components/Footer";
 import { LevelBadge } from "@/components/LevelBadge";
 import { CommentAuthor } from "@/components/CommentAuthor";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { VideoEmbed } from "@/components/VideoEmbed";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewDetail, type ApiComment } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -343,6 +344,13 @@ const ReviewDetails = () => {
               </div>
             )}
 
+            {/* Video */}
+            {review.video && (
+              <div className="mb-8">
+                <VideoEmbed video={review.video} />
+              </div>
+            )}
+
             {/* Content */}
             <div className="prose prose-lg max-w-none mb-12">
               <p className="text-foreground/90 leading-relaxed whitespace-pre-line">
@@ -465,6 +473,11 @@ const ReviewDetails = () => {
                                   className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
                                 />
                               </button>
+                            )}
+                            {entry.video && (
+                              <div className="mt-4 max-w-sm">
+                                <VideoEmbed video={entry.video} />
+                              </div>
                             )}
                           </CardContent>
                         </Card>

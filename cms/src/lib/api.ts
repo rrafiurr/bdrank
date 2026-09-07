@@ -38,6 +38,8 @@ export interface AdminReview {
 export interface AdminReviewDetail extends AdminReview {
   content: string;
   images: string[];
+  /** Original video link the author submitted; "" when there is none. */
+  video_url: string;
 }
 
 export interface AdminComment {

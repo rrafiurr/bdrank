@@ -4,7 +4,8 @@ import { LevelBadge } from "@/components/LevelBadge";
 import { Star, MessageCircle, Clock, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { ApiAuthorBadge } from "@/lib/api";
+import type { ApiAuthorBadge, ApiVideo } from "@/lib/api";
+import { VideoEmbed } from "@/components/VideoEmbed";
 import { sourceLabel } from "@/lib/reviewSource";
 
 interface ReviewCardProps {
@@ -23,6 +24,8 @@ interface ReviewCardProps {
   category: string;
   productName: string;
   images: string[];
+  /** Video the author attached, if any. Shown as a click-to-play facade. */
+  video?: ApiVideo | null;
   commentsCount: number;
   likesCount: number;
   isTimeline?: boolean;
@@ -54,6 +57,7 @@ export function ReviewCard({
   category,
   productName,
   images,
+  video,
   commentsCount,
   likesCount,
   isTimeline,
@@ -129,6 +133,8 @@ export function ReviewCard({
               )}
             </div>
           )}
+
+          {video && <VideoEmbed video={video} className="mb-4" />}
 
           <div className="flex items-center justify-between pt-4 border-t border-border">
             <div className="flex items-center gap-2">

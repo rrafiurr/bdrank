@@ -259,16 +259,18 @@ func (h *AdminHandler) GetReview(w http.ResponseWriter, r *http.Request) {
 		Product    string    `json:"product"`
 		Author     string    `json:"author"`
 		Images     []string  `json:"images"`
+		VideoURL   string    `json:"video_url"`
 		CreatedAt  time.Time `json:"created_at"`
 	}
 	var approved int
 	err = h.db.QueryRowContext(r.Context(), `
-		SELECT r.id, r.title, r.content, r.rating, r.is_approved, p.name, COALESCE(u.username, u.email), r.created_at
+		SELECT r.id, r.title, r.content, r.rating, r.is_approved, p.name, COALESCE(u.username, u.email),
+		       COALESCE(r.video_url,''), r.created_at
 		FROM reviews r
 		INNER JOIN products p ON r.product_id = p.id
 		INNER JOIN users u ON r.user_id = u.id
 		WHERE r.id = ?`, id).
-		Scan(&out.ID, &out.Title, &out.Content, &out.Rating, &approved, &out.Product, &out.Author, &out.CreatedAt)
+		Scan(&out.ID, &out.Title, &out.Content, &out.Rating, &approved, &out.Product, &out.Author, &out.VideoURL, &out.CreatedAt)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "review not found")
 		return
@@ -302,6 +304,7 @@ func (h *AdminHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 		Content    *string   `json:"content"`
 		Rating     *int      `json:"rating"`
 		Images     *[]string `json:"images"`
+		VideoURL   *string   `json:"video_url"`
 	}
 	json.NewDecoder(r.Body).Decode(&body)
 	if body.IsApproved != nil {
@@ -327,6 +330,16 @@ func (h *AdminHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.db.ExecContext(r.Context(), `UPDATE reviews SET rating = ? WHERE id = ?`, *body.Rating, id)
+	}
+	if body.VideoURL != nil {
+		// An empty string clears the link; anything else must pass the same
+		// allowlist a submitter's link does.
+		videoURL, ok := parseOptionalVideo(*body.VideoURL)
+		if !ok {
+			writeError(w, http.StatusBadRequest, videoRejected)
+			return
+		}
+		h.db.ExecContext(r.Context(), `UPDATE reviews SET video_url = ? WHERE id = ?`, videoURL, id)
 	}
 	if body.Images != nil {
 		h.db.ExecContext(r.Context(), `DELETE FROM review_images WHERE review_id = ?`, id)
