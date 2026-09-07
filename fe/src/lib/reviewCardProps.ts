@@ -22,6 +22,7 @@ export function toCardProps(r: ApiReviewListItem, locale: string) {
     category: r.category,
     productName: r.product.name,
     images: r.images ?? [],
+    video: r.video ?? null,
     commentsCount: r.comments_count,
     likesCount: r.likes_count,
     isTimeline: r.is_timeline,

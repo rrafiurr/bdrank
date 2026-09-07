@@ -306,7 +306,11 @@
     "successTitle": "টাইমলাইন এন্ট্রি যোগ হয়েছে!",
     "successDesc": "আপনার টাইমলাইন আপডেট সফলভাবে সংরক্ষিত হয়েছে।",
     "errorTitle": "ত্রুটি",
-    "errorDesc": "টাইমলাইন এন্ট্রি সংরক্ষণ করতে ব্যর্থ।"
+    "errorDesc": "টাইমলাইন এন্ট্রি সংরক্ষণ করতে ব্যর্থ।",
+    "videoLabel": "ভিডিও লিংক (ঐচ্ছিক)",
+    "videoPlaceholder": "YouTube, Facebook, TikTok, Instagram, Vimeo বা Dailymotion লিংক পেস্ট করুন",
+    "videoHint": "এই পণ্য নিয়ে কোনো ভিডিওর লিংক দিন — সেটি আপনার রিভিউয়ের ভেতরেই চলবে।",
+    "videoInvalid": "এই লিংকটি আমরা এম্বেড করতে পারি না। YouTube, Facebook, Instagram, TikTok, Vimeo বা Dailymotion ব্যবহার করুন।"
   },
   "ownerRegister": {
     "pageTitle": "প্রোডাক্ট ওনার পোর্টাল",
@@ -408,7 +412,11 @@
     "anonymousLabel": "এই রিভিউটি বেনামে প্রকাশ করুন",
     "anonymousHint": "আপনার নাম ও ছবি গোপন থাকবে। আপনার লেভেল ব্যাজ দেখা যাবে।",
     "customFieldRequired": "{{label}} আবশ্যক",
-    "selectPlaceholder": "একটি বেছে নিন"
+    "selectPlaceholder": "একটি বেছে নিন",
+    "videoLabel": "ভিডিও লিংক (ঐচ্ছিক)",
+    "videoPlaceholder": "YouTube, Facebook, TikTok, Instagram, Vimeo বা Dailymotion লিংক পেস্ট করুন",
+    "videoHint": "এই পণ্য নিয়ে কোনো ভিডিওর লিংক দিন — সেটি আপনার রিভিউয়ের ভেতরেই চলবে।",
+    "videoInvalid": "এই লিংকটি আমরা এম্বেড করতে পারি না। YouTube, Facebook, Instagram, TikTok, Vimeo বা Dailymotion ব্যবহার করুন।"
   },
   "timelinePreview": {
     "badge": "টাইমলাইন রিভিউ",
@@ -423,5 +431,9 @@
   "header": {
     "seeAllResults": "\"{{query}}\" এর সব ফলাফল দেখুন →",
     "noResults": "এর জন্য কোনো ফলাফল নেই:"
+  },
+  "video": {
+    "play": "{{platform}} ভিডিও চালান",
+    "playerTitle": "{{platform}} ভিডিও প্লেয়ার"
   }
 }

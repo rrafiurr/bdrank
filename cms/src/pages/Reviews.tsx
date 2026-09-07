@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2, ExternalLink, Star, CheckCircle, XCircle, Pencil, ImagePlus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-type ReviewForm = { title: string; content: string; rating: number; images: string[] };
+type ReviewForm = { title: string; content: string; rating: number; images: string[]; video_url: string };
 
 export default function Reviews() {
   const [page, setPage] = useState(0);
@@ -21,7 +21,7 @@ export default function Reviews() {
   const qc = useQueryClient();
 
   const [editId, setEditId] = useState<number | null>(null);
-  const [form, setForm] = useState<ReviewForm>({ title: "", content: "", rating: 5, images: [] });
+  const [form, setForm] = useState<ReviewForm>({ title: "", content: "", rating: 5, images: [], video_url: "" });
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +39,7 @@ export default function Reviews() {
         content: editing.content,
         rating: editing.rating,
         images: editing.images ?? [],
+        video_url: editing.video_url ?? "",
       });
     }
   }, [editing]);
@@ -333,6 +334,19 @@ export default function Reviews() {
                     if (file) handleUpload(file);
                   }}
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Video link</Label>
+                <Input
+                  type="url"
+                  value={form.video_url}
+                  onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
+                  placeholder="https://youtube.com/watch?v=…"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  YouTube, Facebook, Instagram, TikTok, Vimeo, or Dailymotion. Clear the field to remove the video.
+                </p>
               </div>
             </div>
           )}

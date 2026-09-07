@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"final-review/be/internal/video"
+)
 
 type User struct {
 	ID             int64     `json:"id"`
@@ -66,6 +70,11 @@ type Review struct {
 	// review, if any. omitempty keeps every existing review's response
 	// byte-identical.
 	CustomFields []ReviewFieldValue `json:"custom_fields,omitempty"`
+	// Video is the parsed form of an optional video link the author attached.
+	// Nil when there is none, so a review without one serializes exactly as
+	// before. Clients render Video.EmbedURL; it is the only URL that has been
+	// through the host allowlist.
+	Video *video.Video `json:"video,omitempty"`
 }
 
 // Badge is a lightweight rewards-level summary attached to author-bearing
@@ -91,12 +100,13 @@ type AuthorRef struct {
 }
 
 type TimelineEntry struct {
-	ID        int64     `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	Rating    int       `json:"rating"`
-	ImageURL  string    `json:"image_url,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        int64        `json:"id"`
+	Title     string       `json:"title"`
+	Content   string       `json:"content"`
+	Rating    int          `json:"rating"`
+	ImageURL  string       `json:"image_url,omitempty"`
+	Video     *video.Video `json:"video,omitempty"`
+	CreatedAt time.Time    `json:"created_at"`
 }
 
 type Comment struct {

@@ -52,6 +52,12 @@ func (h *TimelineHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	videoURL, ok := parseOptionalVideo(r.FormValue("video_url"))
+	if !ok {
+		writeError(w, http.StatusBadRequest, videoRejected)
+		return
+	}
+
 	var imagePath string
 	file, fh, fileErr := r.FormFile("image")
 	if fileErr == nil {
@@ -59,7 +65,7 @@ func (h *TimelineHandler) Create(w http.ResponseWriter, r *http.Request) {
 		imagePath, _ = h.storage.Store(r.Context(), file, fh.Filename, 10<<20)
 	}
 
-	entry, err := h.reviews.AddTimelineEntry(r.Context(), reviewID, title, content, rating, imagePath)
+	entry, err := h.reviews.AddTimelineEntry(r.Context(), reviewID, title, content, rating, imagePath, videoURL)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to add timeline entry")
 		return

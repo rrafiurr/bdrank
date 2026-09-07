@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { looksLikeSupportedVideo } from "@/lib/videoLink";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
@@ -22,6 +23,7 @@ const AddTimeline = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [videoURL, setVideoURL] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +56,11 @@ const AddTimeline = () => {
       return;
     }
 
+    if (videoURL.trim() && !looksLikeSupportedVideo(videoURL)) {
+      toast({ title: t("timeline.videoInvalid"), variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -61,6 +68,7 @@ const AddTimeline = () => {
       fd.append("content", content.trim());
       fd.append("rating", String(rating));
       if (image) fd.append("image", image);
+      fd.append("video_url", videoURL.trim());
 
       await apiFetch(`/reviews/${id}/timeline`, { method: "POST", body: fd });
 
@@ -197,6 +205,24 @@ const AddTimeline = () => {
                       </label>
                     )}
                   </div>
+                </div>
+
+                {/* Video link */}
+                <div className="space-y-2">
+                  <Label htmlFor="timeline-video">{t("timeline.videoLabel")}</Label>
+                  <Input
+                    id="timeline-video"
+                    type="url"
+                    inputMode="url"
+                    placeholder={t("timeline.videoPlaceholder")}
+                    value={videoURL}
+                    onChange={(e) => setVideoURL(e.target.value)}
+                  />
+                  {videoURL.trim() && !looksLikeSupportedVideo(videoURL) ? (
+                    <p className="text-xs text-destructive">{t("timeline.videoInvalid")}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t("timeline.videoHint")}</p>
+                  )}
                 </div>
 
                 {/* Submit */}
