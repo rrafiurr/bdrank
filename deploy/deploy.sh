@@ -55,7 +55,9 @@ if [ "$SKIP_FRONTEND" = false ]; then
   echo "VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-}" >> .env.production
   echo "VITE_FACEBOOK_APP_ID=${VITE_FACEBOOK_APP_ID:-}" >> .env.production
   echo "VITE_SOCIAL_LOGIN_ENABLED=${VITE_SOCIAL_LOGIN_ENABLED:-}" >> .env.production
-  echo "VITE_GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID:-}" >> .env.production
+  # GA4 Measurement ID is public (it ships in every page's JS), so the real
+  # value is the default here rather than an env var a deploy can forget.
+  echo "VITE_GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID:-G-NYNFNNVSJJ}" >> .env.production
   npm_ci
   npm run build
 
