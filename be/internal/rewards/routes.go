@@ -8,17 +8,24 @@ import (
 
 // RegisterRoutes mounts all reward endpoints. auth guards user routes; admin
 // guards admin routes. Mount under the host's /api/v1 group.
-func RegisterRoutes(r chi.Router, svc *Service, auth, admin func(http.Handler) http.Handler) {
+func RegisterRoutes(r chi.Router, svc *Service, auth, optionalAuth, admin func(http.Handler) http.Handler) {
 	a := &api{svc: svc}
 
 	// public
 	r.Get("/rewards/levels", a.levels)
 
+	// public, but a signed-in caller gets their own row flagged. The home page
+	// shows the weekly top reviewers to anonymous visitors, so this cannot sit
+	// behind Auth — a 401 there would bounce them to the sign-in page.
+	r.Group(func(r chi.Router) {
+		r.Use(optionalAuth)
+		r.Get("/rewards/leaderboard", a.leaderboard)
+	})
+
 	// user (JWT)
 	r.Group(func(r chi.Router) {
 		r.Use(auth)
 		r.Get("/rewards/me", a.me)
-		r.Get("/rewards/leaderboard", a.leaderboard)
 		r.Get("/rewards/me/transactions", a.history)
 		r.Get("/rewards/items", a.items)
 		r.Post("/rewards/redeem", a.redeem)

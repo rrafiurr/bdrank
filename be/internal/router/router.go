@@ -233,6 +233,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 
 		rewards.RegisterRoutes(r, rewardsSvc,
 			mw.Auth(cfg, rdb),
+			mw.OptionalAuth(cfg, rdb),
 			mw.Admin(cfg, rdb, userRepo),
 		)
 	})
