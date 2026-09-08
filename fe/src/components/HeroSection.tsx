@@ -72,8 +72,11 @@ export function HeroSection() {
     results && (results.products.length > 0 || results.reviews.length > 0);
   const showDropdown = focused && query.trim().length >= 2 && results !== null;
 
+  // The section deliberately has no overflow-hidden: it would clip the search
+  // dropdown, which extends past the section's bottom edge. The two decoration
+  // layers below each clip their own contents, so the blobs stay inside anyway.
   return (
-    <section className="relative overflow-hidden bg-gradient-hero py-5 sm:py-6 lg:py-8">
+    <section className="relative bg-gradient-hero py-5 sm:py-6 lg:py-8">
       {/* Ambient motion only — no invented sample content. Every layer is
           absolutely positioned so it adds atmosphere without adding height,
           and all of it is disabled under prefers-reduced-motion (index.css). */}
