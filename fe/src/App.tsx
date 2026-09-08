@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { RouteAnalytics } from "@/components/RouteAnalytics";
 import Index from "./pages/Index";
+import IndexLegacy from "./pages/IndexLegacy";
 import ReviewDetails from "./pages/ReviewDetails";
 import Categories from "./pages/Categories";
 import WriteReview from "./pages/WriteReview";
@@ -38,6 +39,7 @@ const AppTree = (
           <RouteAnalytics />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/home-old" element={<IndexLegacy />} />
             <Route path="/review/:id" element={<ReviewDetails />} />
             <Route path="/review/:id/add-timeline" element={<AddTimeline />} />
             <Route path="/categories" element={<Categories />} />

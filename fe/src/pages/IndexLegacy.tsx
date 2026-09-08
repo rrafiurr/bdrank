@@ -1,0 +1,206 @@
+import { PageHead } from "@/components/PageHead";
+import { Header } from "@/components/Header";
+import { HeroSection } from "@/components/HeroSection";
+import { ReviewCard } from "@/components/ReviewCard";
+import { TimelinePreview } from "@/components/TimelinePreview";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { ReviewedProducts } from "@/components/ReviewedProducts";
+import { ReviewedProductsGrid } from "@/components/ReviewedProductsGrid";
+import { FeaturesSection } from "@/components/FeaturesSection";
+import { Footer } from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch, type ApiReviewListItem, type ApiReviewDetail } from "@/lib/api";
+import { toCardProps } from "@/lib/reviewCardProps";
+import { useTranslation } from "react-i18next";
+
+const IndexLegacy = () => {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language === "bn" ? "bn-BD" : "en-US";
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  // Latest reviews (category-filtered)
+  const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
+    queryKey: ["reviews", { category: activeCategory, sort: "latest", limit: 6 }],
+    queryFn: () => {
+      const params = new URLSearchParams({ sort: "latest", limit: "6" });
+      if (activeCategory !== "all") params.set("category", activeCategory);
+      return apiFetch<{ data: ApiReviewListItem[]; total: number }>(`/reviews?${params}`);
+    },
+  });
+
+  // Featured timeline: get the first timeline review id
+  const { data: tlListData } = useQuery({
+    queryKey: ["featured-timeline-list"],
+    queryFn: () =>
+      apiFetch<{ data: ApiReviewListItem[]; total: number }>("/reviews?timeline_only=true&limit=1"),
+  });
+  const featuredId = tlListData?.data?.[0]?.id;
+
+  // Fetch full detail for the featured timeline review
+  const { data: featured } = useQuery({
+    queryKey: ["review", featuredId],
+    queryFn: () => apiFetch<ApiReviewDetail>(`/reviews/${featuredId}`),
+    enabled: !!featuredId,
+  });
+
+  const reviews = reviewsData?.data ?? [];
+
+  const timelineProps = featured && featured.timeline?.length > 0
+    ? {
+        productName: featured.title,
+        productImage: featured.product.image_url || featured.images?.[0] || "",
+        author: featured.is_anonymous ? t("review.anonymous") : featured.author?.username ?? "",
+        entries: featured.timeline.map((tl) => ({
+          date: new Date(tl.created_at).toLocaleDateString(locale, {
+            year: "numeric",
+            month: "long",
+          }),
+          period: tl.title,
+          rating: tl.rating,
+          summary: tl.content,
+        })),
+      }
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <PageHead
+        title="BdRanks - Home (previous design)"
+        description="The previous BdRanks home page layout, kept for reference."
+        noindex
+      />
+      <Header autoHide />
+      <main>
+        <HeroSection />
+
+        {/* Featured Timeline Review */}
+        {timelineProps && (
+          <section className="py-16 container px-4">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+                  {t("home.featuredTimeline")}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t("home.featuredTimelineSubtitle")}
+                </p>
+              </div>
+              <Link to="/browse">
+                <Button variant="ghost" className="group hidden sm:flex">
+                  {t("home.viewAllTimelines")}
+                  <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+            </div>
+            <TimelinePreview {...timelineProps} />
+          </section>
+        )}
+
+        {/* Reviewed Products */}
+        <section className="py-8 container px-4">
+          <div className="mb-6">
+            <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+              {t("home.productsReviewed")}
+            </h2>
+            <p className="text-muted-foreground">
+              {t("home.productsReviewedSubtitle")}
+            </p>
+          </div>
+          <ReviewedProducts />
+        </section>
+
+        {/* Top Reviewed Products Grid */}
+        <section className="py-8 container px-4">
+          <div className="mb-6">
+            <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+              {t("home.topReviewed")}
+            </h2>
+            <p className="text-muted-foreground">
+              {t("home.topReviewedSubtitle")}
+            </p>
+          </div>
+          <ReviewedProductsGrid />
+        </section>
+
+        {/* Latest Reviews */}
+        <section className="py-16 bg-secondary/20">
+          <div className="container px-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+              <div>
+                <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+                  {t("home.latestReviews")}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t("home.latestReviewsSubtitle")}
+                </p>
+              </div>
+              <CategoryFilter
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+            </div>
+
+            {reviewsLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-[340px] rounded-xl bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : reviews.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {reviews.map((review, index) => (
+                  <div
+                    key={review.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <ReviewCard {...toCardProps(review, locale)} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-12">
+                {t("home.noReviews")}
+              </p>
+            )}
+
+            <div className="text-center mt-12">
+              <Link to="/browse">
+                <Button variant="outline" size="lg" className="group">
+                  {t("home.loadMore")}
+                  <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <FeaturesSection />
+
+        {/* CTA Section */}
+        <section className="py-20 bg-gradient-warm">
+          <div className="container px-4 text-center">
+            <h2 className="font-serif text-3xl font-bold text-primary-foreground mb-4">
+              {t("home.ctaHeading")}
+            </h2>
+            <p className="text-primary-foreground/80 mb-8 max-w-xl mx-auto">
+              {t("home.ctaSubtitle")}
+            </p>
+            <Link to="/auth">
+              <Button variant="secondary" size="xl" className="shadow-elevated">
+                {t("home.ctaButton")}
+              </Button>
+            </Link>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default IndexLegacy;

@@ -70,6 +70,11 @@ export interface ApiReviewListItem {
   comments_count: number;
   is_timeline: boolean;
   timeline_updates_count?: number;
+  /**
+   * Each timeline entry's rating, oldest first. Sent only when the request
+   * asked for timeline reviews (`timeline_only=true`); absent otherwise.
+   */
+  timeline_ratings?: number[];
   created_at: string;
 }
 
