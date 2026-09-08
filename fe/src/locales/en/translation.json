@@ -82,7 +82,11 @@
     "rewardsLink": "See rewards",
     "ownerHeading": "Own a business?",
     "ownerBody": "Print a QR poster for your counter and put a live rating widget on your own website. Reviews you collect show up on your BdRanks page.",
-    "ownerLink": "Register your business"
+    "ownerLink": "Register your business",
+    "timelineEmptyTitle": "No timelines yet",
+    "timelineEmptyBody": "Be the first to show how something held up. Write a review, then come back in a few months and add an update.",
+    "timelineEmptyCta": "Write a review",
+    "timelineEmptyBrowse": "Browse reviews"
   },
   "hero": {
     "badge": "Honest reviews, tracked over time",
