@@ -16,7 +16,10 @@ function useTopReviewers() {
     staleTime: 10 * 60 * 1000,
     retry: false,
   });
-  const entries = data?.entries ?? [];
+  // Production carries leaderboard rows whose username is an empty string.
+  // Rendering those gives a nameless "?" avatar that reads as broken, so drop
+  // them; if nothing usable is left the caller falls back to the trophy icon.
+  const entries = (data?.entries ?? []).filter((e) => e.username.trim() !== "");
   return entries.length > 0 ? entries : null;
 }
 

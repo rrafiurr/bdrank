@@ -76,7 +76,13 @@ export function CategoryTiles() {
     );
   }
 
-  if (categories.length === 0) return null;
+  // Production carries categories with no reviews at all. A tile reading
+  // "0 reviews" is a dead end, so show only categories with something behind
+  // them — unless that would empty the section, in which case show them all.
+  const withReviews = categories.filter((c) => countOf(c.slug) > 0);
+  const shown = withReviews.length > 0 ? withReviews : categories;
+
+  if (shown.length === 0) return null;
 
   return (
     <section className="py-5 lg:py-8">
@@ -90,8 +96,8 @@ export function CategoryTiles() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-          {categories.map((category) => {
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5">
+          {shown.map((category) => {
             const { icon: Icon, color } = getCategoryDisplay(category.slug);
             return (
               <Link

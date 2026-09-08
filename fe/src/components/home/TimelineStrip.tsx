@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Clock, Star, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiReviewListItem } from "@/lib/api";
@@ -57,21 +58,18 @@ export function TimelineStrip() {
     );
   }
 
-  // A silent section: no timeline reviews means no heading either.
-  if (reviews.length === 0) return null;
-
-  return (
-    <section className="py-8 lg:py-12">
-      <div className="container px-4">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="mb-1 font-serif text-[22px] font-bold text-foreground sm:text-[26px]">
-              {t("home.timelineHeading")}
-            </h2>
-            <p className="text-[13px] text-muted-foreground sm:text-[15px]">
-              {t("home.timelineSubtitle")}
-            </p>
-          </div>
+  const heading = (
+    <div className="container px-4">
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="mb-1 font-serif text-[22px] font-bold text-foreground sm:text-[26px]">
+            {t("home.timelineHeading")}
+          </h2>
+          <p className="text-[13px] text-muted-foreground sm:text-[15px]">
+            {t("home.timelineSubtitle")}
+          </p>
+        </div>
+        {reviews.length > 0 && (
           <Link
             to="/browse"
             className="group hidden shrink-0 items-center gap-1.5 text-sm font-medium text-primary sm:inline-flex"
@@ -79,8 +77,59 @@ export function TimelineStrip() {
             {t("home.seeAllReviews")}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
-        </div>
+        )}
       </div>
+    </div>
+  );
+
+  // Timeline reviews are the premise of the site, so the section still makes
+  // the case when none exist yet — and points at the action that creates one.
+  if (reviews.length === 0) {
+    return (
+      <section className="py-8 lg:py-12">
+        {heading}
+        <div className="container px-4">
+          <div className="flex flex-col items-start gap-4 rounded-2xl border border-dashed border-border bg-card/60 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+            <div className="flex items-start gap-4">
+              <div className="hidden shrink-0 items-center gap-1 sm:flex" aria-hidden="true">
+                <TrailChip rating={5} latest={false} />
+                <span className="h-0.5 w-2.5 rounded-full bg-border" />
+                <TrailChip rating={4} latest={false} />
+                <span className="h-0.5 w-2.5 rounded-full bg-border" />
+                <TrailChip rating={4} latest />
+              </div>
+              <div>
+                <p className="font-serif text-lg font-semibold text-card-foreground">
+                  {t("home.timelineEmptyTitle")}
+                </p>
+                <p className="mt-0.5 max-w-xl text-[13px] leading-snug text-muted-foreground sm:text-sm">
+                  {t("home.timelineEmptyBody")}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-4">
+              <Link to="/write-review">
+                <Button variant="hero" size="sm" className="rounded-full px-5">
+                  {t("home.timelineEmptyCta")}
+                </Button>
+              </Link>
+              <Link
+                to="/browse"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-primary"
+              >
+                {t("home.timelineEmptyBrowse")}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-8 lg:py-12">
+      {heading}
 
       <div className="container flex snap-x gap-3 overflow-x-auto px-4 pb-5 sm:gap-4">
         {reviews.map((review) => {

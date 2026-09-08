@@ -65,7 +65,7 @@
     "timelineUpdated_one": "{{count}} বার আপডেট",
     "timelineUpdated_other": "{{count}} বার আপডেট",
     "categoriesHeading": "ক্যাটাগরি অনুযায়ী ব্রাউজ করুন",
-    "categoriesSubtitle": "সব রিভিউ সাজানো আছে চার ধরনের কেনাকাটায়।",
+    "categoriesSubtitle": "প্রতিটি রিভিউ সাজানো আছে জিনিসের ধরন অনুযায়ী।",
     "categoryReviews_one": "{{count}}টি রিভিউ",
     "categoryReviews_other": "{{count}}টি রিভিউ",
     "seeAllReviews": "সব রিভিউ দেখুন",
@@ -82,7 +82,11 @@
     "rewardsLink": "রিওয়ার্ড দেখুন",
     "ownerHeading": "ব্যবসার মালিক?",
     "ownerBody": "কাউন্টারের জন্য QR পোস্টার প্রিন্ট করুন আর নিজের ওয়েবসাইটে লাইভ রেটিং উইজেট বসান। সংগ্রহ করা রিভিউ আপনার BdRanks পেজে দেখা যাবে।",
-    "ownerLink": "আপনার ব্যবসা নিবন্ধন করুন"
+    "ownerLink": "আপনার ব্যবসা নিবন্ধন করুন",
+    "timelineEmptyTitle": "এখনও কোনো টাইমলাইন নেই",
+    "timelineEmptyBody": "জিনিসটা সময়ের সাথে কেমন টিকল, প্রথম হয়ে সেটা দেখান। একটি রিভিউ লিখুন, কয়েক মাস পর ফিরে এসে আপডেট যোগ করুন।",
+    "timelineEmptyCta": "রিভিউ লিখুন",
+    "timelineEmptyBrowse": "রিভিউ ব্রাউজ করুন"
   },
   "hero": {
     "badge": "সৎ রিভিউ, সময়ের সাথে ট্র্যাক করা",

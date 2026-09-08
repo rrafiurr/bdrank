@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Star, Clock, Users, Search, Package, MessageSquare } from "lucide-react";
+import { Star, Clock, Users, Search, Package, MessageSquare, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiSearchResult } from "@/lib/api";
@@ -73,7 +73,24 @@ export function HeroSection() {
   const showDropdown = focused && query.trim().length >= 2 && results !== null;
 
   return (
-    <section className="relative bg-gradient-hero py-5 sm:py-6 lg:py-8">
+    <section className="relative overflow-hidden bg-gradient-hero py-5 sm:py-6 lg:py-8">
+      {/* Ambient motion only — no invented sample content. Every layer is
+          absolutely positioned so it adds atmosphere without adding height,
+          and all of it is disabled under prefers-reduced-motion (index.css). */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl animate-blob-drift" />
+        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gold/5 blur-3xl animate-blob-drift-reverse" />
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <Sparkles className="absolute left-[12%] top-[18%] h-4 w-4 text-gold animate-twinkle" />
+        <Sparkles className="absolute right-[15%] top-[14%] h-3 w-3 text-primary animate-twinkle-slow animation-delay-400" />
+        <Sparkles className="absolute left-[22%] bottom-[20%] h-3 w-3 text-primary/70 animate-twinkle-slow animation-delay-200" />
+        <Sparkles className="absolute right-[24%] bottom-[26%] h-4 w-4 text-gold/80 animate-twinkle animation-delay-300" />
+        <span className="absolute left-[38%] top-[10%] h-1.5 w-1.5 rounded-full bg-gold animate-twinkle animation-delay-100" />
+        <span className="absolute right-[36%] bottom-[12%] h-1.5 w-1.5 rounded-full bg-primary animate-twinkle-slow" />
+      </div>
+
       <div className="container relative px-4">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="mb-3 font-serif text-[28px] font-bold tracking-tight text-foreground sm:text-4xl lg:text-[40px] animate-slide-up">
