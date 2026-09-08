@@ -55,6 +55,10 @@ type Review struct {
 	ViewsCount           int             `json:"views_count"`
 	IsTimeline           bool            `json:"is_timeline"`
 	TimelineUpdatesCount int             `json:"timeline_updates_count,omitempty"`
+	// TimelineRatings carries each timeline entry's rating in chronological
+	// order. Populated only when the caller asked for timeline reviews, so a
+	// plain list query pays nothing for it.
+	TimelineRatings []int `json:"timeline_ratings,omitempty"`
 	Timeline             []TimelineEntry `json:"timeline,omitempty"`
 	Comments             []Comment       `json:"comments,omitempty"`
 	CreatedAt            time.Time       `json:"created_at"`

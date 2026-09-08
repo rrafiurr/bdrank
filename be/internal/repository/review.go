@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"final-review/be/internal/models"
@@ -62,8 +63,15 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 	whereClause := "WHERE " + strings.Join(conditions, " AND ")
 
 	having := ""
+	timelineRatingsExpr := "NULL"
 	if f.TimelineOnly {
 		having = "HAVING COUNT(DISTINCT te.id) > 0"
+		// A correlated subquery, not GROUP_CONCAT over the joined te rows: the
+		// query also LEFT JOINs review_images, so the joined rows multiply and
+		// each rating would repeat once per image. DISTINCT cannot fix that
+		// either, since two entries may legitimately share a rating.
+		timelineRatingsExpr = "(SELECT GROUP_CONCAT(t2.rating ORDER BY t2.created_at, t2.id) " +
+			"FROM timeline_entries t2 WHERE t2.review_id = r.id)"
 	}
 
 	orderBy := "r.created_at DESC"
@@ -90,6 +98,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			(COUNT(DISTINCT te.id) > 0) AS is_timeline,
 			COUNT(DISTINCT te.id)      AS timeline_updates_count,
 			GROUP_CONCAT(DISTINCT ri.url ORDER BY ri.id SEPARATOR '|') AS images,
+			%s AS timeline_ratings,
 			COALESCE(r.created_at, NOW()), r.is_approved, r.is_anonymous,
 			COALESCE(r.source,''), COALESCE(r.source_author,''), COALESCE(r.source_url,''),
 			COALESCE(r.video_url,'')
@@ -107,7 +116,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		         r.video_url
 		%s
 		ORDER BY %s
-		LIMIT ? OFFSET ?`, whereClause, having, orderBy)
+		LIMIT ? OFFSET ?`, timelineRatingsExpr, whereClause, having, orderBy)
 
 	rows, err := r.db.QueryContext(ctx, dataQuery, append(args, f.Limit, f.Offset)...)
 	if err != nil {
@@ -124,6 +133,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		var username, avatarURL string
 		var isTimeline, isApproved, isAnon int
 		var imagesStr sql.NullString
+		var timelineRatingsStr sql.NullString
 		var videoURL string
 
 		if err := rows.Scan(
@@ -132,7 +142,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 			&authorID, &username, &avatarURL,
 			&rv.LikesCount, &rv.CommentsCount,
 			&isTimeline, &rv.TimelineUpdatesCount,
-			&imagesStr, &rv.CreatedAt, &isApproved, &isAnon,
+			&imagesStr, &timelineRatingsStr, &rv.CreatedAt, &isApproved, &isAnon,
 			&rv.Source, &rv.SourceAuthor, &rv.SourceURL, &videoURL,
 		); err != nil {
 			return nil, 0, err
@@ -145,6 +155,7 @@ func (r *ReviewRepo) List(ctx context.Context, f ReviewFilter) ([]*models.Review
 		rv.IsTimeline = isTimeline == 1
 		rv.IsApproved = isApproved == 1
 		rv.Images = absURLSlice(r.baseURL, splitImages(imagesStr))
+		rv.TimelineRatings = parseTimelineRatings(timelineRatingsStr)
 		rv.Video = video.ParseOrNil(videoURL)
 		reviews = append(reviews, &rv)
 	}
@@ -483,4 +494,26 @@ func splitImages(s sql.NullString) []string {
 		return []string{}
 	}
 	return strings.Split(s.String, "|")
+}
+
+// parseTimelineRatings splits the GROUP_CONCAT of timeline entry ratings into
+// a slice. Returns nil (not an empty slice) when there are none, so the JSON
+// field is omitted rather than rendered as [].
+func parseTimelineRatings(s sql.NullString) []int {
+	if !s.Valid || s.String == "" {
+		return nil
+	}
+	parts := strings.Split(s.String, ",")
+	out := make([]int, 0, len(parts))
+	for _, p := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil {
+			continue
+		}
+		out = append(out, n)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
