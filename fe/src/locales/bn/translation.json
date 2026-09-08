@@ -65,7 +65,7 @@
     "timelineUpdated_one": "{{count}} বার আপডেট",
     "timelineUpdated_other": "{{count}} বার আপডেট",
     "categoriesHeading": "ক্যাটাগরি অনুযায়ী ব্রাউজ করুন",
-    "categoriesSubtitle": "সব রিভিউ সাজানো আছে চার ধরনের কেনাকাটায়।",
+    "categoriesSubtitle": "প্রতিটি রিভিউ সাজানো আছে জিনিসের ধরন অনুযায়ী।",
     "categoryReviews_one": "{{count}}টি রিভিউ",
     "categoryReviews_other": "{{count}}টি রিভিউ",
     "seeAllReviews": "সব রিভিউ দেখুন",

@@ -65,7 +65,7 @@
     "timelineUpdated_one": "Updated {{count}} time",
     "timelineUpdated_other": "Updated {{count}} times",
     "categoriesHeading": "Browse by category",
-    "categoriesSubtitle": "Every review sorted into four kinds of things you buy.",
+    "categoriesSubtitle": "Every review, sorted by what kind of thing it is.",
     "categoryReviews_one": "{{count}} review",
     "categoryReviews_other": "{{count}} reviews",
     "seeAllReviews": "See all reviews",
