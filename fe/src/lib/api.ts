@@ -178,10 +178,24 @@ function getToken(): string | null {
   }
 }
 
+/**
+ * Extra behaviour flags for {@link apiFetch}.
+ *
+ * `redirectOn401` defaults to true: a 401 means a signed-in session went
+ * stale, so the app clears it and sends the user to sign in. Pass false for
+ * calls a signed-out visitor makes on a public page — a 401 there must
+ * surface as a normal error the caller can ignore, never as a redirect that
+ * throws the visitor off the page they asked for.
+ */
+export interface ApiFetchOptions {
+  redirectOn401?: boolean;
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
-  token?: string | null
+  token?: string | null,
+  { redirectOn401 = true }: ApiFetchOptions = {}
 ): Promise<T> {
   const resolvedToken = token !== undefined ? token : getToken();
 
@@ -202,6 +216,9 @@ export async function apiFetch<T>(
   const data = await res.json().catch(() => ({ error: res.statusText }));
 
   if (res.status === 401) {
+    if (!redirectOn401) {
+      throw new Error(data.error ?? "Unauthorized");
+    }
     localStorage.removeItem("auth_session");
     window.location.href = "/auth";
     throw new Error("Session expired");

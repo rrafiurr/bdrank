@@ -50,4 +50,16 @@ export const rewardsApi = {
       {},
       t,
     ),
+  /**
+   * The same leaderboard, for public pages a signed-out visitor can see. A 401
+   * here (an older API that still requires a token) must not bounce the
+   * visitor to the sign-in page — the caller just hides the section instead.
+   */
+  publicLeaderboard: (timeframe: string, limit: number) =>
+    apiFetch<LeaderboardView>(
+      `/rewards/leaderboard?timeframe=${encodeURIComponent(timeframe)}&limit=${limit}&offset=0`,
+      {},
+      null,
+      { redirectOn401: false },
+    ),
 };

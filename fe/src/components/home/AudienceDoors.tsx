@@ -9,9 +9,10 @@ import { useTranslation } from "react-i18next";
 function useTopReviewers() {
   const { data } = useQuery({
     queryKey: ["home-top-reviewers"],
-    // Explicit null token: this runs for signed-out visitors too, and the
-    // endpoint is mounted under optional auth so it will not 401 them away.
-    queryFn: () => rewardsApi.leaderboard(null, "week", 5, 0),
+    // publicLeaderboard sends no token and never redirects on 401, so a
+    // signed-out visitor is never bounced to /auth from the home page — even
+    // if this frontend is ever served by an API that still requires a token.
+    queryFn: () => rewardsApi.publicLeaderboard("week", 5),
     staleTime: 10 * 60 * 1000,
     retry: false,
   });
