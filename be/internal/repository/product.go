@@ -166,7 +166,7 @@ func (r *ProductRepo) CategoryStats(ctx context.Context) ([]*models.CategoryStat
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT p.category, COUNT(r.id) as review_count
 		FROM products p
-		LEFT JOIN reviews r ON p.id = r.product_id
+		LEFT JOIN reviews r ON p.id = r.product_id AND r.is_approved = 1
 		GROUP BY p.category`)
 	if err != nil {
 		return nil, err

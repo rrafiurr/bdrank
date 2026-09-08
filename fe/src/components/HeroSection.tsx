@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star, Clock, Users, Heart, Sparkles, Search, Package, MessageSquare } from "lucide-react";
+import { Star, Clock, Users, Search, Package, MessageSquare } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiSearchResult } from "@/lib/api";
@@ -73,107 +73,16 @@ export function HeroSection() {
   const showDropdown = focused && query.trim().length >= 2 && results !== null;
 
   return (
-    <section className="relative bg-gradient-hero py-10 sm:py-12 lg:py-16">
-      {/* Decorative blobs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl animate-blob-drift" />
-        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gold/5 blur-3xl animate-blob-drift-reverse" />
-      </div>
-
-      {/* Twinkling sparkles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <Sparkles className="absolute left-[12%] top-[18%] h-4 w-4 text-gold animate-twinkle" />
-        <Sparkles className="absolute right-[15%] top-[14%] h-3 w-3 text-primary animate-twinkle-slow animation-delay-400" />
-        <Sparkles className="absolute left-[22%] bottom-[20%] h-3 w-3 text-primary/70 animate-twinkle-slow animation-delay-200" />
-        <Sparkles className="absolute right-[24%] bottom-[26%] h-4 w-4 text-gold/80 animate-twinkle animation-delay-300" />
-        <span className="absolute left-[38%] top-[10%] h-1.5 w-1.5 rounded-full bg-gold animate-twinkle animation-delay-100" />
-        <span className="absolute right-[36%] bottom-[12%] h-1.5 w-1.5 rounded-full bg-primary animate-twinkle-slow" />
-      </div>
-
-      {/* Informative floating cards (left / right) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden lg:block" aria-hidden="true">
-        {/* Left: sample community review */}
-        <div className="absolute left-6 xl:left-16 top-1/2 -translate-y-1/2">
-          <div className="w-56 xl:w-64 animate-float">
-            <div className="-rotate-6 rounded-2xl border border-border bg-card/90 p-4 shadow-elevated backdrop-blur-sm">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-warm text-xs font-bold text-primary-foreground">
-                  {t("hero.sampleName").charAt(0)}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-foreground">{t("hero.sampleName")}</p>
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">“{t("hero.sampleReview")}”</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                <Heart className="h-3.5 w-3.5 fill-primary text-primary" />
-                128
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: rating-over-time timeline */}
-        <div className="absolute right-6 xl:right-16 top-1/2 -translate-y-1/2">
-          <div className="w-56 xl:w-64 animate-float-slow">
-            <div className="rotate-6 rounded-2xl border border-border bg-card/90 p-4 shadow-elevated backdrop-blur-sm animate-pulse-glow">
-              <div className="mb-3 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                <span className="text-xs font-semibold text-foreground">{t("hero.timelineTitle")}</span>
-              </div>
-              <div className="space-y-2.5 border-l-2 border-primary/20 pl-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{t("hero.timelineDay1")}</span>
-                  <span className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                    ))}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{t("hero.timelineMonth6")}</span>
-                  <span className="flex">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                    ))}
-                    <Star className="h-3 w-3 text-muted" />
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{t("hero.timelineYear1")}</span>
-                  <span className="flex">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                    ))}
-                    <Star className="h-3 w-3 text-muted" />
-                  </span>
-                </div>
-              </div>
-              <p className="mt-3 text-xs font-medium text-primary">{t("hero.timelineStill")}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <section className="relative bg-gradient-hero py-5 sm:py-6 lg:py-8">
       <div className="container relative px-4">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary animate-fade-in">
-            <Star className="h-4 w-4 fill-primary animate-twinkle" />
-            {t("hero.badge")}
-          </div>
-
-          <h1 className="mb-4 font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl animate-slide-up">
+        <div className="mx-auto max-w-3xl text-center">
+          <h1 className="mb-3 font-serif text-[28px] font-bold tracking-tight text-foreground sm:text-4xl lg:text-[40px] animate-slide-up">
             {t("hero.heading1")}{" "}
             <span className="text-gradient animate-gradient-x">{t("hero.heading2")}</span>{" "}
             {t("hero.heading3")}
           </h1>
 
-          <p className="mb-6 text-base text-muted-foreground sm:text-lg max-w-2xl mx-auto animate-slide-up animation-delay-100">
+          <p className="mb-4 text-sm text-muted-foreground sm:text-base max-w-xl mx-auto animate-slide-up animation-delay-100">
             {t("hero.subtitle")}
           </p>
 
@@ -190,7 +99,7 @@ export function HeroSection() {
                   onKeyDown={(e) => e.key === "Escape" && setFocused(false)}
                   placeholder={t("hero.searchPlaceholder")}
                   aria-label={t("hero.searchPlaceholder")}
-                  className="w-full rounded-full bg-transparent py-3 pl-12 pr-28 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-base"
+                  className="w-full rounded-full bg-transparent py-2.5 pl-12 pr-28 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-base"
                 />
                 <Button type="submit" variant="hero" size="sm" className="absolute right-1.5 rounded-full px-5">
                   {t("hero.searchButton")}
@@ -269,7 +178,7 @@ export function HeroSection() {
           </div>
 
           {/* Popular categories */}
-          <div className="mb-6 flex flex-wrap items-center justify-center gap-2 text-sm animate-slide-up animation-delay-200">
+          <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-[13px] animate-slide-up animation-delay-200">
             <span className="text-muted-foreground">{t("hero.popular")}</span>
             {CATEGORY_CHIPS.map((c) => (
               <Link
@@ -282,45 +191,33 @@ export function HeroSection() {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center animate-slide-up animation-delay-300">
-            <Link to="/write-review">
-              <Button variant="hero" size="lg" className="group w-full sm:w-auto">
-                {t("hero.startWriting")}
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-            <Link to="/browse">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                {t("hero.browseReviews")}
-              </Button>
-            </Link>
-          </div>
-
-          {/* Live stats */}
+          {/* Live stats — one quiet line, so the section below stays in view */}
           {stats && (
-            <div className="mt-8 lg:mt-10 grid grid-cols-3 gap-4 sm:gap-8 animate-fade-in animation-delay-300">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-primary mb-1">
-                  <Star className="h-5 w-5 fill-primary" />
-                  <span className="text-2xl sm:text-3xl font-bold font-serif">{fmt(stats.reviews)}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{t("hero.statsReviews")}</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-primary mb-1">
-                  <Clock className="h-5 w-5" />
-                  <span className="text-2xl sm:text-3xl font-bold font-serif">{fmt(stats.timelines)}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{t("hero.statsTimelines")}</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-primary mb-1">
-                  <Users className="h-5 w-5" />
-                  <span className="text-2xl sm:text-3xl font-bold font-serif">{fmt(stats.members)}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{t("hero.statsMembers")}</p>
-              </div>
-            </div>
+            <p className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted-foreground animate-fade-in animation-delay-300">
+              <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+              <span>
+                <strong className="font-serif text-base font-bold text-foreground">
+                  {fmt(stats.reviews)}
+                </strong>{" "}
+                {t("hero.statsReviews")}
+              </span>
+              <span className="text-border">·</span>
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              <span>
+                <strong className="font-serif text-base font-bold text-foreground">
+                  {fmt(stats.timelines)}
+                </strong>{" "}
+                {t("hero.statsTimelines")}
+              </span>
+              <span className="text-border">·</span>
+              <Users className="h-3.5 w-3.5 text-primary" />
+              <span>
+                <strong className="font-serif text-base font-bold text-foreground">
+                  {fmt(stats.members)}
+                </strong>{" "}
+                {t("hero.statsMembers")}
+              </span>
+            </p>
           )}
         </div>
       </div>
