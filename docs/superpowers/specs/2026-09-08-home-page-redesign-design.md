@@ -5,7 +5,7 @@
 
 ## Summary
 
-Replace the seven-section home page with five compact sections that a
+Replace the seven-section home page with six compact sections that a
 first-time shopper can absorb in one short visit. Each section answers one
 question a visitor has, in the order they ask it:
 
@@ -13,10 +13,15 @@ question a visitor has, in the order they ask it:
 2. *What makes it different?* — a strip of timeline reviews showing ratings over time
 3. *Where do I go?* — four category tiles with counts and thumbnails
 4. *Is it alive?* — a small block of the latest reviews
-5. *Is there anything here for me besides reading?* — two doors: rewards and business owners
+5. *Can I trust it?* — a one-row trust strip
+6. *Is there anything here for me besides reading?* — two doors: rewards (with this week's top reviewers) and business owners
 
 The primary audience is the shopper looking for a review. Contributors and
-business owners get a clear route in section 5 but do not lead the page.
+business owners get a clear route in section 6 but do not lead the page.
+
+A visual mockup of both the desktop and phone layouts lives in the design
+canvas at https://claude.ai/code/artifact/a0a15fd3-8963-4cac-9439-014a69aaea14.
+Sizes below follow the mockup.
 
 ## Decisions
 
@@ -25,7 +30,10 @@ business owners get a clear route in section 5 but do not lead the page.
 | Primary visitor | Shopper. Search leads; write-review stays in the header only. |
 | Hero decoration | Removed. No floating cards, sparkles, or blob animations. Keep the existing gradient background token. |
 | Duplicate product sections | Both removed. Category tiles replace them. |
-| Feature-card grid and gradient sign-up banner | Removed. Their message is now shown by sections 2 and 5. |
+| Feature-card grid and gradient sign-up banner | Removed. Their message is now shown by sections 2, 5 and 6. |
+| Trust facts | One compact row of three facts (moderation, verified owners, timeline authenticity) rather than the old six feature cards. |
+| Top reviewers | Shown inside the rewards door from the weekly leaderboard, not as a separate section. Requires opening the leaderboard endpoint to anonymous visitors. |
+| Active campaign banner, community photo strip | Considered and deferred. Not in this work. |
 | Latest reviews count | 3 on desktop, 2 on mobile, then "See all". |
 | Timeline strip data | Add per-entry ratings to the review list endpoint (small backend change) rather than fetching each review's detail. |
 | Category-stats counting unapproved reviews | Fix as part of this work; the tiles must not show counts the browse page cannot match. |
@@ -51,7 +59,10 @@ Change:
   `1.2K+ reviews · 340 timelines · 890 members`. Same `fmt` helper, same
   `/stats` query.
 - Vertical padding drops so the strip in section 2 is visible on a phone
-  without scrolling.
+  without scrolling. Mockup sizes: headline 40px desktop / 28px phone on a
+  single line where it fits, section padding 32px top / 26px bottom on
+  desktop and 20px / 18px on phone, search bar 50px tall on desktop and 46px
+  on phone.
 
 The search dropdown logic is untouched. If it is convenient during
 implementation, the search form and its dropdown may be extracted into a
@@ -112,14 +123,34 @@ third card with a utility class so mobile shows two. The "Load more" button
 becomes a "See all reviews" ghost link in the section header, matching the
 pattern used by the timeline strip.
 
-### 5. Two doors — `AudienceDoors` (new)
+### 5. Trust strip — `TrustStrip` (new)
 
-Two side-by-side cards on desktop, stacked on mobile. No data fetching.
+One bordered card containing three items in a row on desktop, stacked on
+mobile. Each item is a small primary-tinted icon, a bold title, and one
+sentence. No data fetching.
 
-- **Rewards door.** Heading "Earn rewards for honest reviews", one sentence
-  on points and levels, a static trophy icon from lucide. `LevelBadge` needs
-  level data the home page does not have, so it is not used here. Links to
-  `/rewards`.
+- Shield icon. "Checked by a human". Every review and comment is moderated
+  before it counts.
+- Badge-check icon. "Verified owners". Businesses are vetted before they get
+  a badge.
+- Clock icon. "Timelines can't be faked". Updates come from real buyers
+  months after purchase.
+
+Sits directly above the two doors.
+
+### 6. Two doors — `AudienceDoors` (new)
+
+Two side-by-side cards on desktop, stacked on mobile.
+
+- **Rewards door.** An uppercase eyebrow "This week's top reviewers", then a
+  row of five reviewers from `/rewards/leaderboard?timeframe=week&limit=5`:
+  `UserAvatar` (36px on phone, 40px on desktop), first name, and their level
+  rendered with `LevelBadge` from the entry's `level` field. Below that the
+  heading "Earn rewards for honest reviews", one sentence on points and
+  levels, and a link to `/rewards`. If the leaderboard returns fewer than
+  five entries, show what it returns. If it returns none or fails, the door
+  falls back to a static trophy icon in place of the reviewer row so the
+  card still renders.
 - **Owner door.** Heading "Own a business?", one sentence on the QR poster
   and website widget, a static QR icon, links to `/owner-register`.
 
@@ -157,6 +188,16 @@ split it in the scan loop, the same way `images` is handled today. Add
 
 The frontend rating trail is `[review.rating, ...timeline_ratings]`.
 
+### `GET /rewards/leaderboard` — allow anonymous callers
+
+Today the route is inside the JWT-required group in
+`be/internal/rewards/routes.go`. Move it out of that group and mount it with
+the optional-auth middleware instead, so `RegisterRoutes` gains an
+`optionalAuth` parameter alongside `auth` and `admin`. The handler already
+reads the user id from context and tolerates zero: anonymous callers get the
+ranked list with no `is_me` row and no `me` block. Nothing else about the
+endpoint changes, and the logged-in rewards page keeps its current behavior.
+
 ### `GET /categories/stats` — count only approved reviews
 
 Today `ProductRepo.CategoryStats` joins reviews with no `is_approved` filter,
@@ -174,6 +215,10 @@ home.timelineHeading, home.timelineSubtitle, home.seeAllTimelines,
 home.timelineUpdated (plural: "Updated {{count}} time" / "times"),
 home.categoriesHeading, home.categoriesSubtitle,
 home.seeAllReviews,
+home.trustModeratedTitle, home.trustModeratedBody,
+home.trustVerifiedTitle, home.trustVerifiedBody,
+home.trustTimelineTitle, home.trustTimelineBody,
+home.topReviewersEyebrow,
 home.rewardsHeading, home.rewardsBody, home.rewardsLink,
 home.ownerHeading, home.ownerBody, home.ownerLink,
 hero.statsInline (interpolated: "{{reviews}} reviews · {{timelines}} timelines · {{members}} members")
@@ -205,8 +250,9 @@ There is no frontend test suite. Verification is:
 1. `npx tsc --noEmit -p tsconfig.app.json` passes in `fe/`.
 2. `npm run lint` passes in `fe/`.
 3. Backend: `go test ./...` in `be/` via Docker, plus a new repository test
-   asserting `timeline_ratings` order and omission, and a test that
-   `CategoryStats` ignores unapproved reviews.
+   asserting `timeline_ratings` order and omission, a test that
+   `CategoryStats` ignores unapproved reviews, and a handler test that
+   `/rewards/leaderboard` answers without a token.
 4. Manual check on the dev host at 375px and 1280px widths: the timeline
    strip is visible below the hero on the phone width without scrolling; no
    horizontal page scroll; both languages render; every link resolves.
@@ -215,5 +261,6 @@ There is no frontend test suite. Verification is:
 
 - Any change to browse, product, or review-detail pages.
 - New analytics events.
+- An active-campaign banner and a community photo strip (deferred).
 - Personalised home content for logged-in users.
 - Redesigning `ReviewCard` or `Header`.
