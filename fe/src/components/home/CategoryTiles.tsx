@@ -10,6 +10,11 @@ import {
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
 
+/** Drop a thumbnail whose URL fails to load rather than showing a broken glyph. */
+function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.style.display = "none";
+}
+
 /** Thumbnails of the most-reviewed products in one category, overlapped. */
 function ProductStack({ slug }: { slug: string }) {
   const { data } = useQuery({
@@ -33,6 +38,7 @@ function ProductStack({ slug }: { slug: string }) {
           alt={product.name}
           loading="lazy"
           decoding="async"
+          onError={hideBrokenThumb}
           className={`h-8 w-8 rounded-full border-2 border-card object-cover ${i > 0 ? "-ml-2.5" : ""}`}
         />
       ))}

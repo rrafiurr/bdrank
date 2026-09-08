@@ -146,7 +146,15 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 		r.Get("/stats", func(w http.ResponseWriter, r *http.Request) {
 			var reviews, timelines, members int
 			db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM reviews WHERE is_approved = 1`).Scan(&reviews)
-			db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM reviews WHERE is_approved = 1 AND is_timeline = 1`).Scan(&timelines)
+			// A review is a timeline review when it has at least one timeline
+			// entry — the same definition every list query uses. The
+			// reviews.is_timeline column is never written by the app, so
+			// counting on it always returned 0.
+			db.QueryRowContext(r.Context(), `
+				SELECT COUNT(DISTINCT r.id)
+				FROM reviews r
+				INNER JOIN timeline_entries te ON te.review_id = r.id
+				WHERE r.is_approved = 1`).Scan(&timelines)
 			db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users WHERE email != 'import-bot@system.internal'`).Scan(&members)
 			handlers.WritePublicJSON(w, map[string]int{
 				"reviews":   reviews,

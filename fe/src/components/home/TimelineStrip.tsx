@@ -8,6 +8,13 @@ import { useTranslation } from "react-i18next";
 // The first rating plus at most this many updates, so the trail never wraps.
 const MAX_TRAIL = 4;
 
+// Hide a thumbnail whose URL fails to load, revealing the category icon
+// beneath it rather than the browser's broken-image glyph. Module-level so it
+// is not recreated per render, matching ReviewCard.
+function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.style.display = "none";
+}
+
 /** One rating in the trail. The most recent is highlighted. */
 function TrailChip({ rating, latest }: { rating: number; latest: boolean }) {
   return (
@@ -89,17 +96,18 @@ export function TimelineStrip() {
               className="group min-w-[240px] max-w-[240px] shrink-0 snap-start rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated sm:min-w-[268px] sm:max-w-[268px]"
             >
               <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
-                  {image ? (
+                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
+                  {/* The icon sits underneath, so a broken image reveals it. */}
+                  <Icon className="h-5 w-5 text-muted-foreground" />
+                  {image && (
                     <img
                       src={image}
                       alt={review.product.name}
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover"
+                      onError={hideBrokenThumb}
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
-                  ) : (
-                    <Icon className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
                 <div className="min-w-0">
