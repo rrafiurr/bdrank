@@ -485,7 +485,7 @@ git commit -m "chore(fe): keep the previous home page at /home-old"
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: every `home.*` and `hero.statsInline` key used by Tasks 6 through 10. Doing all copy in one task means no later task has to touch two JSON files.
+- Produces: every `home.*` key used by Tasks 6 through 10, plus the shortened `hero.subtitle`. Doing all copy in one task means no later task has to touch two JSON files.
 
 - [ ] **Step 1: Add the English keys**
 
@@ -590,7 +590,7 @@ git commit -m "feat(fe): copy for the redesigned home page, English and Bangla"
 - Modify: `fe/src/components/HeroSection.tsx`
 
 **Interfaces:**
-- Consumes: `home.*` and `hero.statsInline` keys from Task 5.
+- Consumes: the shortened `hero.subtitle` from Task 5; the existing `hero.stats*` labels.
 - Produces: a shorter `HeroSection` with the same export name and no props. Later tasks compose it unchanged.
 
 - [ ] **Step 1: Remove the decorative layers**
