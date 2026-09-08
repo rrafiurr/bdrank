@@ -38,6 +38,8 @@ Sizes below follow the mockup.
 | Timeline strip data | Add per-entry ratings to the review list endpoint (small backend change) rather than fetching each review's detail. |
 | Category-stats counting unapproved reviews | Fix as part of this work; the tiles must not show counts the browse page cannot match. |
 | Analytics | No new events. Existing pageview tracking is enough. |
+| The old home page | Kept, not deleted. It moves to `fe/src/pages/IndexLegacy.tsx` and stays reachable at `/home-old`, marked noindex and disallowed in `robots.txt`. The new design takes `Index.tsx` and `/`. |
+| Components the old page uses | All retained, because the legacy page still renders them. Nothing is deleted in this work. |
 
 ## Page structure
 
@@ -56,8 +58,9 @@ Change:
 - Remove the "Start writing" and "Browse reviews" buttons. The header already
   carries "Write a review"; the search box submits to browse.
 - Stats become one quiet inline strip under the chips, in muted text:
-  `1.2K+ reviews · 340 timelines · 890 members`. Same `fmt` helper, same
-  `/stats` query.
+  `1.2K+ reviews · 340 timelines · 890 members`, built from the existing
+  `hero.statsReviews`, `hero.statsTimelines` and `hero.statsMembers` labels so
+  each number keeps its own styling. Same `fmt` helper, same `/stats` query.
 - Vertical padding drops so the strip in section 2 is visible on a phone
   without scrolling. Mockup sizes: headline 40px desktop / 28px phone on a
   single line where it fits, section padding 32px top / 26px bottom on
@@ -109,9 +112,9 @@ The whole tile is a link to `/browse?category=<slug>`.
 Loading: four pulse skeletons. Empty: if `/categories` returns nothing the
 section renders nothing.
 
-This section replaces `ReviewedProducts` and `ReviewedProductsGrid`. Both
-components are deleted along with their locale keys, after confirming no
-other page imports them (today only `Index` does).
+This section replaces `ReviewedProducts` and `ReviewedProductsGrid` on the
+home page. Both components stay in the codebase because `IndexLegacy` still
+renders them.
 
 ### 4. Latest reviews — `LatestReviews` (extracted)
 
@@ -144,8 +147,9 @@ Two side-by-side cards on desktop, stacked on mobile.
 
 - **Rewards door.** An uppercase eyebrow "This week's top reviewers", then a
   row of five reviewers from `/rewards/leaderboard?timeframe=week&limit=5`:
-  `UserAvatar` (36px on phone, 40px on desktop), first name, and their level
-  rendered with `LevelBadge` from the entry's `level` field. Below that the
+  `UserAvatar`, first name, and their level name in a white-on-gradient chip.
+  `LevelBadge` is not used here: it tints its background from the level's own
+  colour, which vanishes against the warm gradient the card sits on. Below that the
   heading "Earn rewards for honest reviews", one sentence on points and
   levels, and a link to `/rewards`. If the leaderboard returns fewer than
   five entries, show what it returns. If it returns none or fails, the door
@@ -157,14 +161,27 @@ Two side-by-side cards on desktop, stacked on mobile.
 Both cards use the existing `bg-gradient-warm` treatment the old CTA banner
 used, so the page still ends with a warm accent.
 
-### Removed
+### Not on the new page, but kept in the codebase
 
-- `FeaturesSection` component and its `features.*` locale keys.
-- The CTA banner block in `Index.tsx` and its `home.cta*` keys.
-- `TimelinePreview` component and its `timelinePreview.*` keys. Only the
-  home page imports it.
+The new home page does not render these. They are not deleted, because
+`IndexLegacy` at `/home-old` still does:
+
+- `FeaturesSection` and its `features.*` locale keys.
+- `TimelinePreview` and its `timelinePreview.*` keys.
 - `ReviewedProducts`, `ReviewedProductsGrid`, and their `reviewedProducts.*`
   keys.
+- The old CTA banner markup and its `home.cta*` keys, which live inside
+  `IndexLegacy`.
+
+### The legacy page
+
+`fe/src/pages/Index.tsx` is moved verbatim to `fe/src/pages/IndexLegacy.tsx`
+with only three changes: the component and its default export are renamed to
+`IndexLegacy`, its `PageHead` gains `noindex`, and its title becomes
+"BdRanks - Home (previous design)". It is routed at `/home-old` in
+`fe/src/App.tsx` and added to `fe/public/robots.txt` as a `Disallow` line. It
+is not linked from anywhere in the UI. The sitemap is unchanged, since it
+lists routes explicitly and never included `/home-old`.
 
 ## API changes
 
@@ -221,14 +238,11 @@ home.trustTimelineTitle, home.trustTimelineBody,
 home.topReviewersEyebrow,
 home.rewardsHeading, home.rewardsBody, home.rewardsLink,
 home.ownerHeading, home.ownerBody, home.ownerLink,
-hero.statsInline (interpolated: "{{reviews}} reviews · {{timelines}} timelines · {{members}} members")
+home.latestSubtitle, home.categoryReviews (plural)
 ```
 
-Removed keys: `home.featuredTimeline*`, `home.viewAllTimelines`,
-`home.productsReviewed*`, `home.topReviewed*`, `home.loadMore`,
-`home.cta*`, `hero.startWriting`, `hero.browseReviews`, `hero.sample*`,
-`hero.timeline*`, `hero.badge`, `hero.statsReviews/Timelines/Members`,
-`features.*`, `reviewedProducts.*`.
+No locale keys are removed. The new keys are added alongside the existing
+ones, which `IndexLegacy` still uses.
 
 Bangla copy is written alongside English in the same task, not deferred.
 
