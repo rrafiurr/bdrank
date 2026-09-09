@@ -86,7 +86,11 @@
     "timelineEmptyTitle": "No timelines yet",
     "timelineEmptyBody": "Be the first to show how something held up. Write a review, then come back in a few months and add an update.",
     "timelineEmptyCta": "Write a review",
-    "timelineEmptyBrowse": "Browse reviews"
+    "timelineEmptyBrowse": "Browse reviews",
+    "productsHeading": "Recently reviewed",
+    "productsSubtitle": "The products people wrote about most recently.",
+    "productsReviewCount_one": "{{count}} review",
+    "productsReviewCount_other": "{{count}} reviews"
   },
   "hero": {
     "badge": "Honest reviews, tracked over time",

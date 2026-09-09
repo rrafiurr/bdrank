@@ -86,7 +86,11 @@
     "timelineEmptyTitle": "এখনও কোনো টাইমলাইন নেই",
     "timelineEmptyBody": "জিনিসটা সময়ের সাথে কেমন টিকল, প্রথম হয়ে সেটা দেখান। একটি রিভিউ লিখুন, কয়েক মাস পর ফিরে এসে আপডেট যোগ করুন।",
     "timelineEmptyCta": "রিভিউ লিখুন",
-    "timelineEmptyBrowse": "রিভিউ ব্রাউজ করুন"
+    "timelineEmptyBrowse": "রিভিউ ব্রাউজ করুন",
+    "productsHeading": "সম্প্রতি রিভিউ হয়েছে",
+    "productsSubtitle": "যেসব পণ্য নিয়ে মানুষ সবচেয়ে সম্প্রতি লিখেছেন।",
+    "productsReviewCount_one": "{{count}}টি রিভিউ",
+    "productsReviewCount_other": "{{count}}টি রিভিউ"
   },
   "hero": {
     "badge": "সৎ রিভিউ, সময়ের সাথে ট্র্যাক করা",

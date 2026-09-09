@@ -24,18 +24,30 @@ type ProductFilter struct {
 	Offset   int
 }
 
+// productOrderBy maps the public sort parameter to an ORDER BY clause. It is
+// a closed set: anything unrecognised falls back to most-reviewed, so the
+// value can never reach the query as free text.
+func productOrderBy(sort string) string {
+	switch sort {
+	case "avg_rating":
+		return "avg_rating DESC"
+	case "created_at":
+		return "p.created_at DESC"
+	case "recent_review":
+		// Newest review activity first. Products with no approved review have
+		// a NULL max, which MySQL sorts last under DESC.
+		return "MAX(r.created_at) DESC"
+	default:
+		return "review_count DESC"
+	}
+}
+
 func (r *ProductRepo) List(ctx context.Context, f ProductFilter) ([]*models.Product, int, error) {
 	if f.Limit == 0 {
 		f.Limit = 12
 	}
 
-	orderBy := "review_count DESC"
-	switch f.Sort {
-	case "avg_rating":
-		orderBy = "avg_rating DESC"
-	case "created_at":
-		orderBy = "p.created_at DESC"
-	}
+	orderBy := productOrderBy(f.Sort)
 
 	whereClause := "WHERE 1=1"
 	args := []any{}
@@ -54,7 +66,7 @@ func (r *ProductRepo) List(ctx context.Context, f ProductFilter) ([]*models.Prod
 		       COALESCE(AVG(r.rating), 0) as avg_rating,
 		       COALESCE(p.created_at, NOW())
 		FROM products p
-		LEFT JOIN reviews r ON p.id = r.product_id
+		LEFT JOIN reviews r ON p.id = r.product_id AND r.is_approved = 1
 		` + whereClause + `
 		GROUP BY p.id, p.name, p.category, p.image_url, p.created_at
 		ORDER BY ` + orderBy + `
@@ -95,7 +107,7 @@ func (r *ProductRepo) FindByID(ctx context.Context, id int64) (*models.Product, 
 		SELECT p.id, p.name, p.category, COALESCE(p.image_url,''),
 		       COUNT(r.id), COALESCE(AVG(r.rating), 0), COALESCE(p.created_at, NOW())
 		FROM products p
-		LEFT JOIN reviews r ON p.id = r.product_id
+		LEFT JOIN reviews r ON p.id = r.product_id AND r.is_approved = 1
 		WHERE p.id = ?
 		GROUP BY p.id, p.name, p.category, p.image_url, p.created_at`, id,
 	).Scan(&p.ID, &p.Name, &p.Category, &p.ImageURL, &p.ReviewCount, &p.AvgRating, &p.CreatedAt)
