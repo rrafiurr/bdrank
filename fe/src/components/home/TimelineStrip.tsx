@@ -131,7 +131,7 @@ export function TimelineStrip() {
     <section className="py-8 lg:py-12">
       {heading}
 
-      <div className="container flex snap-x gap-3 overflow-x-auto px-4 pb-5 sm:gap-4">
+      <div className="container flex snap-x scroll-pl-4 gap-3 overflow-x-auto px-4 pb-5 sm:gap-4">
         {reviews.map((review) => {
           const { icon: Icon } = getCategoryDisplay(review.category);
           const updates = review.timeline_ratings ?? [];

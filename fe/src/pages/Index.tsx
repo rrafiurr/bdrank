@@ -1,6 +1,7 @@
 import { PageHead } from "@/components/PageHead";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { TimelineStrip } from "@/components/home/TimelineStrip";
 import { CategoryTiles } from "@/components/home/CategoryTiles";
 import { LatestReviews } from "@/components/home/LatestReviews";
@@ -27,6 +28,7 @@ const Index = () => (
     <Header autoHide />
     <main>
       <HeroSection />
+      <ProductCarousel />
       <TimelineStrip />
       <CategoryTiles />
       <LatestReviews />
