@@ -28,6 +28,10 @@ type Product struct {
 	ReviewCount int       `json:"review_count"`
 	AvgRating   float64   `json:"avg_rating"`
 	CreatedAt   time.Time `json:"created_at"`
+	// HomePlacement controls the home page carousel: "auto", "pinned" or
+	// "hidden". Surfaced publicly because the CMS product table reads the
+	// public list endpoint; it reveals only whether something is featured.
+	HomePlacement string `json:"home_placement"`
 }
 
 type Review struct {

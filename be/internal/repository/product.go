@@ -20,13 +20,44 @@ type ProductFilter struct {
 	Category string
 	Query    string
 	Sort     string
-	Limit    int
-	Offset   int
+	// Placement scopes the list to a surface with its own rules. "home"
+	// excludes hidden products and floats pinned ones; anything else, empty
+	// included, leaves the list exactly as it has always behaved.
+	Placement string
+	Limit     int
+	Offset    int
 }
 
 // productOrderBy maps the public sort parameter to an ORDER BY clause. It is
 // a closed set: anything unrecognised falls back to most-reviewed, so the
 // value can never reach the query as free text.
+// ValidHomePlacement reports whether v is one of the three placement values.
+// The admin handler uses it so an unknown value is rejected rather than
+// written to the column.
+func ValidHomePlacement(v string) bool {
+	return v == "auto" || v == "pinned" || v == "hidden"
+}
+
+// placementOrderPrefix returns the ORDER BY fragment that floats pinned
+// products to the front. Only the explicit "home" placement asks for it, so
+// search, browse and the CMS table keep the ordering they have today.
+func placementOrderPrefix(placement string) string {
+	if placement == "home" {
+		return "(p.home_placement = 'pinned') DESC, "
+	}
+	return ""
+}
+
+// placementWhere excludes products kept off the home page. Applied only for
+// "home": the CMS reads the same public list endpoint, so filtering hidden
+// products everywhere would make them impossible to un-hide.
+func placementWhere(placement string) string {
+	if placement == "home" {
+		return " AND p.home_placement <> 'hidden'"
+	}
+	return ""
+}
+
 func productOrderBy(sort string) string {
 	switch sort {
 	case "avg_rating":
@@ -47,9 +78,9 @@ func (r *ProductRepo) List(ctx context.Context, f ProductFilter) ([]*models.Prod
 		f.Limit = 12
 	}
 
-	orderBy := productOrderBy(f.Sort)
+	orderBy := placementOrderPrefix(f.Placement) + productOrderBy(f.Sort)
 
-	whereClause := "WHERE 1=1"
+	whereClause := "WHERE 1=1" + placementWhere(f.Placement)
 	args := []any{}
 	if f.Category != "" {
 		whereClause += " AND p.category = ?"
@@ -64,11 +95,11 @@ func (r *ProductRepo) List(ctx context.Context, f ProductFilter) ([]*models.Prod
 		SELECT p.id, p.name, p.category, COALESCE(p.image_url,''),
 		       COUNT(r.id) as review_count,
 		       COALESCE(AVG(r.rating), 0) as avg_rating,
-		       COALESCE(p.created_at, NOW())
+		       COALESCE(p.created_at, NOW()), p.home_placement
 		FROM products p
 		LEFT JOIN reviews r ON p.id = r.product_id AND r.is_approved = 1
 		` + whereClause + `
-		GROUP BY p.id, p.name, p.category, p.image_url, p.created_at
+		GROUP BY p.id, p.name, p.category, p.image_url, p.created_at, p.home_placement
 		ORDER BY ` + orderBy + `
 		LIMIT ? OFFSET ?`
 
@@ -82,7 +113,7 @@ func (r *ProductRepo) List(ctx context.Context, f ProductFilter) ([]*models.Prod
 	for rows.Next() {
 		var p models.Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.Category, &p.ImageURL,
-			&p.ReviewCount, &p.AvgRating, &p.CreatedAt); err != nil {
+			&p.ReviewCount, &p.AvgRating, &p.CreatedAt, &p.HomePlacement); err != nil {
 			return nil, 0, err
 		}
 		p.ImageURL = absURL(r.baseURL, p.ImageURL)
@@ -105,12 +136,14 @@ func (r *ProductRepo) FindByID(ctx context.Context, id int64) (*models.Product, 
 	var p models.Product
 	err := r.db.QueryRowContext(ctx, `
 		SELECT p.id, p.name, p.category, COALESCE(p.image_url,''),
-		       COUNT(r.id), COALESCE(AVG(r.rating), 0), COALESCE(p.created_at, NOW())
+		       COUNT(r.id), COALESCE(AVG(r.rating), 0), COALESCE(p.created_at, NOW()),
+		       p.home_placement
 		FROM products p
 		LEFT JOIN reviews r ON p.id = r.product_id AND r.is_approved = 1
 		WHERE p.id = ?
-		GROUP BY p.id, p.name, p.category, p.image_url, p.created_at`, id,
-	).Scan(&p.ID, &p.Name, &p.Category, &p.ImageURL, &p.ReviewCount, &p.AvgRating, &p.CreatedAt)
+		GROUP BY p.id, p.name, p.category, p.image_url, p.created_at, p.home_placement`, id,
+	).Scan(&p.ID, &p.Name, &p.Category, &p.ImageURL, &p.ReviewCount, &p.AvgRating, &p.CreatedAt,
+		&p.HomePlacement)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
