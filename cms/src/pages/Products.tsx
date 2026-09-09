@@ -44,6 +44,13 @@ export default function Products() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
+  const placementMut = useMutation({
+    mutationFn: ({ id, home_placement }: { id: number; home_placement: string }) =>
+      apiFetch(`/admin/products/${id}`, { method: "PATCH", body: JSON.stringify({ home_placement }) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); toast.success("Home page placement updated"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update placement"),
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: number) => apiFetch(`/admin/products/${id}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); toast.success("Product deleted"); },
@@ -75,13 +82,14 @@ export default function Products() {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Reviews</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Avg Rating</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Home page</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i}><td colSpan={5} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
+                    <tr key={i}><td colSpan={6} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td></tr>
                   ))
                 : (products?.data ?? []).map(p => (
                     <tr key={p.id} className="hover:bg-muted/20 transition-colors">
@@ -93,6 +101,21 @@ export default function Products() {
                           <Star className="h-3.5 w-3.5 fill-current" />
                           {p.avg_rating > 0 ? p.avg_rating.toFixed(1) : "—"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Select
+                          value={p.home_placement || "auto"}
+                          onValueChange={(v) => placementMut.mutate({ id: p.id, home_placement: v })}
+                        >
+                          <SelectTrigger className="h-8 w-[130px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automatic</SelectItem>
+                            <SelectItem value="pinned">Pinned</SelectItem>
+                            <SelectItem value="hidden">Hidden</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">

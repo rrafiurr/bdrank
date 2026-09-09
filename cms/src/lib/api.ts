@@ -60,6 +60,8 @@ export interface AdminProduct {
   review_count: number;
   avg_rating: number;
   created_at: string;
+  /** Home page placement: "auto", "pinned" or "hidden". */
+  home_placement: string;
 }
 
 export interface AdminCategory {

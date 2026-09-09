@@ -686,20 +686,29 @@ func (h *AdminHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Name     *string `json:"name"`
-		Category *string `json:"category"`
-		ImageURL *string `json:"image_url"`
+		Name          *string `json:"name"`
+		Category      *string `json:"category"`
+		ImageURL      *string `json:"image_url"`
+		HomePlacement *string `json:"home_placement"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid body")
 		return
 	}
+	// Reject an unknown placement rather than letting MySQL coerce it: an
+	// out-of-range ENUM write silently becomes '' in non-strict mode, which
+	// would drop the product out of every placement branch.
+	if body.HomePlacement != nil && !repository.ValidHomePlacement(*body.HomePlacement) {
+		writeError(w, http.StatusBadRequest, "invalid home_placement")
+		return
+	}
 	h.db.ExecContext(r.Context(), `
 		UPDATE products SET
-		  name      = COALESCE(?, name),
-		  category  = COALESCE(?, category),
-		  image_url = COALESCE(?, image_url)
-		WHERE id = ?`, body.Name, body.Category, body.ImageURL, id)
+		  name           = COALESCE(?, name),
+		  category       = COALESCE(?, category),
+		  image_url      = COALESCE(?, image_url),
+		  home_placement = COALESCE(?, home_placement)
+		WHERE id = ?`, body.Name, body.Category, body.ImageURL, body.HomePlacement, id)
 	// A product's category is mutable here. Its cached field list was built
 	// from the OLD category and is registered in that category's members set,
 	// so no later category edit would ever clear it. There is no TTL.

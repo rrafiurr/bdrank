@@ -21,9 +21,10 @@ func NewProductHandler(products *repository.ProductRepo, reviews *repository.Rev
 
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	f := repository.ProductFilter{
-		Category: r.URL.Query().Get("category"),
-		Query:    r.URL.Query().Get("q"),
-		Sort:     r.URL.Query().Get("sort"),
+		Category:  r.URL.Query().Get("category"),
+		Query:     r.URL.Query().Get("q"),
+		Sort:      r.URL.Query().Get("sort"),
+		Placement: r.URL.Query().Get("placement"),
 		Limit:    queryInt(r, "limit", 12),
 		Offset:   queryInt(r, "offset", 0),
 	}

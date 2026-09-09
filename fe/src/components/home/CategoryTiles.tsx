@@ -21,7 +21,7 @@ function ProductStack({ slug }: { slug: string }) {
     queryKey: ["home-category-products", slug],
     queryFn: () =>
       apiFetch<{ data: ApiProduct[]; total: number }>(
-        `/products?category=${encodeURIComponent(slug)}&sort=review_count&limit=3`,
+        `/products?placement=home&category=${encodeURIComponent(slug)}&sort=review_count&limit=3`,
       ),
     staleTime: 5 * 60 * 1000,
   });
