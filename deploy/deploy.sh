@@ -52,7 +52,9 @@ if [ "$SKIP_FRONTEND" = false ]; then
   echo "==> Building frontend (fe/)"
   cd "$REPO_DIR/fe"
   echo "VITE_API_BASE_URL=$API_URL" > .env.production
-  echo "VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-}" >> .env.production
+  # The Google OAuth Client ID is public (it ships in every page's JS), so the
+  # real value is the default here rather than an env var a deploy can forget.
+  echo "VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-955833428827-eikofpj6e4hpcqegn2fngg9lda2fq9pr.apps.googleusercontent.com}" >> .env.production
   echo "VITE_FACEBOOK_APP_ID=${VITE_FACEBOOK_APP_ID:-}" >> .env.production
   echo "VITE_SOCIAL_LOGIN_ENABLED=${VITE_SOCIAL_LOGIN_ENABLED:-}" >> .env.production
   # GA4 Measurement ID is public (it ships in every page's JS), so the real

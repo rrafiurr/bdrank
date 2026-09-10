@@ -13,7 +13,14 @@ The three origins used everywhere below:
 
 - `https://bdranks.com`
 - `https://www.bdranks.com`
-- `http://localhost:8080` (local dev — the Vite dev server runs on port 8080)
+- `http://localhost:8080` **and** `http://localhost:8081` (local dev — see below)
+
+⚠️ **Add both localhost ports.** `vite.config.ts` asks for port 8080, but the Go
+API also listens on 8080 (`PORT=8080` in `be/.env`, mapped by
+`be/docker-compose.yml`). Vite does not use `strictPort`, so when the API is
+running — the normal case, since the frontend needs it — Vite falls back to
+**8081**. When the API is stopped, Vite takes 8080. The dev port is therefore
+not deterministic, and Google matches origins exactly, so register both.
 
 ---
 
@@ -53,6 +60,7 @@ This is what users see in the Google popup. Must be done before creating credent
    - `https://bdranks.com`
    - `https://www.bdranks.com`
    - `http://localhost:8080`
+   - `http://localhost:8081` (see the port note above — both are needed)
 6. **Create.**
 
 ### Part D — Copy the value
@@ -126,16 +134,34 @@ applying the DB migration, deploying, and verifying.
 
 Quick reference:
 
+### Current status (Google live, Facebook not configured)
+
+Google is configured and live. Facebook has never been set up, so its buttons
+stay hidden automatically — `Auth.tsx` renders them only when
+`VITE_FACEBOOK_APP_ID` is non-empty. Nothing needs disabling.
+
+**Backend — must be added by hand on the VPS.** `be/.env.prod` is not in git, so
+a deploy cannot write it. SSH to the VPS and append:
+
 ```env
 # be/.env.prod
-GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
-FACEBOOK_APP_ID=000000000000000
-FACEBOOK_APP_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GOOGLE_CLIENT_ID=955833428827-eikofpj6e4hpcqegn2fngg9lda2fq9pr.apps.googleusercontent.com
 ```
 
+Then restart the API (`sudo systemctl restart bdranks-api`) — config is read at
+startup only, so the value does not take effect until the service restarts.
+
+⚠️ If this line is missing, the backend compares every token's `aud` against an
+empty string and **every** Google sign-in fails with "social login failed",
+while the button still renders. That is the most likely production failure mode.
+
+**Frontend — nothing to do.** `deploy/deploy.sh` now defaults
+`VITE_GOOGLE_CLIENT_ID` to the real Client ID, so no export is needed at deploy
+time. Export it only to override with a different client.
+
+If Facebook is ever set up, it still needs its values exported at build time:
+
 ```bash
-# frontend build (export before ./deploy/deploy.sh, or add as CI secrets)
-export VITE_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
 export VITE_FACEBOOK_APP_ID=000000000000000
 ```
 
