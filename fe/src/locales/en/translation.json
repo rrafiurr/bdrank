@@ -21,7 +21,8 @@
     "products": "Products",
     "back": "Back",
     "cancel": "Cancel",
-    "home": "Home"
+    "home": "Home",
+    "backToTop": "Back to top"
   },
   "nav": {
     "browse": "Browse",

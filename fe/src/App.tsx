@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { RouteAnalytics } from "@/components/RouteAnalytics";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import IndexLegacy from "./pages/IndexLegacy";
 import ReviewDetails from "./pages/ReviewDetails";
@@ -58,6 +59,7 @@ const AppTree = (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ScrollToTop />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
