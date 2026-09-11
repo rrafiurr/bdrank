@@ -28,7 +28,7 @@ whole-repo exit code as a regression.
 | `cms/` | Separate Vite admin SPA for managing products, categories, review fields, campaigns |
 
 The backend is the source of truth for the data model. When you need the schema,
-read `be/migrations/` — the latest is `015_product_home_placement.sql`.
+read `be/migrations/` — the latest is `016_feedback.sql`.
 
 ## Architecture
 
@@ -98,6 +98,7 @@ All optional; each feature degrades quietly when its variable is absent.
 | `/auth` | `Auth` |
 | `/profile` | `Profile` |
 | `/rewards` | `Rewards` (+ `pages/rewards/LeaderboardTab`) |
+| `/feedback` | `Feedback` — send feedback (signed-in; history and admin replies show on `/profile`) |
 | `/page/:slug` | `StaticPage` (CMS-authored content) |
 | `/owner-register`, `/owner-dashboard`, `/owner-qr`, `/owner-embed` | Product-owner flows |
 | `/embed/:token` | `EmbedPage` — bare badge widget for third-party iframes, no Header/Footer |

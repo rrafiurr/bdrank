@@ -23,13 +23,15 @@ type fakeFeedbackStore struct {
 	updatedID       int64
 	updatedStatus   *string
 	updatedReply    *string
+	createCtxErr    error // ctx.Err() as seen by Create
 }
 
 func (f *fakeFeedbackStore) AdmissionCounts(context.Context, int64, string) (int, int, int, error) {
 	return f.spam, f.dup, f.open, nil
 }
 
-func (f *fakeFeedbackStore) Create(_ context.Context, in repository.NewFeedback) (*models.Feedback, error) {
+func (f *fakeFeedbackStore) Create(ctx context.Context, in repository.NewFeedback) (*models.Feedback, error) {
+	f.createCtxErr = ctx.Err()
 	f.created = append(f.created, in)
 	return &models.Feedback{ID: 1, Type: in.Type, Message: in.Message, Status: "new"}, nil
 }
@@ -139,6 +141,25 @@ func TestFeedbackCreateDropsUnsafePagePath(t *testing.T) {
 	}
 	if p := store.created[0].PagePath; p != "" {
 		t.Errorf("stored page path %q, want empty", p)
+	}
+}
+
+// A client that hangs up mid-request must not cancel the write: a committed row
+// answered with an error would refund the sender's rate-limit slot.
+func TestFeedbackCreateWriteSurvivesClientCancel(t *testing.T) {
+	store := &fakeFeedbackStore{}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/feedback",
+		strings.NewReader(`{"type":"bug","message":"`+okMessage+`"}`))
+	ctx, cancel := context.WithCancel(middleware.WithUserID(req.Context(), 42))
+	cancel() // the client is already gone
+	rec := httptest.NewRecorder()
+	NewFeedbackHandler(store).Create(rec, req.WithContext(ctx))
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201 (body %s)", rec.Code, rec.Body)
+	}
+	if store.createCtxErr != nil {
+		t.Errorf("Create saw a cancelled context (%v); the write must be detached from the client", store.createCtxErr)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"final-review/be/internal/feedback"
 	"final-review/be/internal/middleware"
@@ -59,7 +60,14 @@ var feedbackErrors = map[string]struct {
 }
 
 func writeFeedbackError(w http.ResponseWriter, code string) {
-	e := feedbackErrors[code]
+	e, ok := feedbackErrors[code]
+	if !ok {
+		// A code with no mapping is a programming error; answer a plain 500
+		// rather than WriteHeader(0), which would panic.
+		log.Printf("ERROR feedback: no HTTP mapping for code %q", code)
+		writeError(w, http.StatusInternalServerError, "failed to process feedback")
+		return
+	}
 	writeErrorCode(w, e.status, code, e.msg)
 }
 
@@ -102,7 +110,12 @@ func (h *FeedbackHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := h.store.Create(ctx, repository.NewFeedback{
+	// The write must not be cancelled by the client going away. A row that is
+	// committed but answered with an error would refund the sender's rate-limit
+	// slot while the item stays stored, which would be a way around the limits.
+	wctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	item, err := h.store.Create(wctx, repository.NewFeedback{
 		UserID:    userID,
 		Type:      body.Type,
 		Message:   message,

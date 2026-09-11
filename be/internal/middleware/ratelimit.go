@@ -58,16 +58,23 @@ func RateLimitPerUser(l RateLimiter, scope string, rules ...ratelimit.Rule) func
 				return
 			}
 
+			// Refund unless the handler finishes with a status below 400. The
+			// check runs in a defer so a handler that panics is refunded too;
+			// the panic still propagates to Recoverer.
 			ww := chimw.NewWrapResponseWriter(w, r.ProtoMajor)
-			next.ServeHTTP(ww, r)
-
-			if ww.Status() >= 400 {
+			failed := true
+			defer func() {
+				if !failed {
+					return
+				}
 				ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Second)
 				defer cancel()
 				if err := l.Refund(ctx, scope, subject, rules, token); err != nil {
 					log.Printf("WARN ratelimit refund scope=%s user=%d: %v", scope, userID, err)
 				}
-			}
+			}()
+			next.ServeHTTP(ww, r)
+			failed = ww.Status() >= 400
 		})
 	}
 }

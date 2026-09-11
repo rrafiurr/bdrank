@@ -115,6 +115,26 @@ func TestRateLimitRefundsWhenHandlerRejects(t *testing.T) {
 	}
 }
 
+func TestRateLimitRefundsWhenHandlerPanics(t *testing.T) {
+	l := &fakeLimiter{result: ratelimit.Result{Allowed: true}}
+	h := RateLimitPerUser(l, "feedback", ratelimit.Rule{Name: "cooldown", Limit: 1, Window: time.Minute})(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { panic("boom") }))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/feedback", nil)
+	req = req.WithContext(WithUserID(req.Context(), 42))
+
+	func() {
+		defer func() {
+			if recover() == nil {
+				t.Fatal("panic was swallowed; it must reach the outer Recoverer")
+			}
+		}()
+		h.ServeHTTP(httptest.NewRecorder(), req)
+	}()
+	if len(l.refunds) != 1 || l.refunds[0] != "tok-1" {
+		t.Fatalf("refunds = %v, want [tok-1] after a panic", l.refunds)
+	}
+}
+
 func TestRateLimitFailsClosed(t *testing.T) {
 	l := &fakeLimiter{err: errors.New("dial tcp: connection refused")}
 	rec, ran := serve(l, 42, http.StatusCreated)
