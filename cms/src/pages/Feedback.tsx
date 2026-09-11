@@ -253,7 +253,7 @@ export default function Feedback() {
                 <Button variant="outline" onClick={() => setOpenId(null)}>Close</Button>
                 <Button
                   disabled={updateMut.isPending || replyChars > REPLY_MAX || replyUnchanged}
-                  onClick={() => updateMut.mutate({ id: open.id, body: { admin_reply: reply } })}
+                  onClick={() => updateMut.mutate({ id: open.id, body: { admin_reply: reply.trim() } })}
                 >
                   {reply.trim() === "" && open.admin_reply ? "Remove reply" : "Save reply"}
                 </Button>
