@@ -566,6 +566,8 @@
     "newReply": "New reply",
     "replyFrom": "Reply from BdRanks",
     "navLink": "Send feedback",
-    "unreadLabel": "You have a new reply to your feedback"
+    "unreadLabel": "You have a new reply to your feedback",
+    "showMore": "Show more",
+    "showLess": "Show less"
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { feedbackApi } from "@/lib/feedbackApi";
 import { FEEDBACK_STATUS_CLASS, FEEDBACK_TYPE_ICON } from "@/lib/feedbackDisplay";
+
+// Messages longer than this, or with more lines, start clamped with a toggle.
+const LONG_MESSAGE_CHARS = 280;
+const CLAMP_LINES = 4;
 
 export function MyFeedback() {
   const { t, i18n } = useTranslation();
@@ -23,18 +27,32 @@ export function MyFeedback() {
     enabled: Boolean(user && token),
   });
 
-  // Seeing the list counts as reading the replies. The "New reply" badges come
-  // from the data already loaded, so they stay visible for this visit.
-  const hasUnread = items.some((item) => item.reply_unread);
+  // Replies that were unread when this visit saw them. Seeing the list counts
+  // as reading them, so the server flag is cleared right away, but the badges
+  // come from this snapshot: they stay for the whole visit even when the list
+  // refetches (window focus, a new send) with reply_unread already false.
+  const [newReplyIds, setNewReplyIds] = useState<ReadonlySet<number>>(() => new Set());
   useEffect(() => {
-    if (!isSuccess || !hasUnread) return;
+    const unread = items.filter((item) => item.reply_unread).map((item) => item.id);
+    if (unread.length === 0) return;
+    setNewReplyIds((prev) => new Set([...prev, ...unread]));
     feedbackApi
       .markSeen(token)
       .then(() => qc.invalidateQueries({ queryKey: ["feedback-unread"] }))
       .catch(() => {
         /* the dot stays; the next visit retries */
       });
-  }, [isSuccess, hasUnread, token, qc]);
+  }, [items, token, qc]);
+
+  // Long messages the user has opened on this visit.
+  const [expandedIds, setExpandedIds] = useState<ReadonlySet<number>>(() => new Set());
+  const toggleExpanded = (id: number) =>
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // Arriving from the form's "See your feedback" link (/profile#my-feedback).
   useEffect(() => {
@@ -69,6 +87,8 @@ export function MyFeedback() {
         <ul className="divide-y divide-border">
           {items.map((item) => {
             const Icon = FEEDBACK_TYPE_ICON[item.type];
+            const expanded = expandedIds.has(item.id);
+            const isLong = item.message.length > LONG_MESSAGE_CHARS || item.message.split("\n").length > CLAMP_LINES;
             return (
               <li key={item.id} className="px-6 py-4">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-1.5">
@@ -80,7 +100,19 @@ export function MyFeedback() {
                     {t(`feedback.status.${item.status}`)}
                   </Badge>
                 </div>
-                <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words line-clamp-4">{item.message}</p>
+                <p className={cn("text-sm text-foreground/80 whitespace-pre-wrap break-words", isLong && !expanded && "line-clamp-4")}>
+                  {item.message}
+                </p>
+                {isLong && (
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(item.id)}
+                    aria-expanded={expanded}
+                    className="mt-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    {expanded ? t("feedback.showLess") : t("feedback.showMore")}
+                  </button>
+                )}
 
                 {item.admin_reply && (
                   <div className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] px-4 py-3">
@@ -89,7 +121,7 @@ export function MyFeedback() {
                       {item.replied_at && (
                         <span className="text-muted-foreground">· {new Date(item.replied_at).toLocaleDateString(locale)}</span>
                       )}
-                      {item.reply_unread && <Badge className="ml-auto text-[10px] px-1.5 py-0">{t("feedback.newReply")}</Badge>}
+                      {newReplyIds.has(item.id) && <Badge className="ml-auto text-[10px] px-1.5 py-0">{t("feedback.newReply")}</Badge>}
                     </div>
                     <p className="text-sm text-foreground whitespace-pre-wrap break-words">{item.admin_reply}</p>
                   </div>
