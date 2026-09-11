@@ -24,6 +24,7 @@ import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerQR from "./pages/OwnerQR";
 import OwnerEmbed from "./pages/OwnerEmbed";
 import EmbedPage from "./pages/EmbedPage";
+import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const AppTree = (
             <Route path="/owner-embed" element={<OwnerEmbed />} />
             <Route path="/embed/:token" element={<EmbedPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/feedback" element={<Feedback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ScrollToTop />

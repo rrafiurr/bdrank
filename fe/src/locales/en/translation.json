@@ -506,5 +506,66 @@
   "video": {
     "play": "Play {{platform}} video",
     "playerTitle": "{{platform}} video player"
+  },
+  "feedback": {
+    "pageTitle": "Send feedback",
+    "pageSubtitle": "Found a bug, have an idea, or is something bothering you? Tell us. A person reads every message.",
+    "typeLabel": "What kind of feedback?",
+    "types": {
+      "bug": "Bug",
+      "idea": "Idea",
+      "complaint": "Complaint",
+      "praise": "Praise",
+      "other": "Other"
+    },
+    "messageLabel": "Your message",
+    "hints": {
+      "bug": "What were you doing, and what went wrong?",
+      "idea": "What would you like BdRanks to do, and how would it help?",
+      "complaint": "What happened, and what would have been better?",
+      "praise": "What did you like? We'll pass it on to the team.",
+      "other": "Tell us what's on your mind."
+    },
+    "counter": "{{count, number}} / {{max, number}}",
+    "submit": "Send feedback",
+    "sending": "Sending…",
+    "thanksTitle": "Thanks, we got it",
+    "thanksBody": "Someone on our team will read it. If we reply, you'll see it on your profile.",
+    "seeYours": "See your feedback",
+    "sendAnother": "Send another",
+    "errors": {
+      "message_too_short": "Please write at least {{min, number}} characters so we can understand.",
+      "message_too_long": "Please keep it under {{max, number}} characters.",
+      "message_low_effort": "That doesn't look like a real message. Tell us what happened in a few words.",
+      "too_many_links": "Please include at most {{max, number}} links.",
+      "invalid_type": "Pick a feedback type.",
+      "invalid_body": "Something went wrong with that message. Please try again.",
+      "rate_limited": "You've sent feedback recently. You can send more in {{wait}}.",
+      "duplicate": "You already sent us this message. We have it, so there's no need to send it again.",
+      "too_many_open": "You have {{max, number}} open items waiting for us. You can send more once we've handled some.",
+      "paused": "Feedback is paused on your account for now.",
+      "rate_limit_unavailable": "We couldn't send that right now. Please try again in a moment.",
+      "network": "Couldn't send your feedback. Check your connection and try again."
+    },
+    "wait": {
+      "seconds_one": "{{count, number}} second",
+      "seconds_other": "{{count, number}} seconds",
+      "minutes_one": "{{count, number}} minute",
+      "minutes_other": "{{count, number}} minutes",
+      "hours_one": "{{count, number}} hour",
+      "hours_other": "{{count, number}} hours"
+    },
+    "status": {
+      "new": "New",
+      "in_progress": "In progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "myTitle": "My feedback",
+    "myEmpty": "You haven't sent any feedback yet.",
+    "newReply": "New reply",
+    "replyFrom": "Reply from BdRanks",
+    "navLink": "Send feedback",
+    "unreadLabel": "You have a new reply to your feedback"
   }
 }
