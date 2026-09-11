@@ -58,6 +58,9 @@ func TestValidate(t *testing.T) {
 		{"two links are fine", "see https://a.example and www.b.example please", ""},
 		{"scheme plus www counts as one link", "see https://www.a.example and https://www.b.example", ""},
 		{"three links", "see https://a.example http://b.example www.c.example now", CodeTooManyLinks},
+		{"comma-joined links count separately", "see https://a.example,http://b.example,www.c.example now", CodeTooManyLinks},
+		{"semicolon-joined links count separately", "links: www.a.example;www.b.example;www.c.example ok", CodeTooManyLinks},
+		{"two scheme-plus-www links joined by a comma are fine", "see https://www.a.example,https://www.b.example please", ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

@@ -65,10 +65,12 @@ var (
 	types    = map[string]bool{"bug": true, "idea": true, "complaint": true, "praise": true, "other": true}
 	statuses = map[string]bool{"new": true, "in_progress": true, "resolved": true, "spam": true}
 
-	// A link is a scheme or "www." followed by non-space characters, so
-	// "https://www.example.com" counts once, not twice.
-	linkPattern = regexp.MustCompile(`(?i)(?:https?://|www\.)\S+`)
-	blankRuns   = regexp.MustCompile(`\n{3,}`)
+	// linkStart matches where a link begins. A "www." that directly follows
+	// "://" belongs to that scheme's link, so countLinks skips it: this keeps
+	// "https://www.example.com" at one link, while links joined by commas or
+	// semicolons still count separately.
+	linkStart = regexp.MustCompile(`(?i)https?://|www\.`)
+	blankRuns = regexp.MustCompile(`\n{3,}`)
 )
 
 func ValidType(t string) bool   { return types[t] }
@@ -119,7 +121,7 @@ func Validate(message string) (string, string) {
 		return m, CodeTooLong
 	case distinctNonSpace(m) < MinDistinct:
 		return m, CodeLowEffort
-	case len(linkPattern.FindAllStringIndex(m, -1)) > MaxLinks:
+	case countLinks(m) > MaxLinks:
 		return m, CodeTooManyLinks
 	}
 	return m, ""
@@ -133,6 +135,19 @@ func distinctNonSpace(s string) int {
 		}
 	}
 	return len(seen)
+}
+
+// countLinks counts the links in s by where each one starts.
+func countLinks(s string) int {
+	n := 0
+	for _, loc := range linkStart.FindAllStringIndex(s, -1) {
+		isWWW := loc[1]-loc[0] == len("www.")
+		if isWWW && loc[0] >= 3 && s[loc[0]-3:loc[0]] == "://" {
+			continue
+		}
+		n++
+	}
+	return n
 }
 
 // Fingerprint identifies a message for the duplicate check. It is the SHA-256
