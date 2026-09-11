@@ -120,6 +120,7 @@ func TestFeedbackRepoAdmissionCounts(t *testing.T) {
 	mustExec(t, db, insert, "h4", "spam", 1)
 	mustExec(t, db, insert, "h5", "spam", 2)
 	mustExec(t, db, insert, "h6", "spam", 31)     // too old to count toward a pause
+	mustExec(t, db, insert, "old", "resolved", 31) // too old to count as a duplicate
 	mustExec(t, db, `INSERT INTO feedback (user_id, type, message, message_hash) VALUES (2, 'bug', 'm', 'h1')`)
 
 	spam, dup, open, err = r.AdmissionCounts(ctx, 1, "h1")
