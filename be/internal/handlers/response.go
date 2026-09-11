@@ -19,6 +19,12 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
+// writeErrorCode writes an error carrying a stable machine-readable code next
+// to the English sentence, for clients that show their own translated message.
+func writeErrorCode(w http.ResponseWriter, status int, code, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg, "code": code})
+}
+
 func queryInt(r *http.Request, key string, def int) int {
 	v, err := strconv.Atoi(r.URL.Query().Get(key))
 	if err != nil {

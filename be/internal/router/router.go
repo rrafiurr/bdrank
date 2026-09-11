@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"final-review/be/internal/config"
+	"final-review/be/internal/feedback"
 	"final-review/be/internal/handlers"
 	mw "final-review/be/internal/middleware"
+	"final-review/be/internal/ratelimit"
 	"final-review/be/internal/repository"
 	"final-review/be/internal/rewards"
 	"final-review/be/internal/storage"
@@ -72,12 +74,16 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	commentRepo := repository.NewCommentRepo(db, cfg.BaseURL)
 	pageRepo := repository.NewPageRepo(db)
 	embedRepo := repository.NewEmbedRepo(db, cfg.SiteURL)
+	feedbackRepo := repository.NewFeedbackRepo(db)
 
 	// storage — swap NewLocal for a CDN implementation to change hosting
 	store := storage.NewLocal(cfg.UploadDir, cfg.BaseURL)
 
 	// rewards service
 	rewardsSvc := rewards.NewService(db)
+
+	// rate limiting — per-user sliding windows in Redis
+	limiter := ratelimit.New(rdb)
 
 	// handlers
 	authH := handlers.NewAuthHandler(userRepo, rdb, cfg, rewardsSvc)
@@ -95,6 +101,7 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 	externalH := handlers.NewExternalHandler(db, cfg.ExternalUser, cfg.ExternalPass, store)
 	ownerH := handlers.NewOwnerHandler(reviewRepo, productRepo, userRepo, embedRepo)
 	widgetH := handlers.NewWidgetHandler(embedRepo)
+	feedbackH := handlers.NewFeedbackHandler(feedbackRepo)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -187,6 +194,11 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 			r.Post("/reviews/{id}/timeline", timelineH.Create)
 			r.Post("/reviews/{id}/comments", commentH.Create)
 			r.Post("/reviews/{id}/comments/{comment_id}/like", commentH.LikeComment)
+
+			r.With(mw.RateLimitPerUser(limiter, "feedback", feedback.RateRules...)).Post("/feedback", feedbackH.Create)
+			r.Get("/feedback/mine", feedbackH.Mine)
+			r.Get("/feedback/mine/unread", feedbackH.Unread)
+			r.Post("/feedback/mine/seen", feedbackH.MarkSeen)
 		})
 
 		// admin-only
@@ -237,6 +249,9 @@ func New(cfg *config.Config, db *sql.DB, rdb *redis.Client) http.Handler {
 
 			r.Get("/admin/embeds", adminH.ListEmbeds)
 			r.Patch("/admin/embeds/{id}", adminH.UpdateEmbed)
+
+			r.Get("/admin/feedback", feedbackH.AdminList)
+			r.Patch("/admin/feedback/{id}", feedbackH.AdminUpdate)
 		})
 
 		rewards.RegisterRoutes(r, rewardsSvc,
