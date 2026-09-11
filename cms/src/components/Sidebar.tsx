@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, MessageSquare, Package,
   Tag, BookOpen, Users, LogOut, ChevronRight, Building2, Code2, X, Gift,
-  Image as ImageIcon, ListChecks,
+  Image as ImageIcon, ListChecks, Inbox,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-tight.png";
@@ -12,6 +12,7 @@ const NAV = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/" },
   { label: "Reviews", icon: FileText, to: "/reviews" },
   { label: "Comments", icon: MessageSquare, to: "/comments", badge: "pending" },
+  { label: "Feedback", icon: Inbox, to: "/feedback", badge: "feedback" },
   { label: "Products", icon: Package, to: "/products" },
   { label: "Categories", icon: Tag, to: "/categories" },
   { label: "Form Fields", icon: ListChecks, to: "/form-fields" },
@@ -29,9 +30,10 @@ interface Props {
   pendingComments?: number;
   pendingOwners?: number;
   pendingEmbeds?: number;
+  newFeedback?: number;
 }
 
-export function Sidebar({ open = false, onClose, pendingComments = 0, pendingOwners = 0, pendingEmbeds = 0 }: Props) {
+export function Sidebar({ open = false, onClose, pendingComments = 0, pendingOwners = 0, pendingEmbeds = 0, newFeedback = 0 }: Props) {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
 
@@ -89,6 +91,11 @@ export function Sidebar({ open = false, onClose, pendingComments = 0, pendingOwn
                   {badge === "embeds" && pendingEmbeds > 0 && (
                     <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                       {pendingEmbeds}
+                    </span>
+                  )}
+                  {badge === "feedback" && newFeedback > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {newFeedback}
                     </span>
                   )}
                   {active && <ChevronRight className="h-3.5 w-3.5 text-white/40" />}

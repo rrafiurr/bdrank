@@ -44,6 +44,7 @@ export function Layout({ children, title, action }: Props) {
         pendingComments={stats?.pending_comments}
         pendingOwners={stats?.pending_owners}
         pendingEmbeds={stats?.pending_embeds}
+        newFeedback={stats?.new_feedback}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
