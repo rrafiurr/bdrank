@@ -65,10 +65,10 @@ var (
 	types    = map[string]bool{"bug": true, "idea": true, "complaint": true, "praise": true, "other": true}
 	statuses = map[string]bool{"new": true, "in_progress": true, "resolved": true, "spam": true}
 
-	// linkStart matches where a link begins. A "www." that directly follows
-	// "://" belongs to that scheme's link, so countLinks skips it: this keeps
-	// "https://www.example.com" at one link, while links joined by commas or
-	// semicolons still count separately.
+	// linkStart matches where a link begins. A "www." that begins exactly where
+	// a matched scheme ended belongs to that link, so countLinks skips it: this
+	// keeps "https://www.example.com" at one link, while links joined by commas
+	// or semicolons still count separately.
 	linkStart = regexp.MustCompile(`(?i)https?://|www\.`)
 	blankRuns = regexp.MustCompile(`\n{3,}`)
 )
@@ -137,13 +137,20 @@ func distinctNonSpace(s string) int {
 	return len(seen)
 }
 
-// countLinks counts the links in s by where each one starts.
+// countLinks counts the links in s by where each one starts. A "www." that
+// begins exactly where a matched http:// or https:// ended is that link's
+// host, not a second link; any other "www." (including one after a made-up
+// "xyz://") counts on its own.
 func countLinks(s string) int {
 	n := 0
+	schemeEnd := -1 // end offset of the last matched http:// or https://
 	for _, loc := range linkStart.FindAllStringIndex(s, -1) {
-		isWWW := loc[1]-loc[0] == len("www.")
-		if isWWW && loc[0] >= 3 && s[loc[0]-3:loc[0]] == "://" {
-			continue
+		if loc[1]-loc[0] == len("www.") {
+			if loc[0] == schemeEnd {
+				continue
+			}
+		} else {
+			schemeEnd = loc[1]
 		}
 		n++
 	}

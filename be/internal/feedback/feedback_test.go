@@ -61,6 +61,8 @@ func TestValidate(t *testing.T) {
 		{"comma-joined links count separately", "see https://a.example,http://b.example,www.c.example now", CodeTooManyLinks},
 		{"semicolon-joined links count separately", "links: www.a.example;www.b.example;www.c.example ok", CodeTooManyLinks},
 		{"two scheme-plus-www links joined by a comma are fine", "see https://www.a.example,https://www.b.example please", ""},
+		{"bare :// before www does not hide links", "see ://www.a.example ://www.b.example ://www.c.example now", CodeTooManyLinks},
+		{"made-up scheme before www does not hide links", "buy xyz://www.a.example xyz://www.b.example xyz://www.c.example now", CodeTooManyLinks},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
