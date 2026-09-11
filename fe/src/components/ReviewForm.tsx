@@ -1,20 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, Upload, X, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
+import { Star, Upload, X, FileClock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, type ApiCategory, type ApiProduct, type ApiReviewField } from "@/lib/api";
-import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
 import { CustomFieldInputs } from "@/components/CustomFieldInputs";
+import { ProductPicker } from "@/components/ProductPicker";
+import { ReviewPrompts } from "@/components/ReviewPrompts";
+import { useReviewDraft, type ReviewDraftValues } from "@/hooks/useReviewDraft";
 import { looksLikeSupportedVideo } from "@/lib/videoLink";
+import { cn } from "@/lib/utils";
 
 interface ReviewFormProps {
   onClose?: () => void;
@@ -25,6 +28,50 @@ interface ReviewFormProps {
 // that prunes stale answers and loop indefinitely) while the review-fields
 // query is disabled.
 const EMPTY_CUSTOM_FIELDS: ApiReviewField[] = [];
+
+const MAX_IMAGES = 3;
+
+// Not a minimum — submitting a shorter review is allowed. It's the point past
+// which the counter stops nudging, because reviews below it rarely tell anyone
+// anything useful.
+const HELPFUL_LENGTH = 100;
+
+/** Small numbered heading so nine stacked inputs read as four short steps. */
+function Section({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: number;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-5">
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground">
+            {step}
+          </span>
+          {title}
+        </h2>
+        {description && <p className="text-xs text-muted-foreground pl-7">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="text-xs text-destructive">
+      {message}
+    </p>
+  );
+}
 
 export function ReviewForm({ onClose }: ReviewFormProps) {
   const { t } = useTranslation();
@@ -38,13 +85,8 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Product autocomplete state
   const [productName, setProductName] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ApiProduct | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState(-1);
-  const productWrapperRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -58,32 +100,18 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoURL, setVideoURL] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const MAX_IMAGES = 3;
   const [customValues, setCustomValues] = useState<Record<number, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  // Debounce product search
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(productName.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [productName]);
-
-  const { data: productSearchData, isFetching: searchFetching } = useQuery({
-    queryKey: ["product-search", debouncedQuery],
-    queryFn: () =>
-      apiFetch<{ data: ApiProduct[]; total: number }>(
-        `/products?q=${encodeURIComponent(debouncedQuery)}&limit=6`
-      ),
-    enabled: debouncedQuery.length >= 2 && !selectedProduct,
-  });
-
-  const suggestions = productSearchData?.data ?? [];
-
-  // Show dropdown when there are results and no product locked in
-  useEffect(() => {
-    setShowDropdown(!selectedProduct && suggestions.length > 0 && debouncedQuery.length >= 2);
-    setFocusedIndex(-1);
-  }, [suggestions, selectedProduct, debouncedQuery]);
+  const clearError = (key: string) =>
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
 
   // Admin-defined fields for the selected product or category
   const { data: customFields = EMPTY_CUSTOM_FIELDS } = useQuery<ApiReviewField[]>({
@@ -122,54 +150,50 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     });
   }, [customFields]);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (productWrapperRef.current && !productWrapperRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  // Autosaved draft. Memoised so a hover-rating render doesn't reset the
+  // debounce — only a real edit should.
+  const draftValues = useMemo<ReviewDraftValues>(
+    () => ({
+      productName,
+      selectedProduct,
+      category: formData.category,
+      title: formData.title,
+      content: formData.content,
+      rating: formData.rating,
+      videoURL,
+      customValues,
+    }),
+    [productName, selectedProduct, formData, videoURL, customValues]
+  );
 
-  const handleProductNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProductName(e.target.value);
-    if (selectedProduct) {
-      // User started typing again — clear the locked selection
-      setSelectedProduct(null);
-      setFormData((prev) => ({ ...prev, category: "" }));
-    }
+  const { pendingDraft, restoreDraft, discardDraft, clearDraft } = useReviewDraft(
+    user?.id ?? null,
+    draftValues
+  );
+
+  const handleRestoreDraft = () => {
+    const draft = restoreDraft();
+    if (!draft) return;
+    setProductName(draft.productName);
+    setSelectedProduct(draft.selectedProduct);
+    setFormData({
+      title: draft.title,
+      category: draft.category,
+      rating: draft.rating,
+      content: draft.content,
+    });
+    setVideoURL(draft.videoURL);
+    setCustomValues(draft.customValues ?? {});
+    setErrors({});
   };
 
-  const handleProductSelect = (p: ApiProduct) => {
-    setProductName(p.name);
-    setSelectedProduct(p);
-    setFormData((prev) => ({ ...prev, category: p.category }));
-    setShowDropdown(false);
-  };
-
-  const clearSelectedProduct = () => {
-    setSelectedProduct(null);
-    setProductName("");
-    setFormData((prev) => ({ ...prev, category: "" }));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showDropdown) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setFocusedIndex((i) => Math.min(i + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setFocusedIndex((i) => Math.max(i - 1, -1));
-    } else if (e.key === "Enter" && focusedIndex >= 0) {
-      e.preventDefault();
-      handleProductSelect(suggestions[focusedIndex]);
-    } else if (e.key === "Escape") {
-      setShowDropdown(false);
-      setFocusedIndex(-1);
-    }
+  const handleProductSelect = (product: ApiProduct | null) => {
+    setSelectedProduct(product);
+    // An existing product carries its own category; a cleared selection hands
+    // the choice back to the reviewer.
+    setFormData((prev) => ({ ...prev, category: product?.category ?? "" }));
+    clearError("product");
+    clearError("category");
   };
 
   // Images
@@ -210,6 +234,47 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const validate = (): Record<string, string> => {
+    const next: Record<string, string> = {};
+    if (!productName.trim()) next.product = t("reviewForm.errProduct");
+    if (!formData.category) next.category = t("reviewForm.errCategory");
+    if (formData.rating === 0) next.rating = t("reviewForm.errRating");
+    if (!formData.content.trim()) next.content = t("reviewForm.errContent");
+    if (!formData.title.trim()) next.title = t("reviewForm.errTitle");
+    for (const f of customFields) {
+      if (f.is_required && !(customValues[f.id] ?? "").trim()) {
+        next[`cf-${f.id}`] = t("reviewForm.customFieldRequired", { label: f.label });
+      }
+    }
+    // Caught here only so the reviewer sees it before losing the form; the
+    // server rejects an unsupported link regardless.
+    if (videoURL.trim() && !looksLikeSupportedVideo(videoURL)) {
+      next.video = t("reviewForm.videoInvalid");
+    }
+    return next;
+  };
+
+  // Send them to the first problem rather than leaving them to hunt for it.
+  const focusFirstError = (found: Record<string, string>) => {
+    const order = [
+      "product",
+      "category",
+      "rating",
+      ...customFields.map((f) => `cf-${f.id}`),
+      "content",
+      "title",
+      "video",
+    ];
+    const key = order.find((k) => found[k]);
+    if (!key) return;
+    const elementId =
+      key === "category" ? "field-category" : key === "rating" ? "field-rating" : key === "video" ? "video-url" : key;
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.focus({ preventScroll: true });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -219,26 +284,10 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
       return;
     }
 
-    if (!productName.trim() || !formData.title || !formData.category || formData.rating === 0 || !formData.content) {
-      toast({ title: t("reviewForm.missingFields"), description: t("reviewForm.missingFieldsDesc"), variant: "destructive" });
-      return;
-    }
-
-    const missing = customFields.find(
-      (f) => f.is_required && !(customValues[f.id] ?? "").trim()
-    );
-    if (missing) {
-      toast({
-        title: t("reviewForm.customFieldRequired", { label: missing.label }),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Caught here only so the reviewer sees it before losing the form; the
-    // server rejects an unsupported link regardless.
-    if (videoURL.trim() && !looksLikeSupportedVideo(videoURL)) {
-      toast({ title: t("reviewForm.videoInvalid"), variant: "destructive" });
+    const found = validate();
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusFirstError(found);
       return;
     }
 
@@ -263,302 +312,291 @@ export function ReviewForm({ onClose }: ReviewFormProps) {
 
       await apiFetch("/reviews", { method: "POST", body: fd });
 
+      clearDraft();
       toast({ title: t("reviewForm.reviewSubmitted"), description: t("reviewForm.reviewSubmittedDesc") });
       navigate("/browse");
       onClose?.();
-    } catch (err: any) {
-      toast({ title: t("reviewForm.errorTitle"), description: err.message ?? t("reviewForm.failedToSubmit"), variant: "destructive" });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : t("reviewForm.failedToSubmit");
+      toast({ title: t("reviewForm.errorTitle"), description, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const activeRating = hoveredRating || formData.rating;
+  const contentLength = formData.content.trim().length;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Product name with autocomplete */}
-      <div className="space-y-2">
-        <Label htmlFor="product">{t("reviewForm.productLabel")}</Label>
-        <div ref={productWrapperRef} className="relative">
-          <div className="relative">
-            <Input
-              id="product"
-              placeholder={t("reviewForm.productPlaceholder")}
-              value={productName}
-              onChange={handleProductNameChange}
-              onKeyDown={handleKeyDown}
-              onFocus={() => {
-                if (!selectedProduct && suggestions.length > 0) setShowDropdown(true);
-              }}
-              className={`bg-background pr-8 ${selectedProduct ? "border-primary ring-1 ring-primary/20" : ""}`}
-              autoComplete="off"
-            />
-            {searchFetching && !selectedProduct && (
-              <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-            )}
+    <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+      {pendingDraft && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 px-4 py-3">
+          <FileClock className="h-4 w-4 flex-shrink-0 text-primary" />
+          <p className="min-w-[12rem] flex-1 text-sm text-foreground">{t("reviewForm.draftFound")}</p>
+          <div className="flex gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={discardDraft}>
+              {t("reviewForm.draftDiscard")}
+            </Button>
+            <Button type="button" size="sm" onClick={handleRestoreDraft}>
+              {t("reviewForm.draftRestore")}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Section step={1} title={t("reviewForm.sectionSubject")} description={t("reviewForm.sectionSubjectHint")}>
+        <div className="space-y-2">
+          <Label htmlFor="product">{t("reviewForm.productLabel")}</Label>
+          <ProductPicker
+            value={productName}
+            onValueChange={(name) => {
+              setProductName(name);
+              clearError("product");
+            }}
+            selected={selectedProduct}
+            onSelect={handleProductSelect}
+            invalid={Boolean(errors.product)}
+            describedBy={errors.product ? "product-error" : undefined}
+          />
+          <FieldError id="product-error" message={errors.product} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>
+            {t("reviewForm.categoryLabel")}
             {selectedProduct && (
-              <button
-                type="button"
-                onClick={clearSelectedProduct}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive transition-colors"
-                title="Clear selection"
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                {t("reviewForm.categorySetByProduct")}
+              </span>
+            )}
+          </Label>
+          <div
+            id="field-category"
+            tabIndex={-1}
+            className={cn(
+              "flex flex-wrap gap-2 rounded-lg outline-none",
+              errors.category && "ring-2 ring-destructive/40 ring-offset-4 ring-offset-card"
+            )}
+          >
+            {categories.map((cat) => (
+              <Badge
+                key={cat.slug}
+                variant={formData.category === cat.slug ? "gold" : "outline"}
+                className={selectedProduct ? "opacity-60" : "cursor-pointer transition-all hover:scale-105"}
+                onClick={() => {
+                  if (selectedProduct) return;
+                  setFormData({ ...formData, category: cat.slug });
+                  clearError("category");
+                }}
               >
-                <X className="h-4 w-4" />
-              </button>
+                {cat.label}
+              </Badge>
+            ))}
+          </div>
+          <FieldError id="category-error" message={errors.category} />
+        </div>
+      </Section>
+
+      <div className="border-t border-border/70" />
+
+      <Section step={2} title={t("reviewForm.sectionRating")} description={t("reviewForm.sectionRatingHint")}>
+        <div className="space-y-2">
+          <div
+            id="field-rating"
+            tabIndex={-1}
+            className={cn(
+              "flex flex-wrap items-center gap-3 rounded-lg outline-none",
+              errors.rating && "ring-2 ring-destructive/40 ring-offset-4 ring-offset-card"
+            )}
+          >
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  className="p-1 transition-transform hover:scale-110"
+                  aria-label={t(`reviewForm.ratingLabels.${star}`)}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  onClick={() => {
+                    setFormData({ ...formData, rating: star });
+                    clearError("rating");
+                  }}
+                >
+                  <Star
+                    className={`h-8 w-8 transition-colors ${
+                      star <= activeRating ? "fill-primary text-primary" : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            {/* Reserve the row so the form doesn't jump when a label appears. */}
+            <span className="min-h-[1.25rem] text-sm font-medium text-foreground">
+              {activeRating > 0 ? t(`reviewForm.ratingLabels.${activeRating}`) : ""}
+            </span>
+          </div>
+          <FieldError id="rating-error" message={errors.rating} />
+        </div>
+      </Section>
+
+      <div className="border-t border-border/70" />
+
+      <Section step={3} title={t("reviewForm.sectionExperience")} description={t("reviewForm.sectionExperienceHint")}>
+        <CustomFieldInputs
+          fields={customFields}
+          values={customValues}
+          errors={errors}
+          onChange={(id, v) => {
+            setCustomValues((p) => ({ ...p, [id]: v }));
+            clearError(`cf-${id}`);
+          }}
+        />
+
+        <div className="space-y-3">
+          <Label htmlFor="content">{t("reviewForm.contentLabel")}</Label>
+          <ReviewPrompts
+            category={formData.category}
+            value={formData.content}
+            onChange={(next) => {
+              setFormData((prev) => ({ ...prev, content: next }));
+              clearError("content");
+            }}
+            textareaRef={contentRef}
+          />
+          <Textarea
+            id="content"
+            ref={contentRef}
+            placeholder={t("reviewForm.contentPlaceholder")}
+            value={formData.content}
+            onChange={(e) => {
+              setFormData({ ...formData, content: e.target.value });
+              clearError("content");
+            }}
+            aria-invalid={Boolean(errors.content) || undefined}
+            aria-describedby={errors.content ? "content-error" : "content-hint"}
+            className={cn(
+              "min-h-[180px] bg-background",
+              errors.content && "border-destructive focus-visible:ring-destructive"
+            )}
+          />
+          <FieldError id="content-error" message={errors.content} />
+          <p
+            id="content-hint"
+            className={cn(
+              "text-xs",
+              contentLength >= HELPFUL_LENGTH ? "text-success" : "text-muted-foreground"
+            )}
+          >
+            {contentLength >= HELPFUL_LENGTH
+              ? t("reviewForm.lengthGood")
+              : t("reviewForm.lengthNudge", { length: contentLength, target: HELPFUL_LENGTH })}
+          </p>
+        </div>
+
+        {/* Asked last: a title is a summary, and you can't summarise what you
+            haven't written yet. */}
+        <div className="space-y-2">
+          <Label htmlFor="title">{t("reviewForm.titleLabel")}</Label>
+          <Input
+            id="title"
+            placeholder={t("reviewForm.titlePlaceholder")}
+            value={formData.title}
+            onChange={(e) => {
+              setFormData({ ...formData, title: e.target.value });
+              clearError("title");
+            }}
+            aria-invalid={Boolean(errors.title) || undefined}
+            aria-describedby={errors.title ? "title-error" : undefined}
+            className={cn("bg-background", errors.title && "border-destructive focus-visible:ring-destructive")}
+          />
+          <FieldError id="title-error" message={errors.title} />
+        </div>
+      </Section>
+
+      <div className="border-t border-border/70" />
+
+      <Section step={4} title={t("reviewForm.sectionProof")} description={t("reviewForm.sectionProofHint")}>
+        <div className="space-y-6 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4">
+          <div className="space-y-2">
+            <Label>{t("reviewForm.photosLabel", { max: MAX_IMAGES })}</Label>
+            <div className="flex flex-wrap gap-3">
+              {imagePreviews.map((src, i) => (
+                <div key={src} className="relative h-24 w-24 rounded-lg overflow-hidden border border-border group">
+                  <img src={src} alt={`Upload preview ${i + 1}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1 right-1 p-1 rounded-full bg-background/80 hover:bg-background shadow-soft opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove image"
+                  >
+                    <X className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                </div>
+              ))}
+              {images.length < MAX_IMAGES && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-24 w-24 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-accent/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Upload className="h-5 w-5" />
+                  <span className="text-xs">{t("reviewForm.addPhoto")}</span>
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <p className="text-xs text-muted-foreground">{t("reviewForm.photoHint")}</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="video-url">{t("reviewForm.videoLabel")}</Label>
+            <Input
+              id="video-url"
+              type="url"
+              inputMode="url"
+              placeholder={t("reviewForm.videoPlaceholder")}
+              value={videoURL}
+              onChange={(e) => {
+                setVideoURL(e.target.value);
+                clearError("video");
+              }}
+              aria-invalid={Boolean(errors.video) || undefined}
+              aria-describedby={errors.video ? "video-error" : undefined}
+              className={cn("bg-background", errors.video && "border-destructive focus-visible:ring-destructive")}
+            />
+            {errors.video ? (
+              <FieldError id="video-error" message={errors.video} />
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("reviewForm.videoHint")}</p>
             )}
           </div>
 
-          {/* Selected product pill */}
-          {selectedProduct && (
-            <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
-              <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-xs font-medium text-primary">{t("reviewForm.existingSelected")}</span>
-              <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-                {selectedProduct.review_count > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    {selectedProduct.avg_rating.toFixed(1)}
-                    <span className="text-border/70">·</span>
-                    {t("reviewForm.review", { count: selectedProduct.review_count })}
-                  </span>
-                )}
-              </div>
+          <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/60 p-4">
+            <Checkbox
+              id="is-anonymous"
+              checked={isAnonymous}
+              onCheckedChange={(v) => setIsAnonymous(v === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="is-anonymous" className="cursor-pointer font-medium">
+                {t("reviewForm.anonymousLabel")}
+              </Label>
+              <p className="text-xs text-muted-foreground">{t("reviewForm.anonymousHint")}</p>
             </div>
-          )}
-
-          {/* Suggestions dropdown */}
-          {showDropdown && (
-            <div className="absolute z-50 top-full mt-1.5 w-full bg-card border border-border rounded-xl shadow-elevated overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-150">
-              {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {t("reviewForm.existingProducts", { count: suggestions.length })}
-                </span>
-                <span className="text-xs text-muted-foreground hidden sm:block">{t("reviewForm.navigateHint")}</span>
-              </div>
-
-              {/* Product rows */}
-              {suggestions.map((p, idx) => {
-                const { icon: Icon, badgeVariant } = getCategoryDisplay(p.category);
-                const isHighlighted = focusedIndex === idx;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleProductSelect(p)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 text-left transition-colors border-b border-border/40 last:border-b-0 group ${
-                      isHighlighted ? "bg-accent" : "hover:bg-accent/60"
-                    }`}
-                  >
-                    {/* Thumbnail */}
-                    <div className="h-11 w-11 rounded-lg overflow-hidden flex-shrink-0 bg-muted border border-border flex items-center justify-center">
-                      {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <Icon className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </div>
-
-                    {/* Name + meta */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate leading-snug">{p.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant={badgeVariant} className="text-[10px] px-1.5 h-4 py-0">
-                          {p.category}
-                        </Badge>
-                        {p.review_count > 0 ? (
-                          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            {p.avg_rating.toFixed(1)}
-                            <span className="text-border">·</span>
-                            {t("reviewForm.review", { count: p.review_count })}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-muted-foreground">{t("reviewForm.noReviewsYet")}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Select hint */}
-                    <span
-                      className={`flex items-center gap-0.5 text-xs font-medium text-primary flex-shrink-0 transition-opacity ${
-                        isHighlighted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                      }`}
-                    >
-                      {t("reviewForm.select")}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </span>
-                  </button>
-                );
-              })}
-
-              {/* Footer hint */}
-              <div className="px-3 py-2 bg-muted/30 border-t border-border">
-                <p className="text-[11px] text-muted-foreground">
-                  {t("reviewForm.notWhatYouNeed")}
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      </Section>
 
-      {/* Title */}
-      <div className="space-y-2">
-        <Label htmlFor="title">{t("reviewForm.titleLabel")}</Label>
-        <Input
-          id="title"
-          placeholder={t("reviewForm.titlePlaceholder")}
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="bg-background"
-        />
-      </div>
-
-      {/* Category — locked when an existing product is selected */}
-      <div className="space-y-2">
-        <Label>
-          {t("reviewForm.categoryLabel")}
-          {selectedProduct && (
-            <span className="ml-2 text-xs text-muted-foreground font-normal">{t("reviewForm.categorySetByProduct")}</span>
-          )}
-        </Label>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
-            <Badge
-              key={cat.slug}
-              variant={formData.category === cat.slug ? "gold" : "outline"}
-              className={selectedProduct ? "opacity-60" : "cursor-pointer transition-all hover:scale-105"}
-              onClick={() => {
-                if (!selectedProduct) setFormData({ ...formData, category: cat.slug });
-              }}
-            >
-              {cat.label}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Rating */}
-      <div className="space-y-2">
-        <Label>{t("reviewForm.ratingLabel")}</Label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              className="p-1 transition-transform hover:scale-110"
-              onMouseEnter={() => setHoveredRating(star)}
-              onMouseLeave={() => setHoveredRating(0)}
-              onClick={() => setFormData({ ...formData, rating: star })}
-            >
-              <Star
-                className={`h-8 w-8 transition-colors ${
-                  star <= (hoveredRating || formData.rating)
-                    ? "fill-primary text-primary"
-                    : "text-muted-foreground"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <CustomFieldInputs
-        fields={customFields}
-        values={customValues}
-        onChange={(id, v) => setCustomValues((p) => ({ ...p, [id]: v }))}
-      />
-
-      {/* Content */}
-      <div className="space-y-2">
-        <Label htmlFor="content">{t("reviewForm.contentLabel")}</Label>
-        <Textarea
-          id="content"
-          placeholder={t("reviewForm.contentPlaceholder")}
-          value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="min-h-[150px] bg-background"
-        />
-      </div>
-
-      {/* Images */}
-      <div className="space-y-2">
-        <Label>{t("reviewForm.photosLabel", { max: MAX_IMAGES })}</Label>
-        <div className="flex flex-wrap gap-3">
-          {imagePreviews.map((src, i) => (
-            <div key={src} className="relative h-24 w-24 rounded-lg overflow-hidden border border-border group">
-              <img src={src} alt={`Upload preview ${i + 1}`} className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => removeImage(i)}
-                className="absolute top-1 right-1 p-1 rounded-full bg-background/80 hover:bg-background shadow-soft opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Remove image"
-              >
-                <X className="h-3.5 w-3.5 text-foreground" />
-              </button>
-            </div>
-          ))}
-          {images.length < MAX_IMAGES && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-24 w-24 rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-accent/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Upload className="h-5 w-5" />
-              <span className="text-xs">{t("reviewForm.addPhoto")}</span>
-            </button>
-          )}
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={handleImageSelect}
-        />
-        <p className="text-xs text-muted-foreground">{t("reviewForm.photoHint")}</p>
-      </div>
-
-      {/* Video link */}
-      <div className="space-y-2">
-        <Label htmlFor="video-url">{t("reviewForm.videoLabel")}</Label>
-        <Input
-          id="video-url"
-          type="url"
-          inputMode="url"
-          placeholder={t("reviewForm.videoPlaceholder")}
-          value={videoURL}
-          onChange={(e) => setVideoURL(e.target.value)}
-          className="bg-background"
-        />
-        {videoURL.trim() && !looksLikeSupportedVideo(videoURL) ? (
-          <p className="text-xs text-destructive">{t("reviewForm.videoInvalid")}</p>
-        ) : (
-          <p className="text-xs text-muted-foreground">{t("reviewForm.videoHint")}</p>
-        )}
-      </div>
-
-      {/* Anonymous posting */}
-      <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-4">
-        <Checkbox
-          id="is-anonymous"
-          checked={isAnonymous}
-          onCheckedChange={(v) => setIsAnonymous(v === true)}
-          className="mt-0.5"
-        />
-        <div className="space-y-1">
-          <Label htmlFor="is-anonymous" className="cursor-pointer font-medium">
-            {t("reviewForm.anonymousLabel")}
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            {t("reviewForm.anonymousHint")}
-          </p>
-        </div>
-      </div>
-
-      {/* Submit */}
-      <div className="flex gap-3 pt-4">
+      <div className="flex gap-3 pt-2">
         <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={submitting}>
           {t("reviewForm.cancel")}
         </Button>
