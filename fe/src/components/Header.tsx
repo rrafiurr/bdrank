@@ -8,11 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, PenSquare, User, Menu, LogOut, X, LayoutDashboard, Code2 } from "lucide-react";
+import { Search, PenSquare, User, Menu, LogOut, X, LayoutDashboard, Code2, MessageSquarePlus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-tight.png";
 import { useAuth } from "@/hooks/useAuth";
+import { useFeedbackUnread } from "@/hooks/useFeedbackUnread";
 import { apiFetch, type ApiSearchResult } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
@@ -53,6 +54,8 @@ export function Header({ autoHide = false }: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
+  const location = useLocation();
+  const unreadReplies = useFeedbackUnread();
 
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
@@ -254,8 +257,17 @@ export function Header({ autoHide = false }: HeaderProps) {
             user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hidden sm:flex rounded-full h-9 w-9 p-0">
+                  <Button variant="ghost" size="icon" className="relative hidden sm:flex rounded-full h-9 w-9 p-0">
                     <UserAvatar name={user.username || user.email} src={user.avatar_url} size="xs" />
+                    {unreadReplies > 0 && (
+                      <>
+                        <span
+                          className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">{t("feedback.unreadLabel")}</span>
+                      </>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-elevated">
@@ -268,6 +280,13 @@ export function Header({ autoHide = false }: HeaderProps) {
                     <Link to="/profile" className="flex items-center">
                       <User className="h-4 w-4 mr-2" />
                       {t("common.myProfile")}
+                      {unreadReplies > 0 && <span className="ml-auto h-2 w-2 rounded-full bg-primary" aria-hidden="true" />}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
+                    <Link to="/feedback" state={{ from: location.pathname }} className="flex items-center">
+                      <MessageSquarePlus className="h-4 w-4 mr-2" />
+                      {t("feedback.navLink")}
                     </Link>
                   </DropdownMenuItem>
                   {user.is_product_owner && (
@@ -348,13 +367,24 @@ export function Header({ autoHide = false }: HeaderProps) {
               {t("nav.categories")}
             </Link>
             {user && (
-              <Link
-                to="/profile"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
-              >
-                {t("common.myProfile")}
-              </Link>
+              <>
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
+                >
+                  {t("common.myProfile")}
+                  {unreadReplies > 0 && <span className="ml-2 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />}
+                </Link>
+                <Link
+                  to="/feedback"
+                  state={{ from: location.pathname }}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 px-3 py-2.5 rounded-xl transition-colors"
+                >
+                  {t("feedback.navLink")}
+                </Link>
+              </>
             )}
             {user?.is_product_owner && (
               <>

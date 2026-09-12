@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiFetch, type ApiCategory, type ApiPageListItem } from "@/lib/api";
@@ -16,6 +16,7 @@ const EXPLORE_LINKS = [
 const ACCOUNT_LINKS = [
   { labelKey: "footer.signIn", to: "/auth" },
   { labelKey: "footer.myProfile", to: "/profile" },
+  { labelKey: "feedback.navLink", to: "/feedback" },
 ];
 
 // Bottom-bar shortcuts — each renders only while its page is published in the CMS
@@ -27,6 +28,7 @@ const LEGAL_LINKS = [
 
 export function Footer() {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
 
   const { data: categories = [] } = useQuery<ApiCategory[]>({
     queryKey: ["categories"],
@@ -143,6 +145,7 @@ export function Footer() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
+                    state={link.to === "/feedback" ? { from: pathname } : undefined}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {t(link.labelKey)}

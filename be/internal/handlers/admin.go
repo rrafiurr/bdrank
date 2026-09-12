@@ -56,6 +56,8 @@ func (h *AdminHandler) Stats(w http.ResponseWriter, r *http.Request) {
 	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users WHERE is_product_owner = 1 AND owner_verified = 0`).Scan(&pendingOwners)
 	var pendingEmbeds int
 	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM embed_tokens WHERE status = 'pending'`).Scan(&pendingEmbeds)
+	var newFeedback int
+	h.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM feedback WHERE status = 'new'`).Scan(&newFeedback)
 	writeJSON(w, http.StatusOK, map[string]int{
 		"total_users":      totalUsers,
 		"total_reviews":    totalReviews,
@@ -67,6 +69,7 @@ func (h *AdminHandler) Stats(w http.ResponseWriter, r *http.Request) {
 		"total_categories": totalCategories,
 		"pending_owners":   pendingOwners,
 		"pending_embeds":   pendingEmbeds,
+		"new_feedback":     newFeedback,
 	})
 }
 

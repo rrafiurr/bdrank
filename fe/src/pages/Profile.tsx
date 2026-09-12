@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { ProfileCampaignBanners } from "@/components/ProfileCampaignBanners";
+import { MyFeedback } from "@/components/MyFeedback";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -371,7 +372,7 @@ export default function Profile() {
         </div>
 
         {/* ── My Comments ── */}
-        <div className="mt-6 mb-8 bg-card border border-border rounded-xl overflow-hidden shadow-soft">
+        <div className="mt-6 bg-card border border-border rounded-xl overflow-hidden shadow-soft">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <h2 className="font-serif text-xl font-semibold text-foreground flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-primary" />
@@ -412,6 +413,8 @@ export default function Profile() {
             </ul>
           )}
         </div>
+
+        <MyFeedback />
       </main>
 
       <AlertDialog open={revealing !== null} onOpenChange={(open) => !open && setRevealing(null)}>

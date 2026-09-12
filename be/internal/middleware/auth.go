@@ -80,6 +80,12 @@ func UserIDFromCtx(ctx context.Context) int64 {
 	return 0
 }
 
+// WithUserID returns ctx carrying userID as the authenticated user, exactly as
+// Auth would set it. For tests of handlers and middleware that sit behind Auth.
+func WithUserID(ctx context.Context, userID int64) context.Context {
+	return context.WithValue(ctx, ctxUserID, userID)
+}
+
 func JTIFromCtx(ctx context.Context) string {
 	if v, ok := ctx.Value(ctxJTI).(string); ok {
 		return v

@@ -7,6 +7,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Reviews from "@/pages/Reviews";
 import Comments from "@/pages/Comments";
+import Feedback from "@/pages/Feedback";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
 import FormFields from "@/pages/FormFields";
@@ -36,6 +37,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
       <Route path="/comments" element={<ProtectedRoute><Comments /></ProtectedRoute>} />
+      <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
       <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
       <Route path="/form-fields" element={<ProtectedRoute><FormFields /></ProtectedRoute>} />

@@ -23,6 +23,7 @@ export interface AdminStats {
   total_categories: number;
   pending_owners: number;
   pending_embeds: number;
+  new_feedback: number;
 }
 
 export interface AdminReview {
@@ -49,6 +50,24 @@ export interface AdminComment {
   review_id: number;
   review_title: string;
   author: string;
+  created_at: string;
+}
+
+export type FeedbackStatus = "new" | "in_progress" | "resolved" | "spam";
+
+export interface AdminFeedback {
+  id: number;
+  type: "bug" | "idea" | "complaint" | "praise" | "other";
+  message: string;
+  status: FeedbackStatus;
+  /** "" when there is no reply. */
+  admin_reply: string;
+  replied_at: string | null;
+  /** True until the user opens their profile after the latest reply. */
+  reply_unread: boolean;
+  page_path: string;
+  user_agent: string;
+  user: { id: number; username: string; email: string };
   created_at: string;
 }
 

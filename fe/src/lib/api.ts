@@ -181,6 +181,24 @@ function getToken(): string | null {
 }
 
 /**
+ * A non-2xx answer from the API. `code` and `retryAfter` are set by endpoints
+ * that return machine-readable errors (feedback, for one), so callers can show
+ * a translated message. Everything else only has `message`, exactly as before.
+ */
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  retryAfter?: number;
+  constructor(message: string, status: number, code?: string, retryAfter?: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.retryAfter = retryAfter;
+  }
+}
+
+/**
  * Extra behaviour flags for {@link apiFetch}.
  *
  * `redirectOn401` defaults to true: a 401 means a signed-in session went
@@ -227,7 +245,7 @@ export async function apiFetch<T>(
   }
 
   if (!res.ok) {
-    throw new Error(data.error ?? "Request failed");
+    throw new ApiError(data.error ?? "Request failed", res.status, data.code, data.retry_after);
   }
 
   return data as T;
