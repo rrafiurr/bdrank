@@ -10,12 +10,22 @@ npm run build      # Production build
 npm run build:dev  # Development build
 npm run lint       # Run ESLint
 npm run preview    # Preview production build locally
+npm run test:rules # Unit-test the pure rule modules (no framework, no deps)
 ```
 
-There is no test suite configured. `npm run lint` currently reports pre-existing
-errors across the repo (mostly `no-explicit-any` and empty `catch` blocks) — when
-checking your own work, lint the files you touched rather than reading the
-whole-repo exit code as a regression.
+There is no component/browser test suite. `test:rules` runs the pure-logic tests
+that do exist straight through Node's TypeScript support — currently
+[src/lib/scrollTopRules.test.ts](src/lib/scrollTopRules.test.ts). Logic worth
+testing belongs in a pure module in `src/lib/` with a sibling `*.test.ts`, which
+keeps it verifiable without a DOM; add it to that script's path list.
+
+`npm run lint` currently reports pre-existing errors across the repo (mostly
+`no-explicit-any` and empty `catch` blocks) — when checking your own work, lint
+the files you touched rather than reading the whole-repo exit code as a
+regression.
+
+Neither `npm run build` nor `npm run lint` type-checks. The real check is
+`npx tsc --noEmit -p tsconfig.app.json`.
 
 ## Repository Context
 
@@ -156,6 +166,10 @@ body because it is a one-tap commitment that primes the writing, and the title c
 - `BrowseReviews` once held its own hardcoded array; it now reads from the API like
   everything else.
 - A global [ScrollToTop.tsx](src/components/ScrollToTop.tsx) is mounted once in
-  `App.tsx` for all routes (excluded on `/embed/*`).
+  `App.tsx` for all routes (excluded on `/embed/*`). Whether it is *visible* is
+  decided by [src/lib/scrollTopRules.ts](src/lib/scrollTopRules.ts): the
+  threshold scales with how far the page can actually scroll, because a flat
+  `scrollY > 400` is unreachable on any page shorter than one viewport plus
+  400px and left the button missing from every short route.
 - The production bundle is over 500 kB and Vite warns about it on every build. That
   warning is pre-existing, not a regression from your change.
