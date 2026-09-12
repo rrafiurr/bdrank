@@ -4,9 +4,7 @@ import { ArrowUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// How far down the page the user must be before the button fades in.
-const SHOW_AFTER_PX = 400;
+import { shouldShowScrollTop } from "@/lib/scrollTopRules";
 
 // Embed widgets render inside a short iframe on third-party sites, where a
 // floating button would cover the badge itself.
@@ -26,18 +24,33 @@ export function ScrollToTop() {
     // Scroll fires far more often than the UI needs to change, so the read is
     // coalesced into one rAF per frame.
     let frame = 0;
-    const onScroll = () => {
+    const update = () => {
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        setVisible(window.scrollY > SHOW_AFTER_PX);
+        setVisible(
+          shouldShowScrollTop({
+            scrollY: window.scrollY,
+            scrollHeight: document.documentElement.scrollHeight,
+            innerHeight: window.innerHeight,
+          }),
+        );
       });
     };
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    // The threshold depends on how far the page can scroll, so it has to be
+    // recomputed when that changes and not only when the user scrolls: rotating
+    // a phone, or a query resolving and making the page taller, both move it.
+    window.addEventListener("resize", update);
+    const observer = new ResizeObserver(update);
+    observer.observe(document.documentElement);
+
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      observer.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
   }, [excluded]);
