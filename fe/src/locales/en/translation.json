@@ -569,5 +569,202 @@
     "unreadLabel": "You have a new reply to your feedback",
     "showMore": "Show more",
     "showLess": "Show less"
+  },
+  "landing": {
+    "all": "All",
+    "number": "{{value, number}}",
+    "reviewsCount_one": "{{count, number}} review",
+    "reviewsCount_other": "{{count, number}} reviews",
+    "starsLabel": "Rated {{rating}} out of 5",
+    "elapsed": {
+      "day1": "Day 1",
+      "daysLater_one": "{{count}} day later",
+      "daysLater_other": "{{count}} days later",
+      "monthsLater_one": "{{count}} month later",
+      "monthsLater_other": "{{count}} months later",
+      "yearsLater_one": "{{count}} year later",
+      "yearsLater_other": "{{count}} years later",
+      "daysShort_one": "{{count}} d",
+      "daysShort_other": "{{count}} d",
+      "monthsShort_one": "{{count}} mo",
+      "monthsShort_other": "{{count}} mo",
+      "yearsShort_one": "{{count}} yr",
+      "yearsShort_other": "{{count}} yr"
+    },
+    "nav": {
+      "label": "Main",
+      "categories": "Categories",
+      "rewards": "Rewards",
+      "business": "For businesses",
+      "login": "Log in",
+      "write": "Write a review"
+    },
+    "search": {
+      "placeholder": "Search a phone, ISP, restaurant, shop…",
+      "placeholderShort": "Search products, shops, services",
+      "placeholderMobile": "Search a phone, ISP, restaurant…",
+      "button": "Search",
+      "noProduct": "No product yet —",
+      "beFirst": "be the first to review it",
+      "seeAllBefore": "See all reviews mentioning ",
+      "seeAllAfter": "",
+      "popularNow": "Popular right now",
+      "categories": "Categories"
+    },
+    "hero": {
+      "badgeNew": "New",
+      "badge": "Bangladesh’s review platform — reviews that track products over time",
+      "title": "Don’t just read how it unboxed. See how it",
+      "highlight": "holds up.",
+      "sub": "Real Bangladeshi buyers review phones, ISPs, restaurants and shops — then come back after 3 months, 6 months, a year to update their rating.",
+      "subShort": "Real buyers review — then come back after 3 months, 6 months, a year to update their rating.",
+      "popular": "Popular:",
+      "statReviews": "reviews",
+      "statTimelines": "timelines",
+      "statMembers": "members"
+    },
+    "deck": {
+      "liveLabel": "Live review timelines",
+      "cameBack": "came back {{times}}×",
+      "by": "by {{author}}",
+      "timelineLabel": "Review timeline",
+      "footnote": "Fake reviewers don’t come back a year later. Real buyers do — that’s why timelines are hard to fake.",
+      "footnoteShort": "Fake reviewers don’t come back a year later. Real buyers do."
+    },
+    "how": {
+      "step1Title": "Search before you buy",
+      "step1Body": "Phones, internet, food, f-commerce shops — rated by real buyers.",
+      "step2Title": "Check how it held up",
+      "step2Body": "Timelines show the rating after months of real use, not just day one.",
+      "step3Title": "Review, return, earn",
+      "step3Body": "Share your experience, update it later, collect points for real rewards."
+    },
+    "categories": {
+      "title": "What are you looking for?",
+      "titleShort": "Browse categories",
+      "all": "All categories",
+      "desc": {
+        "physical": "Phones, electronics, fashion",
+        "digital": "Apps, software, subscriptions",
+        "service": "Internet, rides, clinics, shops",
+        "food": "Restaurants, delivery, home chefs"
+      }
+    },
+    "holds": {
+      "eyebrow": "Only on BdRanks",
+      "title": "How it holds up",
+      "sub": "Reviewers who came back to update their rating after months of use.",
+      "all": "All timeline reviews",
+      "updates_one": "{{count}} update",
+      "updates_other": "{{count}} updates"
+    },
+    "recent": {
+      "title": "Recently reviewed",
+      "prev": "Scroll back",
+      "next": "Scroll forward",
+      "noReviews": "No reviews yet"
+    },
+    "latest": {
+      "title": "Latest reviews",
+      "all": "All",
+      "likes": "Likes",
+      "browseAll": "Browse all reviews"
+    },
+    "cta": {
+      "title": "Bought something recently?",
+      "body": "Your Day 1 review starts its timeline. We’ll remind you to update it later. Takes about 2 minutes — drafts save automatically.",
+      "bodyShort": "Your Day 1 review starts its timeline. We’ll remind you to update it later.",
+      "step": {
+        "rate": "Rate",
+        "write": "Write",
+        "title": "Title",
+        "photos": "Photos (optional)"
+      },
+      "button": "Write a review · earn points"
+    },
+    "trust": {
+      "moderation": {
+        "title": "Human moderation",
+        "titleShort": "Human moderation",
+        "body": "Every review and comment is checked by a person before it counts.",
+        "bodyShort": "Every review checked by a person."
+      },
+      "owners": {
+        "title": "Verified owners",
+        "titleShort": "Verified owners",
+        "body": "Businesses are vetted before they can reply officially.",
+        "bodyShort": "Businesses vetted before replying."
+      },
+      "timelines": {
+        "title": "Timelines can’t be faked",
+        "titleShort": "Can’t be faked",
+        "body": "Fake accounts don’t return months later. Real customers do.",
+        "bodyShort": "Real buyers return months later."
+      },
+      "imports": {
+        "title": "Honest imports",
+        "titleShort": "Honest imports",
+        "body": "Google reviews are credited to their author, with a link back.",
+        "bodyShort": "Google reviews credited & linked."
+      }
+    },
+    "rewards": {
+      "eyebrow": "For reviewers",
+      "title": "Your reviews earn real rewards",
+      "body": "Points for reviews, photos and updates. Level up, then redeem for coupons and gifts.",
+      "top": "Top reviewers",
+      "topWeek": "Top reviewers this week",
+      "range": {
+        "week": "Week",
+        "month": "Month",
+        "all": "All-time"
+      },
+      "empty": "No points earned in this period yet — your first review could top the list.",
+      "points": "{{value, number}} pts",
+      "join": "Join & start earning",
+      "mine": "See your rewards",
+      "leaderboard": "See leaderboard"
+    },
+    "business": {
+      "eyebrow": "For businesses",
+      "title": "Turn happy customers into your best advert",
+      "body": "Claim your product, get verified, and grow a reputation that shows up on Google.",
+      "claim": "Claim your business — free",
+      "summary": "Official replies, QR poster, website widget.",
+      "qrTitle": "Printable QR poster",
+      "qrBody": "English or বাংলা, for your counter",
+      "repliesTitle": "Official replies",
+      "repliesBody": "Respond as the verified owner",
+      "widgetTitle": "Website widget",
+      "widgetBody": "Live rating on your own site"
+    },
+    "footer": {
+      "label": "Footer",
+      "col": {
+        "explore": "Explore",
+        "community": "Community",
+        "business": "Businesses"
+      },
+      "categories": "Categories",
+      "timelines": "Timeline reviews",
+      "latest": "Latest reviews",
+      "write": "Write a review",
+      "rewards": "Rewards & levels",
+      "leaderboard": "Leaderboard",
+      "claim": "Claim your business",
+      "qr": "QR poster",
+      "widget": "Review widget",
+      "contact": "Contact",
+      "made": "Made in Bangladesh",
+      "tagline": "Honest reviews, tracked over time."
+    },
+    "tabs": {
+      "label": "Main",
+      "home": "Home",
+      "search": "Search",
+      "review": "Review",
+      "rewards": "Rewards",
+      "account": "Account"
+    }
   }
 }

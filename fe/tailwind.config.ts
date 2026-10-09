@@ -16,6 +16,12 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['Crimson Pro', 'Georgia', 'serif'],
+        // Home page type (fonts are loaded by that page only). Hind Siliguri
+        // follows each Latin face so Bangla glyphs fall back to it per character.
+        display: ['"Bricolage Grotesque"', '"Hind Siliguri"', 'system-ui', 'sans-serif'],
+        bangla: ['"Hind Siliguri"', 'system-ui', 'sans-serif'],
+        label: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        wordmark: ['Poppins', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -58,6 +64,33 @@ export default {
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         cream: "hsl(var(--cream))",
+        // Fixed brand palette from the home page handoff. Light-only on
+        // purpose: the app has no dark-mode switch.
+        bd: {
+          navy: "#14213d",
+          logo: "#1e3263",
+          badge: "#2a4785",
+          amber: "#ffa514",
+          "amber-hover": "#f29600",
+          "amber-ink": "#b86e00",
+          bg: "#faf8f5",
+          hero: "#f4efe8",
+          soft: "#f8f5f0",
+          hover: "#f6f2ec",
+          toggle: "#efe9e1",
+          line: "#ebe5dd",
+          "line-strong": "#e3ddd4",
+          "star-off": "#e2dbd1",
+          dot: "#d5cdc2",
+          body: "#3d3731",
+          ink2: "#5a534c",
+          muted: "#6b645c",
+          faint: "#958c82",
+          tint: "#eaeef6",
+          "tint-line": "#d5ddec",
+          pill: "#e8edf6",
+          footer: "#cfc6ba",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

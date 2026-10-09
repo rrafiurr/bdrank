@@ -72,7 +72,8 @@ export function ScrollToTop() {
       aria-hidden={!visible}
       tabIndex={visible ? 0 : -1}
       className={cn(
-        "fixed bottom-6 right-6 z-40 h-11 w-11 rounded-full shadow-elevated transition-all duration-300",
+        // --bottom-nav-h is set while a bottom tab bar is on screen (home, mobile).
+        "fixed bottom-[calc(1.5rem+var(--bottom-nav-h,0px))] right-6 z-40 h-11 w-11 rounded-full shadow-elevated transition-all duration-300",
         "[margin-bottom:env(safe-area-inset-bottom)]",
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0",
       )}
