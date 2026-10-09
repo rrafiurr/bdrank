@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:rules": "node --experimental-strip-types --disable-warning=ExperimentalWarning src/lib/scrollTopRules.test.ts"
+    "test:rules": "node --experimental-strip-types --disable-warning=ExperimentalWarning src/lib/scrollTopRules.test.ts && node --experimental-strip-types --disable-warning=ExperimentalWarning src/lib/reviewDeck.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

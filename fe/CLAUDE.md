@@ -15,7 +15,8 @@ npm run test:rules # Unit-test the pure rule modules (no framework, no deps)
 
 There is no component/browser test suite. `test:rules` runs the pure-logic tests
 that do exist straight through Node's TypeScript support — currently
-[src/lib/scrollTopRules.test.ts](src/lib/scrollTopRules.test.ts). Logic worth
+[src/lib/scrollTopRules.test.ts](src/lib/scrollTopRules.test.ts) and
+[src/lib/reviewDeck.test.ts](src/lib/reviewDeck.test.ts). Logic worth
 testing belongs in a pure module in `src/lib/` with a sibling `*.test.ts`, which
 keeps it verifiable without a DOM; add it to that script's path list.
 
@@ -171,5 +172,14 @@ body because it is a one-tap commitment that primes the writing, and the title c
   threshold scales with how far the page can actually scroll, because a flat
   `scrollY > 400` is unreachable on any page shorter than one viewport plus
   400px and left the button missing from every short route.
+- The home page ([src/pages/Index.tsx](src/pages/Index.tsx), sections in
+  [src/components/home/](src/components/home/)) is built from the design handoff in
+  `docs/design_handoff_home_page/`. It has its own header, footer and phone tab bar
+  rather than the shared `Header`/`Footer`, its own fonts (loaded by that page only)
+  and a fixed light-only `bd-*` palette in `tailwind.config.ts`. Strings live under
+  `landing.*`. One component serves both layouts: CSS `sm:` (640px) for styling, and
+  `useIsNarrow()` where the structure differs (deck placement, search sheet vs
+  dropdown, leaderboard size). The deck's autoplay rules are pure, in
+  [src/lib/reviewDeck.ts](src/lib/reviewDeck.ts).
 - The production bundle is over 500 kB and Vite warns about it on every build. That
   warning is pre-existing, not a regression from your change.

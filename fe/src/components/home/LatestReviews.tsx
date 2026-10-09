@@ -1,86 +1,122 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { apiFetch, type ApiReviewListItem } from "@/lib/api";
-import { toCardProps } from "@/lib/reviewCardProps";
-import { ReviewCard } from "@/components/ReviewCard";
-import { CategoryFilter } from "@/components/CategoryFilter";
+import { Heart } from "lucide-react";
+import { formatDistanceToNowStrict } from "date-fns";
+import { bn, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { UserAvatar } from "@/components/UserAvatar";
+import { cn } from "@/lib/utils";
+import { sourceLabel } from "@/lib/reviewSource";
+import { Container, Pill, SectionTitle, Stars, Thumb } from "./bits";
+import { reviewAuthor, useCategories, useLatestReviews } from "./useHomeData";
+
+// Phones show the first three; wider screens all six.
+const PHONE_LIMIT = 3;
 
 export function LatestReviews() {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "bn" ? "bn-BD" : "en-US";
-  const [activeCategory, setActiveCategory] = useState("all");
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["reviews", { category: activeCategory, sort: "latest", limit: 3 }],
-    queryFn: () => {
-      const params = new URLSearchParams({ sort: "latest", limit: "3" });
-      if (activeCategory !== "all") params.set("category", activeCategory);
-      return apiFetch<{ data: ApiReviewListItem[]; total: number }>(`/reviews?${params}`);
-    },
-  });
-
+  const dateLocale = i18n.language?.startsWith("bn") ? bn : enUS;
+  const [tab, setTab] = useState("all");
+  const { data: categories = [] } = useCategories();
+  const { data, isLoading } = useLatestReviews(tab);
   const reviews = data?.data ?? [];
 
+  const tabs = [{ slug: "all", label: t("landing.latest.all") }, ...categories];
+
   return (
-    <section className="bg-secondary/50 py-7 lg:py-12">
-      <div className="container px-4">
-        <div className="mb-4 flex items-end justify-between gap-4 lg:mb-6">
-          <div>
-            <h2 className="mb-1 font-serif text-[22px] font-bold text-foreground sm:text-[26px]">
-              {t("home.latestReviews")}
-            </h2>
-            <p className="text-[13px] text-muted-foreground sm:text-[15px]">
-              {t("home.latestSubtitle")}
-            </p>
-          </div>
-          <Link
-            to="/browse"
-            className="group hidden shrink-0 items-center gap-1.5 text-sm font-medium text-primary sm:inline-flex"
-          >
-            {t("home.seeAllReviews")}
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
-        </div>
-
-        <div className="mb-4 lg:mb-6">
-          <CategoryFilter activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
-        </div>
-
-        {isLoading ? (
-          <div className="grid gap-3 md:grid-cols-3 lg:gap-6">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className={`h-[340px] rounded-2xl bg-muted animate-pulse ${i === 2 ? "hidden md:block" : ""}`}
-              />
+    <section className="pt-7 sm:pt-16">
+      <Container className="px-0 sm:px-6">
+        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-4 px-4 sm:mb-4 sm:px-0">
+          <SectionTitle>{t("landing.latest.title")}</SectionTitle>
+          <div className="bd-noscroll -mx-4 flex w-[calc(100%+2rem)] gap-1.5 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0">
+            {tabs.map((c) => (
+              <Pill key={c.slug} active={tab === c.slug} onClick={() => setTab(c.slug)}>
+                {c.label}
+              </Pill>
             ))}
           </div>
-        ) : reviews.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-3 lg:gap-6">
-            {reviews.map((review, index) => (
-              <div
-                key={review.id}
-                // The third card is desktop-only: the phone shows two.
-                className={`animate-fade-in ${index === 2 ? "hidden md:block" : ""}`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <ReviewCard {...toCardProps(review, locale)} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="py-10 text-center text-muted-foreground">{t("home.noReviews")}</p>
-        )}
-
-        <div className="mt-6 text-center sm:hidden">
-          <Link to="/browse" className="text-sm font-medium text-primary">
-            {t("home.seeAllReviews")}
-          </Link>
         </div>
-      </div>
+
+        <div className="flex flex-col gap-2.5 px-4 sm:grid sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] sm:gap-4 sm:px-0">
+          {isLoading ? (
+            [0, 1, 2].map((i) => <div key={i} className="h-[220px] animate-pulse rounded-2xl bg-bd-toggle sm:rounded-[18px]" />)
+          ) : reviews.length === 0 ? (
+            <p className="py-10 text-center text-bd-muted sm:col-span-full">{t("home.noReviews")}</p>
+          ) : (
+            reviews.map((r, i) => {
+              const who = reviewAuthor(r, t("review.anonymous"));
+              return (
+                <article
+                  key={r.id}
+                  className={cn(
+                    "flex flex-col gap-2 rounded-2xl border border-bd-line bg-white p-3.5 sm:gap-2.5 sm:rounded-[18px] sm:p-5",
+                    i >= PHONE_LIMIT && "hidden sm:flex",
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <UserAvatar
+                      name={who.name}
+                      src={who.avatarUrl}
+                      anonymous={who.anonymous}
+                      size="xs"
+                      className="sm:h-9 sm:w-9"
+                    />
+                    <div className="min-w-0 flex-1 text-[13px] leading-[1.3] sm:text-sm">
+                      <div className="truncate font-semibold">
+                        {who.name}
+                        {who.level && <span className="text-[11px] font-semibold text-bd-badge sm:text-xs"> · {who.level}</span>}
+                      </div>
+                      <div className="text-xs text-bd-muted sm:text-[13px]">
+                        {formatDistanceToNowStrict(new Date(r.created_at), { addSuffix: true, locale: dateLocale })}
+                        {r.source && <> · {t("review.viaSource", { source: sourceLabel(r.source) })}</>}
+                      </div>
+                    </div>
+                    <Stars rating={r.rating} className="text-sm sm:text-base" />
+                  </div>
+
+                  <Link
+                    to={`/review/${r.id}`}
+                    className="bd-display font-display text-base font-semibold leading-[1.3] text-bd-navy hover:text-bd-amber-ink sm:text-[17px]"
+                  >
+                    {r.title}
+                  </Link>
+                  <p className="m-0 line-clamp-4 text-sm leading-normal text-bd-body [text-wrap:pretty] sm:text-[15px] sm:leading-[1.55]">
+                    {r.excerpt}
+                  </p>
+
+                  {r.images?.length > 0 && (
+                    <div className="hidden gap-1.5 sm:flex">
+                      {r.images.slice(0, 2).map((src) => (
+                        <Thumb key={src} src={src} alt={r.product.name} className="h-14 w-14 rounded-lg" />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#f2ede6] pt-2 text-xs text-bd-muted sm:pt-2.5 sm:text-[13px]">
+                    <Link to={`/product/${r.product.id}`} className="truncate font-semibold text-bd-navy hover:text-bd-amber-ink">
+                      {r.product.name}
+                    </Link>
+                    <span className="flex flex-none items-center gap-1">
+                      <Heart className="h-3.5 w-3.5" aria-hidden />
+                      <span className="sr-only">{t("landing.latest.likes")}</span>
+                      {r.likes_count}
+                    </span>
+                  </div>
+                </article>
+              );
+            })
+          )}
+
+          <div className="mt-1 flex justify-center sm:col-span-full sm:mt-2">
+            <Link
+              to="/browse"
+              className="w-full rounded-full border border-bd-navy p-3 text-center text-[15px] font-semibold text-bd-navy transition-colors hover:bg-bd-navy hover:text-white sm:w-auto sm:px-[22px] sm:py-2.5"
+            >
+              {t("landing.latest.browseAll")}
+            </Link>
+          </div>
+        </div>
+      </Container>
     </section>
   );
 }

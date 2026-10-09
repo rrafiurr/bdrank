@@ -1,14 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { UserAvatar } from "@/components/UserAvatar";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Search, PenSquare, User, Menu, LogOut, X, LayoutDashboard, Code2, MessageSquarePlus } from "lucide-react";
+import { Search, PenSquare, User, Menu, LogOut, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo-tight.png";
@@ -18,6 +10,7 @@ import { apiFetch, type ApiSearchResult } from "@/lib/api";
 import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { AccountMenu } from "@/components/AccountMenu";
 
 interface HeaderProps {
   /** Hide the header's search pill while the hero search (#hero-search) is on screen; fade it in after scrolling past. */
@@ -255,66 +248,7 @@ export function Header({ autoHide = false }: HeaderProps) {
 
           {!loading && (
             user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative hidden sm:flex rounded-full h-9 w-9 p-0">
-                    <UserAvatar name={user.username || user.email} src={user.avatar_url} size="xs" />
-                    {unreadReplies > 0 && (
-                      <>
-                        <span
-                          className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background"
-                          aria-hidden="true"
-                        />
-                        <span className="sr-only">{t("feedback.unreadLabel")}</span>
-                      </>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 rounded-2xl shadow-elevated">
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-semibold">{user.full_name || user.username || "User"}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
-                    <Link to="/profile" className="flex items-center">
-                      <User className="h-4 w-4 mr-2" />
-                      {t("common.myProfile")}
-                      {unreadReplies > 0 && <span className="ml-auto h-2 w-2 rounded-full bg-primary" aria-hidden="true" />}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
-                    <Link to="/feedback" state={{ from: location.pathname }} className="flex items-center">
-                      <MessageSquarePlus className="h-4 w-4 mr-2" />
-                      {t("feedback.navLink")}
-                    </Link>
-                  </DropdownMenuItem>
-                  {user.is_product_owner && (
-                    <>
-                      <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
-                        <Link to="/owner-dashboard" className="flex items-center">
-                          <LayoutDashboard className="h-4 w-4 mr-2" />
-                          {t("nav.ownerDashboard")}
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="cursor-pointer rounded-xl mx-1">
-                        <Link to="/owner-embed" className="flex items-center">
-                          <Code2 className="h-4 w-4 mr-2" />
-                          {t("nav.embedCodes")}
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={signOut}
-                    className="text-destructive focus:text-destructive cursor-pointer rounded-xl mx-1 mb-1"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    {t("common.signOut")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <AccountMenu className="hidden sm:flex" />
             ) : (
               <Link to="/auth" className="hidden sm:block">
                 <Button variant="outline" size="sm" className="gap-1.5 rounded-full px-4">

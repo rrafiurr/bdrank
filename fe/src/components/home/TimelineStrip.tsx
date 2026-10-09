@@ -1,189 +1,116 @@
+import { Fragment } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Clock, Star, ArrowRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { apiFetch, type ApiReviewListItem } from "@/lib/api";
-import { getCategoryDisplay } from "@/lib/categoryDisplay";
 import { useTranslation } from "react-i18next";
+import { UserAvatar } from "@/components/UserAvatar";
+import { trimTrail } from "@/lib/reviewDeck";
+import { Container, Eyebrow, MoreLink, SectionTitle } from "./bits";
+import { useElapsedLabel, type TimelineItem } from "./useHomeData";
 
-// The first rating plus at most this many updates, so the trail never wraps.
-const MAX_TRAIL = 4;
-
-// Hide a thumbnail whose URL fails to load, revealing the category icon
-// beneath it rather than the browser's broken-image glyph. Module-level so it
-// is not recreated per render, matching ReviewCard.
-function hideBrokenThumb(e: React.SyntheticEvent<HTMLImageElement>) {
-  e.currentTarget.style.display = "none";
-}
-
-/** One rating in the trail. The most recent is highlighted. */
-function TrailChip({ rating, latest }: { rating: number; latest: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-semibold ${
-        latest ? "bg-primary/10 text-primary" : "bg-muted text-foreground"
-      }`}
-    >
-      <Star className="h-3 w-3 fill-gold text-gold" />
-      {rating}
-    </span>
-  );
-}
-
-export function TimelineStrip() {
+/** "How it holds up": reviews whose authors came back to update their rating. */
+export function TimelineStrip({ items, isLoading }: { items: TimelineItem[]; isLoading: boolean }) {
   const { t } = useTranslation();
-  const { data, isLoading } = useQuery({
-    queryKey: ["home-timelines"],
-    queryFn: () =>
-      apiFetch<{ data: ApiReviewListItem[]; total: number }>(
-        "/reviews?timeline_only=true&sort=latest&limit=6",
-      ),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const reviews = data?.data ?? [];
-
-  if (isLoading) {
-    return (
-      <section className="py-8 lg:py-12">
-        <div className="container px-4">
-          <div className="mb-6 h-14 w-64 rounded-xl bg-muted animate-pulse" />
-        </div>
-        <div className="container flex gap-4 overflow-hidden px-4 pb-5">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-[148px] min-w-[240px] rounded-2xl bg-muted animate-pulse" />
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  const heading = (
-    <div className="container px-4">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <h2 className="mb-1 font-serif text-[22px] font-bold text-foreground sm:text-[26px]">
-            {t("home.timelineHeading")}
-          </h2>
-          <p className="text-[13px] text-muted-foreground sm:text-[15px]">
-            {t("home.timelineSubtitle")}
-          </p>
-        </div>
-        {reviews.length > 0 && (
-          <Link
-            to="/browse"
-            className="group hidden shrink-0 items-center gap-1.5 text-sm font-medium text-primary sm:inline-flex"
-          >
-            {t("home.seeAllReviews")}
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
-        )}
-      </div>
-    </div>
-  );
-
-  // Timeline reviews are the premise of the site, so the section still makes
-  // the case when none exist yet — and points at the action that creates one.
-  if (reviews.length === 0) {
-    return (
-      <section className="py-8 lg:py-12">
-        {heading}
-        <div className="container px-4">
-          <div className="flex flex-col items-start gap-4 rounded-2xl border border-dashed border-border bg-card/60 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-            <div className="flex items-start gap-4">
-              <div className="hidden shrink-0 items-center gap-1 sm:flex" aria-hidden="true">
-                <TrailChip rating={5} latest={false} />
-                <span className="h-0.5 w-2.5 rounded-full bg-border" />
-                <TrailChip rating={4} latest={false} />
-                <span className="h-0.5 w-2.5 rounded-full bg-border" />
-                <TrailChip rating={4} latest />
-              </div>
-              <div>
-                <p className="font-serif text-lg font-semibold text-card-foreground">
-                  {t("home.timelineEmptyTitle")}
-                </p>
-                <p className="mt-0.5 max-w-xl text-[13px] leading-snug text-muted-foreground sm:text-sm">
-                  {t("home.timelineEmptyBody")}
-                </p>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-4">
-              <Link to="/write-review">
-                <Button variant="hero" size="sm" className="rounded-full px-5">
-                  {t("home.timelineEmptyCta")}
-                </Button>
-              </Link>
-              <Link
-                to="/browse"
-                className="group inline-flex items-center gap-1.5 text-sm font-medium text-primary"
-              >
-                {t("home.timelineEmptyBrowse")}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const elapsed = useElapsedLabel();
 
   return (
-    <section className="py-8 lg:py-12">
-      {heading}
+    <section className="pt-7 sm:pt-16">
+      <Container className="px-0 sm:px-6">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-4 px-4 sm:mb-5 sm:px-0">
+          <div className="min-w-0 flex-1">
+            <Eyebrow className="text-bd-badge">{t("landing.holds.eyebrow")}</Eyebrow>
+            <div className="flex items-baseline justify-between gap-4">
+              <SectionTitle>{t("landing.holds.title")}</SectionTitle>
+              <span className="sm:hidden">
+                <MoreLink to="/browse" label={t("landing.holds.all")} short={t("landing.all")} />
+              </span>
+            </div>
+            <p className="mb-0 mt-1.5 hidden text-base text-bd-muted sm:block">{t("landing.holds.sub")}</p>
+          </div>
+          <span className="hidden sm:block">
+            <MoreLink to="/browse" label={t("landing.holds.all")} />
+          </span>
+        </div>
 
-      <div className="container flex snap-x scroll-pl-4 gap-3 overflow-x-auto px-4 pb-5 sm:gap-4">
-        {reviews.map((review) => {
-          const { icon: Icon } = getCategoryDisplay(review.category);
-          const updates = review.timeline_ratings ?? [];
-          const trail = [review.rating, ...updates].slice(-MAX_TRAIL);
-          const image = review.images?.[0];
-
-          return (
+        {isLoading ? (
+          <div className="grid gap-4 px-4 sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className={`h-[230px] animate-pulse rounded-[18px] bg-bd-toggle ${i > 0 ? "hidden sm:block" : ""}`} />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          // Timelines are the premise of the site, so the section makes its
+          // case even before any exist, and points at the action that starts one.
+          <div className="mx-4 flex flex-col items-start gap-4 rounded-[18px] border border-dashed border-bd-line-strong bg-white/60 p-5 sm:mx-0 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="bd-display m-0 font-display text-lg font-semibold">{t("home.timelineEmptyTitle")}</p>
+              <p className="m-0 mt-1 max-w-xl text-sm text-bd-muted">{t("home.timelineEmptyBody")}</p>
+            </div>
             <Link
-              key={review.id}
-              to={`/review/${review.id}`}
-              className="group min-w-[240px] max-w-[240px] shrink-0 snap-start rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated sm:min-w-[268px] sm:max-w-[268px]"
+              to="/write-review"
+              className="rounded-full bg-bd-navy px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-bd-amber hover:text-bd-navy"
             >
-              <div className="mb-3 flex items-center gap-3">
-                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
-                  {/* The icon sits underneath, so a broken image reveals it. */}
-                  <Icon className="h-5 w-5 text-muted-foreground" />
-                  {image && (
-                    <img
-                      src={image}
-                      alt={review.product.name}
-                      loading="lazy"
-                      decoding="async"
-                      onError={hideBrokenThumb}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-serif font-semibold text-card-foreground group-hover:text-primary">
-                    {review.product.name}
-                  </p>
-                  <p className="text-xs capitalize text-muted-foreground">{review.category}</p>
-                </div>
-              </div>
-
-              <div className="mb-3 flex flex-nowrap items-center gap-1">
-                {trail.map((rating, i) => (
-                  <div key={i} className="flex items-center gap-1">
-                    {i > 0 && <span className="h-0.5 w-2.5 rounded-full bg-border" />}
-                    <TrailChip rating={rating} latest={i === trail.length - 1} />
-                  </div>
-                ))}
-              </div>
-
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {t("home.timelineUpdated", { count: updates.length })}
-              </p>
+              {t("home.timelineEmptyCta")}
             </Link>
-          );
-        })}
-      </div>
+          </div>
+        ) : (
+          <div className="bd-noscroll flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+            {items.map((tl) => {
+              const trail = trimTrail(tl.steps, 3);
+              const latest = tl.steps[tl.steps.length - 1];
+              return (
+                <Link
+                  key={tl.id}
+                  to={`/review/${tl.id}`}
+                  className="flex w-[290px] flex-none snap-center flex-col gap-3 rounded-2xl border border-bd-line bg-white p-4 text-bd-navy transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:text-bd-navy hover:shadow-[0_16px_30px_-18px_rgba(60,40,20,.35)] sm:w-auto sm:gap-3.5 sm:rounded-[18px] sm:p-5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="bd-display truncate font-display text-[15px] font-semibold sm:text-base">{tl.productName}</span>
+                    <span className="whitespace-nowrap rounded-full bg-bd-pill px-2 py-0.5 text-[11px] font-semibold text-bd-badge sm:px-[9px] sm:py-[3px] sm:text-xs">
+                      ↻ <span className="sm:hidden">{t("landing.number", { value: tl.updates })}</span>
+                      <span className="hidden sm:inline">{t("landing.holds.updates", { count: tl.updates })}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-[5px] sm:gap-1.5">
+                    {trail.map((s, i) => (
+                      <Fragment key={i}>
+                        {i > 0 && <span className="text-[#c9c0b4]" aria-hidden>→</span>}
+                        <span className="flex min-w-[52px] flex-col items-center rounded-[9px] bg-bd-soft px-2 py-[5px] sm:min-w-[58px] sm:rounded-[10px] sm:px-2.5 sm:py-1.5">
+                          <b className="text-[15px] sm:text-base">
+                            <span className="text-bd-amber">★</span>
+                            {s.rating}
+                          </b>
+                          <span className="font-label text-[10px] font-medium text-bd-muted">{elapsed(s.elapsed, true)}</span>
+                        </span>
+                      </Fragment>
+                    ))}
+                  </div>
+
+                  <p className="m-0 line-clamp-4 text-sm leading-normal text-bd-body [text-wrap:pretty] sm:text-[15px] sm:leading-[1.55]">
+                    “{latest.text}”
+                  </p>
+
+                  <div className="mt-auto flex items-center gap-2 text-xs text-bd-muted sm:text-[13px]">
+                    <UserAvatar
+                      name={tl.author}
+                      src={tl.avatarUrl}
+                      anonymous={tl.anonymous}
+                      size="xs"
+                      className="hidden h-[26px] w-[26px] text-xs sm:flex"
+                    />
+                    <span className="truncate">{tl.author}</span>
+                    {tl.level && (
+                      <>
+                        <span className="text-bd-dot" aria-hidden>·</span>
+                        <span className="font-semibold text-bd-ink2">{tl.level}</span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </Container>
     </section>
   );
 }
